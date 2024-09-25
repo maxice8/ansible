@@ -1,0 +1,27 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+- name: Allow OpenSSH access on any interface
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Allow OpenSSH access on the interface tailscale0
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+    interface_in: tailscale0
+
+- name: Allow any access on the interface tailscale0
+  community.general.ufw:
+    rule: allow
+    interface_in: tailscale0
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    logging: 'on'

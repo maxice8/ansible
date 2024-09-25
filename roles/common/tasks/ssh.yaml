@@ -1,0 +1,40 @@
+---
+- name: Disable root login on SSH
+  block:
+
+    - name: Set PermitRootLogin no
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PermitRootLogin no'
+        state: present
+
+    - name: Remove PermitRootLogin yes
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PermitRootLogin yes'
+        state: absent
+
+
+- name: Disable password authentication on SSH
+  block:
+    - name: Set PasswordAuthentication no
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PasswordAuthentication no'
+        state: present
+
+    - name: Remove PasswordAuthentication yes
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PasswordAuthentication yes'
+        state: absent
+
+- name: Restart SSH service
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: Wait for SSH to return
+  ansible.builtin.wait_for_connection:
+    timeout: 300
+    delay: 10

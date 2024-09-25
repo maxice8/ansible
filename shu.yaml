@@ -1,0 +1,20 @@
+---
+# Playbook for the server shu
+- name: Setup VPS
+  hosts: shu
+  gather_facts: false
+
+  tasks:
+    - name: Setup User, SSH, and UFW
+      ansible.builtin.import_role:
+        name: common
+
+    - name: Setup syncthing
+      ansible.builtin.import_role:
+        name: syncthing
+      vars:
+        syncthing_username: "{{ username }}"
+
+    - name: Setup gitea
+      ansible.builtin.import_role:
+        name: gitea

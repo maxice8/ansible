@@ -1,0 +1,98 @@
+---
+- name: Install git
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Download Gitea binary
+  ansible.builtin.get_url:
+    # TODO: support arches other than linux-amd64
+    url: https://dl.gitea.com/gitea/{{ gitea_version }}/gitea-{{ gitea_version }}-linux-amd64
+    dest: /usr/local/bin/gitea
+    mode: '0755'
+
+- name: Create git user
+  ansible.builtin.user:
+    name: git
+    system: true
+    shell: /bin/bash
+    comment: "Git Version Control"
+    password_lock: true
+    home: /home/git
+
+- name: Create directories with specific structure for gitea
+  ansible.builtin.file:
+    path: /var/lib/gitea/{{ item }}
+    state: directory
+    owner: git
+    group: git
+    mode: '0750'
+  with_items:
+    - custom
+    - data
+    - log
+
+- name: Ensure /etc/gitea directory exists
+  ansible.builtin.file:
+    path: /etc/gitea
+    state: directory
+    owner: root
+    group: git
+    mode: '0770'
+
+- name: Create gitea systemd service
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/gitea.service
+    content: |
+      [Unit]
+      Description=Gitea (Git with a cup of tea)
+      After=network.target
+      After=gitea.socket
+      Requires=gitea.socket
+
+      [Service]
+      RestartSec=2s
+      Type=simple
+      User=git
+      Group=git
+      WorkingDirectory=/var/lib/gitea/
+      RuntimeDirectory=gitea
+      ExecStart=/usr/local/bin/gitea web --config /etc/gitea/app.ini
+      Restart=always
+      Environment=USER=git HOME=/home/git GITEA_WORK_DIR=/var/lib/gitea
+      PrivateUsers=true
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Install gitea systemd socket
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/gitea.socket
+    content: |
+      [Unit]
+      Description=Gitea Web Socket
+      PartOf=gitea.service
+
+      [Socket]
+      Service=gitea.service
+      ListenStream=3000
+      NoDelay=true
+
+      [Install]
+      WantedBy=sockets.target
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable gitea systemd socket
+  ansible.builtin.systemd:
+    name: gitea.socket
+    state: started
+    enabled: true

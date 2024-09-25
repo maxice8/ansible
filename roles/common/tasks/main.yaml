@@ -1,0 +1,6 @@
+- name: Import user creation tasks
+  ansible.builtin.import_tasks: user.yaml
+- name: Import ufw tasks
+  ansible.builtin.import_tasks: ufw.yaml
+- name: Import SSH tasks
+  ansible.builtin.import_tasks: ssh.yaml
