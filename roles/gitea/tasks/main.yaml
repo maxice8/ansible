@@ -50,8 +50,6 @@
       [Unit]
       Description=Gitea (Git with a cup of tea)
       After=network.target
-      After=gitea.socket
-      Requires=gitea.socket
 
       [Service]
       RestartSec=2s
@@ -68,31 +66,12 @@
       [Install]
       WantedBy=multi-user.target
 
-- name: Install gitea systemd socket
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /etc/systemd/system/gitea.socket
-    content: |
-      [Unit]
-      Description=Gitea Web Socket
-      PartOf=gitea.service
-
-      [Socket]
-      Service=gitea.service
-      ListenStream=3000
-      NoDelay=true
-
-      [Install]
-      WantedBy=sockets.target
-
 - name: Reload systemd daemon
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Enable gitea systemd socket
-  ansible.builtin.systemd:
-    name: gitea.socket
+- name: Enable gitea service
+  ansible.builtin.service:
+    name: gitea
     state: started
     enabled: true
