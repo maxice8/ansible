@@ -62,7 +62,7 @@
     owner: root
     group: root
     mode: '0644'
-    dest: /etc/systemd/service/keep-vm-alive.service
+    dest: /etc/systemd/system/keep-vm-alive.service
     content: |
         [Unit]
         Description=Service to keep VM resource usage high to prevent reclamation
