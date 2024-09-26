@@ -56,3 +56,15 @@
     groups: docker
     append: true
   when: docker_username != ""
+
+- name: Enable the docker service
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Enable the containerd service
+  ansible.builtin.service:
+    name: containerd
+    state: started
+    enabled: true
