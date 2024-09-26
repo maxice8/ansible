@@ -4,6 +4,7 @@
     name: "{{ username }}"
     groups: adm
     password_lock: true
+    shell: /bin/bash
 
 - name: Install sudo
   ansible.builtin.apt:
