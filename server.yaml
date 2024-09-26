@@ -1,7 +1,7 @@
 ---
 # Playbook for the server shu
 - name: Setup VPS
-  hosts: shu
+  hosts: all
   gather_facts: false
 
   tasks:
@@ -9,12 +9,9 @@
       ansible.builtin.import_role:
         name: common
 
-    - name: Setup syncthing
-      ansible.builtin.import_role:
-        name: syncthing
+    - name: Setup service {{ item }}
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      loop: "{{ services.split(',') }}"
       vars:
         syncthing_username: "{{ username }}"
-
-    - name: Setup gitea
-      ansible.builtin.import_role:
-        name: gitea
