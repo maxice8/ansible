@@ -1,3 +1,8 @@
+- name: Install sysstat for mpstat support
+  ansible.builtin.apt:
+    name: sysstat
+    state: present
+
 - name: Install keep-vm-alive script
   ansible.builtin.copy:
     owner: root
