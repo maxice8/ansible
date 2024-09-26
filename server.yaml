@@ -2,7 +2,6 @@
 # Playbook for the server shu
 - name: Setup VPS
   hosts: all
-  gather_facts: false
 
   tasks:
     - name: Setup User, SSH, and UFW
