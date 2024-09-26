@@ -1,0 +1,85 @@
+- name: Install keep-vm-alive script
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0755'
+    dest: /usr/local/bin/keep-vm-alive
+    content: |
+      #!/usr/bin/env bash
+
+      min_cpu=10 # Minimum CPU utilization percentage
+      duration=$((60 * 60 * 24 * 7)) # Duration of each cycle in seconds (7 days)
+      min_time=$((duration / 20)) # 5% of the total duration (in seconds)
+      cpu_stress_time=60 # Time spent stressing the CPU in each cycle (in seconds)
+      interval=300 # Time between CPU stress cycles (in seconds)
+
+      # Function to stress the CPU for a specified time
+      stress_cpu() {
+          echo "Stressing the CPU for $cpu_stress_time seconds..."
+          timeout $cpu_stress_time bash -c "while true; do echo 'Running...'; done"
+      }
+
+      while true; do
+          start_time=$(date +%s) # Start time of the current cycle
+          time_above_min=0 # Initialize the time_above_min variable
+
+          echo "Starting a new 7-day cycle..."
+
+          while true; do
+              current_time=$(date +%s)
+              elapsed_time=$((current_time - start_time))
+
+              if [ $elapsed_time -ge $duration ]; then
+                  echo "7-day cycle completed."
+                  break
+              fi
+
+              # Run the CPU stress and check CPU utilization
+              stress_cpu
+
+              # Measure CPU utilization for the last stress period
+              cpu_utilization=$(mpstat 1 10 | awk '/all/ {print 100 - $NF}')
+
+              if (( $(echo "$cpu_utilization > $min_cpu" | bc -l) )); then
+                  time_above_min=$((time_above_min + cpu_stress_time))
+              fi
+
+              if [ $time_above_min -ge $min_time ]; then
+                  echo "CPU utilization has been above $min_cpu% for the required time."
+                  break
+              fi
+
+              echo "Sleeping for $interval seconds before the next CPU stress cycle..."
+              sleep $interval
+          done
+
+          # After 7 days, start a new cycle
+          echo "Restarting another 7-day cycle..."
+      done
+
+- name: Create keep-vm-alive systemd service
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/service/keep-vm-alive.service
+    content: |
+        [Unit]
+        Description=Service to keep VM resource usage high to prevent reclamation
+
+        [Service]
+        ExecStart=/usr/local/bin/keep-vm-alive
+        Type=simple
+
+        [Install]
+        WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable keep-vm-alive service
+  ansible.builtin.service:
+    service: keep-vm-alive
+    state: started
+    enabled: true
