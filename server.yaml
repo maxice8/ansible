@@ -13,7 +13,7 @@
       ansible.builtin.import_role:
         name: common
 
-    - name: Setup service {{ service }}
+    - name: Setup services
       ansible.builtin.include_role:
         name: "{{ service }}"
       loop_control:
