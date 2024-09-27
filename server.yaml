@@ -16,7 +16,7 @@
     - name: Setup service {{ item }}
       ansible.builtin.include_role:
         name: "{{ item }}"
-      loop: "{{ services.split(',') }}"
+      loop: "{{ services }}"
       vars:
         syncthing_username: "{{ username }}"
         docker_username: "{{ username }}"

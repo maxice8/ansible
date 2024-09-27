@@ -1,0 +1,14 @@
+servers:
+  vars:
+    ansible_user: root
+    username: max
+  hosts:
+    shu:
+      services:
+        - gitea
+        - syncthing
+    mika:
+      services:
+        - keep-vm-alive
+        - syncthing
+        - docker
