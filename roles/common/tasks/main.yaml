@@ -1,3 +1,6 @@
+- name: Import apt configuration tasks
+  ansible.builtin.import_tasks: apt.yaml
+  when: ansible_facts.os_family == "Debian"
 - name: Import user creation tasks
   ansible.builtin.import_tasks: user.yaml
 - name: Import ufw tasks
