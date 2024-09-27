@@ -22,12 +22,14 @@
 
 - name: Create directories with specific structure for gitea
   ansible.builtin.file:
-    path: /var/lib/gitea/{{ item }}
+    path: /var/lib/gitea/{{ directory }}
     state: directory
     owner: git
     group: git
     mode: '0750'
-  with_items:
+  loop_control:
+    loop_var: directory
+  loop:
     - custom
     - data
     - log

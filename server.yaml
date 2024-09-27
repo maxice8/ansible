@@ -13,9 +13,11 @@
       ansible.builtin.import_role:
         name: common
 
-    - name: Setup service {{ item }}
+    - name: Setup service {{ service }}
       ansible.builtin.include_role:
-        name: "{{ item }}"
+        name: "{{ service }}"
+      loop_control:
+        loop_var: service
       loop: "{{ services }}"
       vars:
         syncthing_username: "{{ username }}"
