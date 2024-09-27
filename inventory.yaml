@@ -7,8 +7,10 @@ servers:
       services:
         - gitea
         - syncthing
+        - node-exporter
     mika:
       services:
         - keep-vm-alive
         - syncthing
         - docker
+        - node-exporter
