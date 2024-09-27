@@ -20,7 +20,8 @@
 				"ms-python.python",
 				"redhat.vscode-yaml",
 				"wholroyd.jinja",
-				"hangxingliu.vscode-systemd-support"
+				"hangxingliu.vscode-systemd-support",
+				"samuelcolvin.jinjahtml"
 			]
 		}
 	},
