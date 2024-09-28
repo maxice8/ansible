@@ -1,5 +1,0 @@
----
-- name: Reload Prometheus
-  ansible.builtin.service:
-    name: prometheus
-    state: reloaded
