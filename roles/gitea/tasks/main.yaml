@@ -18,3 +18,5 @@
 - name: Enable gitea docker
   community.docker.docker_compose_v2:
     project_src: /srv/gitea
+    wait: true
+    wait_timeout: 30
