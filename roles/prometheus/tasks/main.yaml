@@ -21,5 +21,21 @@
     owner: prometheus
     group: prometheus
     mode: '0644'
+
+- name: Create prometheus rules directory
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: "0755"
+    path: /etc/prometheus/rules
+    state: directory
+
+- name: Add node-exporter alerts for prometheus
+  ansible.builtin.get_url:
+    owner: root
+    group: root
+    mode: '0644'
+    url: https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/host-and-hardware/node-exporter.yml
+    dest: /etc/prometheus/rules/node-exporter-rules.yml
   notify:
     - Reload Prometheus
