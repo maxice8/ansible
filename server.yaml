@@ -19,6 +19,13 @@
       ansible.builtin.import_role:
         name: common
 
+    # We have to setup docker for everyone first
+    - name: Setup docker
+      ansible.builtin.include_role:
+        name: docker
+      vars:
+        docker_username: "{{ username }}"
+
     - name: Setup services
       ansible.builtin.include_role:
         name: "{{ service }}"
@@ -27,4 +34,3 @@
       loop: "{{ services }}"
       vars:
         syncthing_username: "{{ username }}"
-        docker_username: "{{ username }}"
