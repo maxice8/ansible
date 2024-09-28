@@ -1,79 +1,21 @@
 ---
-- name: Install git
-  ansible.builtin.apt:
-    name: git
-    state: present
-
-- name: Download Gitea binary
-  ansible.builtin.get_url:
-    # TODO: support arches other than linux-amd64
-    url: https://dl.gitea.com/gitea/{{ gitea_version }}/gitea-{{ gitea_version }}-linux-amd64
-    dest: /usr/local/bin/gitea
-    mode: '0755'
-
-- name: Create git user
-  ansible.builtin.user:
-    name: git
-    system: true
-    shell: /bin/bash
-    comment: "Git Version Control"
-    password_lock: true
-    home: /home/git
-
-- name: Create directories with specific structure for gitea
+- name: Create docker-compose directory for gitea
   ansible.builtin.file:
-    path: /var/lib/gitea/{{ directory }}
-    state: directory
-    owner: git
-    group: git
-    mode: '0750'
-  loop_control:
-    loop_var: directory
-  loop:
-    - custom
-    - data
-    - log
-
-- name: Ensure /etc/gitea directory exists
-  ansible.builtin.file:
-    path: /etc/gitea
-    state: directory
     owner: root
-    group: git
-    mode: '0770'
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/gitea
 
-- name: Create gitea systemd service
+- name: Copy files to /srv/gitea
   ansible.builtin.copy:
     owner: root
     group: root
     mode: '0644'
-    dest: /etc/systemd/system/gitea.service
-    content: |
-      [Unit]
-      Description=Gitea (Git with a cup of tea)
-      After=network.target
+    dest: /srv/gitea
+    # TODO: if we have other files this might change, so keep an eye out
+    src: ./
 
-      [Service]
-      RestartSec=2s
-      Type=simple
-      User=git
-      Group=git
-      WorkingDirectory=/var/lib/gitea/
-      RuntimeDirectory=gitea
-      ExecStart=/usr/local/bin/gitea web --config /etc/gitea/app.ini
-      Restart=always
-      Environment=USER=git HOME=/home/git GITEA_WORK_DIR=/var/lib/gitea
-      PrivateUsers=true
-
-      [Install]
-      WantedBy=multi-user.target
-
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Enable gitea service
-  ansible.builtin.service:
-    name: gitea
-    state: started
-    enabled: true
+- name: Enable gitea docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/gitea
