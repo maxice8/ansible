@@ -1,0 +1,25 @@
+---
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Prometheus
+  ansible.builtin.apt:
+    name: prometheus
+    state: present
+
+- name: Ensure Prometheus service is enabled and started
+  ansible.builtin.service:
+    name: prometheus
+    enabled: true
+    state: started
+
+- name: Copy custom Prometheus config using Jinja templating
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify:
+    - Reload Prometheus

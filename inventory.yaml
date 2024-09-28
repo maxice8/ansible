@@ -14,3 +14,4 @@ servers:
         - syncthing
         - docker
         - node-exporter
+        - prometheus
