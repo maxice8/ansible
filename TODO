@@ -1,1 +1,4 @@
 - Allow bootstrapping without Tailscale, currently we need to tailscale already active so we can bootstrap, and even we use root even though we disable log-in for it by abusing the fact that tailscale allows us to log-in as root while having root-login disabled
+- Create role for prometheus with default configuration based on which nodes have node-exporter activated
+- Create role for grafana with some default dashboards
+- Create role for nextcloud
