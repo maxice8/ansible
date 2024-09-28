@@ -1,34 +1,33 @@
 ---
-- name: Add syncthing repository and key
-  block:
-    - name: Add key
-      ansible.builtin.get_url:
-        url: https://syncthing.net/release-key.gpg
-        dest: /etc/apt/keyrings/syncthing-archive-keyring.gpg
-        owner: root
-        mode: '0644'
+- name: Get the PUID for the user
+  ansible.builtin.command: id -u {{ syncthing_username }}
+  register: puid
+  changed_when: false
 
-    - name: Add repository
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable"
-        state: present
+- name: Get the PGID for the user
+  ansible.builtin.command: id -g {{ syncthing_username }}
+  register: pgid
+  changed_when: false
 
-- name: Install syncthing
-  ansible.builtin.apt:
-    name: syncthing
-    state: present
-    update_cache: true
+- name: Create docker-compose directory for syncthing
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/syncthing
 
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
+- name: Copy docker-compose files to /srv/syncthing
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/syncthing/docker-compose.yml
+    src: docker-compose.yml.j2
+  vars:
+    syncthing_user_id: "{{ puid.stdout }}"
+    syncthing_user_group_id: "{{ pgid.stdout }}"
 
-- name: Create user for syncthing
-  ansible.builtin.user:
-    user: "{{ syncthing_username }}"
-
-- name: Enable syncthing systemd service for max
-  ansible.builtin.systemd_service:
-    name: syncthing@{{ syncthing_username }}
-    state: started
-    enabled: true
+- name: Enable syncthing docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/syncthing
