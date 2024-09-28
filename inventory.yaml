@@ -15,3 +15,4 @@ servers:
         - docker
         - node-exporter
         - prometheus
+        - grafana

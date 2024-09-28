@@ -1,0 +1,4 @@
+---
+# Used for authentication
+grafana_url_username: "admin"
+grafana_url_password: "admin"

@@ -1,0 +1,29 @@
+---
+- name: Add Prometheus data source
+  community.grafana.grafana_datasource:
+    name: "{{ inventory_hostname }}_prometheus"
+    url: http://localhost:3000
+    ds_type: prometheus
+    ds_url: http://localhost:9090
+    access: proxy
+    tls_skip_verify: true
+    url_username: "{{ grafana_url_username }}"
+    url_password: "{{ grafana_url_password }}"
+
+- name: Add node-exporter dashboard
+  community.grafana.grafana_dashboard:
+    dashboard_id: 1860
+    dashboard_revision: 37
+    url: http://localhost:3000
+    url_username: "{{ grafana_url_username }}"
+    url_password: "{{ grafana_url_password }}"
+    overwrite: true
+
+- name: Add monitord dashboard
+  community.grafana.grafana_dashboard:
+    dashboard_id: 21855
+
+    url: http://localhost:3000
+    url_username: "{{ grafana_url_username }}"
+    url_password: "{{ grafana_url_password }}"
+    overwrite: true
