@@ -3,3 +3,6 @@
 - Find a way to install monitord (rust cargo package), send its data to metrics and set up alerts for it
 - Install Neko on new Hetzner VPN
 - Add alerts for prometheus
+- Install cAdvisor
+- Move Prometheus to containers
+- Move Grafana to containers
