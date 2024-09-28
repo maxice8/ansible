@@ -13,7 +13,7 @@
     group: root
     mode: '0644'
     dest: /srv/gitea/
-    src: docker-compose.yaml
+    src: docker-compose.yml
 
 - name: Enable gitea docker
   community.docker.docker_compose_v2:
