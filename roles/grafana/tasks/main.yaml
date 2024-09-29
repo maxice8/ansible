@@ -1,4 +1,26 @@
 ---
+- name: Create docker-compose directory for grafana
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/grafana
+
+- name: Copy docker-compose files to /srv/grafana
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/grafana/
+    src: docker-compose.yml
+
+- name: Enable grafana docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/grafana
+    wait: true
+    wait_timeout: 90
+
 - name: Add Prometheus data source
   community.grafana.grafana_datasource:
     name: "{{ inventory_hostname }}_prometheus"
@@ -22,7 +44,7 @@
 - name: Add monitord dashboard
   community.grafana.grafana_dashboard:
     dashboard_id: 21855
-
+    dashboard_revision: 1
     url: http://localhost:3000
     url_username: "{{ grafana_url_username }}"
     url_password: "{{ grafana_url_password }}"
