@@ -11,7 +11,6 @@ servers:
     mika:
       services:
         - keep-vm-alive
-        - syncthing
         - node-exporter
         - prometheus
         - grafana
