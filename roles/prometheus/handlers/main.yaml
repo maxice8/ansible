@@ -4,3 +4,8 @@
   ansible.builtin.uri:
     url: http://localhost:9090/-/reload
     method: POST
+
+- name: Restart Prometheus
+  community.docker.docker_compose_v2:
+    project_src: /srv/prometheus
+    state: restarted
