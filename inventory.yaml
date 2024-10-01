@@ -2,15 +2,16 @@ servers:
   vars:
     ansible_user: root
     username: max
+    group_services:
+      - node-exporter
+      - cadvisor
   hosts:
     shu:
-      services:
+      host_services:
         - gitea
         - syncthing
-        - node-exporter
     mika:
-      services:
+      host_services:
         - keep-vm-alive
-        - node-exporter
         - prometheus
         - grafana

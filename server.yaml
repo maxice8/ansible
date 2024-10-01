@@ -4,6 +4,10 @@
   hosts: all
 
   tasks:
+    - name: Merge group and host specific services
+      ansible.builtin.set_fact:
+        services: "{{ group_services + host_services }}"
+
     - name: Get DEB architecture
       ansible.builtin.command: dpkg --print-architecture
       register: deb_architecture
