@@ -1,0 +1,49 @@
+﻿---
+- name: Create systemd service file
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    dest: /etc/systemd/system
+
+- name: Create docker-system-prune service
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/docker-system-prune.service
+    content: |
+      [Unit]
+      Description=Run Docker system prune
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/docker system prune -f
+
+- name: Create docker-system-prune timer
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/docker-system-prune.timer
+    content: |
+      [Unit]
+      Description=Run Docker system prune daily
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable docker-system-prune timer
+  ansible.builtin.systemd:
+    name: docker-system-prune.timer
+    enabled: true
+    state: started

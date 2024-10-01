@@ -68,3 +68,7 @@
     name: containerd
     state: started
     enabled: true
+
+- name: Create systemd timer to prune images
+  ansible.builtin.import_tasks:
+    file: docker-system-prune.yaml
