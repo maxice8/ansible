@@ -2,7 +2,7 @@ services:
   syncthing:
     image: syncthing/syncthing
     container_name: syncthing
-    hostname: syncthing-for-{{ syncthing_username }}
+    hostname: {{ inventory_hostname }}
     environment:
       - PUID={{ syncthing_user_id }}
       - PGID={{ syncthing_user_group_id }}
