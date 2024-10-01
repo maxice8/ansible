@@ -6,12 +6,12 @@ servers:
       - node-exporter
       - cadvisor
   hosts:
-    shu:
-      host_services:
-        - gitea
-        - syncthing
     mika:
       host_services:
         - keep-vm-alive
         - prometheus
         - grafana
+    koga:
+      host_services:
+        - gitea
+        - syncthing
