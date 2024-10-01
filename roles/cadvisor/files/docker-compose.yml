@@ -1,0 +1,21 @@
+services:
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "9180:8080"
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    healthcheck:
+      test: wget -q http://localhost:8080/healthz -O - | grep '^ok$'
+      interval: 15s
+      timeout: 30s
+      retries: 3
