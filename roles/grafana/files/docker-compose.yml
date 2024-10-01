@@ -6,6 +6,7 @@ services:
     network_mode: host
     volumes:
       - 'storage:/var/lib/grafana'
+      - ./provisioning:/etc/grafana/provisioning
     healthcheck:
       test: "curl -f http://localhost:3000/api/health"
       interval: 15s

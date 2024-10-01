@@ -15,37 +15,47 @@
     dest: /srv/grafana/
     src: docker-compose.yml
 
+- name: Get list of managed provisioning files
+  ansible.builtin.find:
+    path: roles/grafana/files/provisioning
+    recurse: true
+  register: managed
+  delegate_to: localhost
+
+- name: Set managed_files to list of managed provisioning files
+  ansible.builtin.set_fact:
+    managed_files: "{{ managed.files | map(attribute='path') | map('regex_replace', '^.*/provisioning/', '') | sort | list }}"
+  delegate_to: localhost
+
+- name: Get list of installed provisioning files
+  ansible.builtin.find:
+    path: /srv/grafana/provisioning
+    recurse: true
+  register: remote_files
+
+- name: Set remote_files to list of provisioning files in remote
+  ansible.builtin.set_fact:
+    remote_files: "{{ remote_files.files | map(attribute='path') | map('regex_replace', '^.*/provisioning/', '') | sort | list }}"
+
+- name: Remove provisioning files in Remote that are not Managed
+  ansible.builtin.file:
+    path: /srv/grafana/provisioning/{{ provisioning_file }}
+    state: absent
+  loop: "{{ remote_files | difference(managed_files) }}"
+  loop_control:
+    loop_var: provisioning_file
+
+- name: Copy Grafana provisioning directory to /srv/grafana
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/grafana/
+    src: provisioning/
+  notify: Restart Grafana
+
 - name: Enable grafana docker
   community.docker.docker_compose_v2:
     project_src: /srv/grafana
     wait: true
     wait_timeout: 90
-
-- name: Add Prometheus data source
-  community.grafana.grafana_datasource:
-    name: "{{ inventory_hostname }}_prometheus"
-    url: http://localhost:3000
-    ds_type: prometheus
-    ds_url: http://localhost:9090
-    access: proxy
-    tls_skip_verify: true
-    url_username: "{{ grafana_url_username }}"
-    url_password: "{{ grafana_url_password }}"
-
-- name: Add node-exporter dashboard
-  community.grafana.grafana_dashboard:
-    dashboard_id: 1860
-    dashboard_revision: 37
-    url: http://localhost:3000
-    url_username: "{{ grafana_url_username }}"
-    url_password: "{{ grafana_url_password }}"
-    overwrite: true
-
-- name: Add monitord dashboard
-  community.grafana.grafana_dashboard:
-    dashboard_id: 21855
-    dashboard_revision: 1
-    url: http://localhost:3000
-    url_username: "{{ grafana_url_username }}"
-    url_password: "{{ grafana_url_password }}"
-    overwrite: true
