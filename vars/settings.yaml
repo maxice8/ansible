@@ -1,2 +1,1 @@
-grafana_url_username: ""
-grafana_url_password: ""
+prometheus_discord_webhook_url: ""
