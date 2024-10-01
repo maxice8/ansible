@@ -1,0 +1,12 @@
+global:
+  resolve_timeout: 1m
+
+route:
+  receiver: 'discord'
+  group_by: ['alertname', 'cluster']
+  repeat_interval: 1h
+
+receivers:
+- name: 'discord'
+  discord_configs:
+    - webhook_url: {{ prometheus_discord_webhook_url }}

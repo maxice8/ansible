@@ -10,7 +10,8 @@ alerting:
         - targets: ['localhost:9093']
 
 rule_files:
-  - /etc/prometheus/rules/node-exporter-rules.yml
+  - /etc/prometheus/rules/node-exporter.yml
+  - /etc/prometheus/rules/google-cadvisor.yml
 
 scrape_configs:
   - job_name: 'prometheus'
@@ -22,6 +23,19 @@ scrape_configs:
   - job_name: 'node'
     static_configs:
       - targets:
-        {% for host, details in hostvars.items() if 'node-exporter' in details.services %}
+        {% for host, details in hostvars.items() %}
         - '{{ host }}:9100'
         {% endfor %}
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets:
+        {% for host, details in hostvars.items() %}
+        - '{{ host }}:9180'
+        {% endfor %}
+        
+    metric_relabel_configs:
+      - source_labels: ['container_label_com_docker_swarm_service_name']
+        target_label: 'service'
+      - source_labels: ['name']
+        target_label: 'container'
