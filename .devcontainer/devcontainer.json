@@ -27,7 +27,7 @@
 		}
 	},
 	"mounts": [
-		"source=${localEnv:HOMEDRIVE}/${localEnv:HOMEPATH}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+		"source=${localEnv:HOMEDRIVE}/${localEnv:HOMEPATH}/${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
 	],
 	"postStartCommand": "sudo chown -R vscode:vscode /home/vscode/.ssh && chmod 700 /home/vscode/.ssh && chmod 600 /home/vscode/.ssh/* && chmod 700 /home/vscode/.ssh/config.d && chmod 600 /home/vscode/.ssh/config.d/*"
 	// Configure tool-specific properties.
