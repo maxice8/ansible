@@ -1,0 +1,36 @@
+---
+- name: Create docker-compose directory for docker-registry
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/docker-registry
+
+- name: Copy docker-compose files to /srv/docker-registry
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/docker-registry/docker-compose.yml
+    src: docker-compose.yml
+
+- name: Create ./data directory for docker-registry
+  ansible.builtin.file:
+    state: directory
+    mode: '0755'
+    dest: /srv/docker-registry/data
+
+- name: Copy configuration for docker-registry
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/docker-registry/config.yml
+    src: config.yml.j2
+
+- name: Enable docker-registry
+  community.docker.docker_compose_v2:
+    project_src: /srv/docker-registry
+    wait: true
+    wait_timeout: 90
