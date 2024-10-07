@@ -1,4 +1,4 @@
-﻿---
+---
 - name: Create APT configuration folder
   ansible.builtin.file:
     owner: root

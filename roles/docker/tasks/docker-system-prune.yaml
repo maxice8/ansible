@@ -1,4 +1,4 @@
-﻿---
+---
 - name: Create systemd service file
   ansible.builtin.file:
     owner: root
