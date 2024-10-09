@@ -2,6 +2,7 @@ servers:
   vars:
     ansible_user: root
     username: max
+    user_shell: /bin/bash
     group_services:
       - node-exporter
       - cadvisor
@@ -12,6 +13,7 @@ servers:
         - keep-vm-alive
         - prometheus
         - grafana
+      user_shell: /usr/bin/fish
     shu:
       host_services:
         - gitea

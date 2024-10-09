@@ -4,7 +4,7 @@
     name: "{{ username }}"
     groups: adm
     password_lock: true
-    shell: /bin/bash
+    shell: "{{ user_shell }}"
     append: true
 
 - name: Install sudo
