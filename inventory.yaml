@@ -12,7 +12,7 @@ servers:
         - keep-vm-alive
         - prometheus
         - grafana
-    koga:
+    shu:
       host_services:
         - gitea
         - syncthing
