@@ -6,6 +6,7 @@ servers:
     group_services:
       - node-exporter
       - cadvisor
+      - watchtower
   hosts:
     mika:
       host_services:
