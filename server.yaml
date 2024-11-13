@@ -11,6 +11,7 @@
     - name: Get DEB architecture
       ansible.builtin.command: dpkg --print-architecture
       register: deb_architecture
+      check_mode: false
       changed_when: false
 
     - name: Load vars/settings.local.yaml

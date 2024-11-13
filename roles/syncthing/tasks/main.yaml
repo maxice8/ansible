@@ -2,11 +2,13 @@
 - name: Get the PUID for the user
   ansible.builtin.command: id -u {{ syncthing_username }}
   register: puid
+  check_mode: false
   changed_when: false
 
 - name: Get the PGID for the user
   ansible.builtin.command: id -g {{ syncthing_username }}
   register: pgid
+  check_mode: false
   changed_when: false
 
 - name: Create docker-compose directory for syncthing
