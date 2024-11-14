@@ -19,3 +19,4 @@ servers:
       host_services:
         - gitea
         - syncthing
+        - portainer-agent
