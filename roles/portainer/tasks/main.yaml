@@ -1,0 +1,20 @@
+---
+- name: Create docker-compose directory for portainer
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/portainer
+
+- name: Copy docker-compose files to /srv/portainer
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/portainer/
+    src: docker-compose.yml
+
+- name: Enable portainer docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/portainer
