@@ -77,7 +77,8 @@
     file: docker-system-prune.yaml
 
 - name: Run hello-world container
-  ansible.builtin.command: docker run hello-world
-  register: docker_hello_world_result
-  changed_when: false
-  failed_when: docker_hello_world_result.rc != 0
+  community.docker.docker_container:
+    name: hello-world
+    image: hello-world
+    state: started
+    auto_remove: true
