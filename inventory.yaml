@@ -10,7 +10,6 @@ servers:
   hosts:
     mika:
       host_services:
-        - docker-registry
         - keep-vm-alive
         - prometheus
         - grafana

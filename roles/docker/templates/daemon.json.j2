@@ -1,8 +1,3 @@
 {
-    "live-restore": true,
-    "insecure-registries": [
-    {% for host, details in hostvars.items() if 'docker-registry' in details.services %}
-    "{{ host }}:5000"{% if not loop.last %},{% endif %}
-    {% endfor %}
-    ]
+    "live-restore": true
 }
