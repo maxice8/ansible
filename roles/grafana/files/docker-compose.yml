@@ -4,11 +4,13 @@ services:
     container_name: grafana
     restart: unless-stopped
     network_mode: host
+    environment:
+      - GF_SERVER_HTTP_PORT=33000
     volumes:
       - 'storage:/var/lib/grafana'
       - ./provisioning:/etc/grafana/provisioning
     healthcheck:
-      test: "curl -f http://localhost:3000/api/health"
+      test: "curl -f http://localhost:33000/api/health"
       interval: 15s
       timeout: 30s
       retries: 3
