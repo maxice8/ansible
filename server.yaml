@@ -8,6 +8,26 @@
       ansible.builtin.set_fact:
         services: "{{ group_services + host_services }}"
 
+    - name: Check tailscale status
+      ansible.builtin.command: tailscale status --json
+      register: tailscale_status
+      check_mode: false
+      changed_when: false
+
+    - name: Set tailscale_is_running
+      ansible.builtin.set_fact:
+        tailscale_active: "{{ (tailscale_status.stdout | from_json).Self.Online }}"
+
+    - name: Check tailscale serve status
+      ansible.builtin.command: tailscale serve status --json
+      register: tailscale_serve_status
+      check_mode: false
+      changed_when: false
+
+    - name: Set tailscale_serve_status as a dict
+      ansible.builtin.set_fact:
+        tailscale_serve_status: "{{ (tailscale_serve_status.stdout | from_json) }}"
+
     - name: Get DEB architecture
       ansible.builtin.command: dpkg --print-architecture
       register: deb_architecture
