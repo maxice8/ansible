@@ -63,3 +63,23 @@
     project_src: /srv/prometheus
     wait: true
     wait_timeout: 90
+
+- name: Expose prometheus over tailscale on port 9001
+  ansible.builtin.command: tailscale serve --bg --https=9001 https+insecure://127.0.0.1:9001
+  register: tailscale_serve_output
+  failed_when: tailscale_serve_output.rc != 0
+  changed_when: true
+  # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
+  # and check if matches http://127.0.0.1:<service-port>
+  when: >
+    tailscale_active and
+    tailscale_serve_status.Web.get(
+      ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:9001',
+      {}
+    ).get(
+      'Handlers',
+      {}
+    ).get(
+      '/',
+      {}
+    ).get('Proxy', '') != 'https+insecure://127.0.0.1:9001'
