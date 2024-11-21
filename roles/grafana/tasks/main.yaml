@@ -60,7 +60,7 @@
     wait: true
     wait_timeout: 90
 
-- name: Expose grafana over tailscale
+- name: Expose grafana over tailscale on port 3000
   ansible.builtin.command: tailscale serve --bg --https=3000 33000
   register: tailscale_serve_output
   failed_when: tailscale_serve_output.rc != 0

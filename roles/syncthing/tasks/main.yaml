@@ -36,7 +36,7 @@
     wait: true
     wait_timeout: 90
 
-- name: Expose syncthing over tailscale
+- name: Expose syncthing over tailscale on port 8384
   ansible.builtin.command: tailscale serve --bg --https=8384 38384
   register: tailscale_serve_output
   failed_when: tailscale_serve_output.rc != 0
