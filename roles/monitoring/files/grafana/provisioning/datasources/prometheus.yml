@@ -6,5 +6,5 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: "http://localhost:39090"
+    url: "https://mika.neko-great.ts.net:9090"
     isDefault: true
