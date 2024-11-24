@@ -13,8 +13,7 @@ servers:
     mika:
       host_services:
         - keep-vm-alive
-        - prometheus
-        - grafana
+        - monitoring
         - portainer
       user_shell: /usr/bin/fish
     shu:

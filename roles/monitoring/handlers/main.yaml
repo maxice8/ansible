@@ -1,0 +1,14 @@
+---
+- name: Restart Prometheus
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+    services:
+      - prometheus
+    state: restarted
+
+- name: Restart Grafana
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+    services:
+      - grafana
+    state: restarted
