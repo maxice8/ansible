@@ -1,6 +1,6 @@
 ---
 - name: Expose prometheus over tailscale on port 9090
-  ansible.builtin.command: tailscale serve --bg --https=9090 https+insecure://127.0.0.1:39090
+  ansible.builtin.command: tailscale serve --bg --https=9090 9090
   register: tailscale_serve_output
   failed_when: tailscale_serve_output.rc != 0
   changed_when: true
@@ -17,4 +17,4 @@
     ).get(
       '/',
       {}
-    ).get('Proxy', '') != 'https+insecure://127.0.0.1:39090'
+    ).get('Proxy', '') != 'http://127.0.0.1:39090'
