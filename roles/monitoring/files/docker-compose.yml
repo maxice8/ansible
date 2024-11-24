@@ -3,15 +3,15 @@ services:
     image: grafana/grafana-enterprise
     container_name: grafana
     restart: unless-stopped
-    ports:
-      - '33000:3000'
-    networks:
-      - net
+    # See below for why we have to use network_mode: host
+    network_mode: host
     volumes:
       - 'grafana-data:/var/lib/grafana'
       - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SERVER_HTTP_PORT=33000
     healthcheck:
-      test: "curl -f http://localhost:3000/api/health"
+      test: "curl -f http://localhost:33000/api/health"
       interval: 15s
       timeout: 30s
       retries: 3
@@ -20,10 +20,15 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
-    ports:
-      - '39090:9090'
-    networks:
-      - net
+    # Since tailscale does not allow 'mika' to access 'mika' from inside docker
+    # giving us a timeout we have to use the host network to access it, that entails
+    # a few other changes that need to be reverted if we ever find a solution for this
+    #
+    # 1. usage of localhost:39090 instead of prometheus:9090
+    # 2. usage of localhost:39093 instead of alertmanager:9093
+    # 3. listening directly on 39090 instead of 9090 and having docker expose the ports
+    # 4. not being in the 'net' network for easy access to grafana
+    network_mode: host
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -34,8 +39,9 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      - '--web.listen-address=:39090'
     healthcheck:
-      test: wget http://localhost:9090/-/healthy -q -O - | grep -q 'Prometheus Server is Healthy.' || exit 1
+      test: wget http://localhost:39090/-/healthy -q -O - | grep -q 'Prometheus Server is Healthy.' || exit 1
       interval: 15s
       timeout: 30s
       retries: 3
