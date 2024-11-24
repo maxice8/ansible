@@ -22,7 +22,7 @@
     - name: Include grafana pre-activation tasks
       ansible.builtin.import_tasks: grafana-pre.yaml
 
-- name: Enable prometheus docker
+- name: Enable monitoring docker
   community.docker.docker_compose_v2:
     project_src: /srv/monitoring
     wait: true
