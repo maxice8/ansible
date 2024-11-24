@@ -3,7 +3,7 @@ services:
     image: portainer/agent:2.21.4
     container_name: portainer_agent
     ports:
-      - "39001:9001"
+      - "9001:9001"
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
