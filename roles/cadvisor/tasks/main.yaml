@@ -1,22 +1,17 @@
 ---
-- name: Create docker-compose directory for cadvisor
-  ansible.builtin.file:
-    owner: root
-    group: root
-    mode: '0755'
-    state: directory
-    path: /srv/cadvisor
-
-- name: Copy docker-compose files to /srv/cadvisor
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /srv/cadvisor/
-    src: docker-compose.yml
-
-- name: Enable cadvisor docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/cadvisor
-    wait: true
-    wait_timeout: 90
+- name: Enable cAdvisor docker
+  community.docker.docker_container:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    name: cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - 9180:8080
+    devices:
+      - /dev/kmsg
+    restart_policy: unless-stopped
