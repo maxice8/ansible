@@ -1,4 +1,9 @@
 ---
+- name: Fail if gitea_tsclient_key is not filled
+  ansible.builtin.fail:
+    msg: "Please set the variable 'gitea_tsclient_key' in settings.local.yaml"
+  when: gitea_tsclient_key == ""
+
 - name: Create docker-compose directory for gitea
   ansible.builtin.file:
     owner: root
@@ -8,12 +13,20 @@
     path: /srv/gitea
 
 - name: Copy docker-compose files to /srv/gitea
-  ansible.builtin.copy:
+  ansible.builtin.template:
     owner: root
     group: root
     mode: '0644'
-    dest: /srv/gitea/
-    src: docker-compose.yml
+    dest: /srv/gitea/docker-compose.yml
+    src: docker-compose.yml.j2
+
+- name: Copy configuration files to /srv/gitea/config
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0755'
+    dest: /srv/gitea/config
+    src: config
 
 - name: Enable gitea docker
   community.docker.docker_compose_v2:
@@ -21,43 +34,43 @@
     wait: true
     wait_timeout: 30
 
-- name: Expose gitea over tailscale port 3000
-  ansible.builtin.command: tailscale serve --bg --https=3000 32300
-  register: tailscale_serve_output
-  failed_when: tailscale_serve_output.rc != 0
-  changed_when: true
-  # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
-  # and check if matches http://127.0.0.1:<service-port>
-  when: >
-    tailscale_active and
-    tailscale_serve_status.Web.get(
-      ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:3000',
-      {}
-    ).get(
-      'Handlers',
-      {}
-    ).get(
-      '/',
-      {}
-    ).get('Proxy', '') != 'http://127.0.0.1:32300'
+# - name: Expose gitea over tailscale port 3000
+#   ansible.builtin.command: tailscale serve --bg --https=3000 32300
+#   register: tailscale_serve_output
+#   failed_when: tailscale_serve_output.rc != 0
+#   changed_when: true
+#   # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
+#   # and check if matches http://127.0.0.1:<service-port>
+#   when: >
+#     tailscale_active and
+#     tailscale_serve_status.Web.get(
+#       ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:3000',
+#       {}
+#     ).get(
+#       'Handlers',
+#       {}
+#     ).get(
+#       '/',
+#       {}
+#     ).get('Proxy', '') != 'http://127.0.0.1:32300'
 
 
-- name: Expose gitea over tailscale on port 443
-  ansible.builtin.command: tailscale serve --bg 32300
-  register: tailscale_serve_output
-  failed_when: tailscale_serve_output.rc != 0
-  changed_when: true
-  # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
-  # and check if matches http://127.0.0.1:<service-port>
-  when: >
-    tailscale_active and
-    tailscale_serve_status.Web.get(
-      ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:443',
-      {}
-    ).get(
-      'Handlers',
-      {}
-    ).get(
-      '/',
-      {}
-    ).get('Proxy', '') != 'http://127.0.0.1:32300'
+# - name: Expose gitea over tailscale on port 443
+#   ansible.builtin.command: tailscale serve --bg 32300
+#   register: tailscale_serve_output
+#   failed_when: tailscale_serve_output.rc != 0
+#   changed_when: true
+#   # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
+#   # and check if matches http://127.0.0.1:<service-port>
+#   when: >
+#     tailscale_active and
+#     tailscale_serve_status.Web.get(
+#       ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:443',
+#       {}
+#     ).get(
+#       'Handlers',
+#       {}
+#     ).get(
+#       '/',
+#       {}
+#     ).get('Proxy', '') != 'http://127.0.0.1:32300'
