@@ -1,22 +1,9 @@
 ---
-- name: Create docker-compose directory for watchtower
-  ansible.builtin.file:
-    owner: root
-    group: root
-    mode: '0755'
-    state: directory
-    path: /srv/watchtower
-
-- name: Copy docker-compose files to /srv/watchtower
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /srv/watchtower/
-    src: docker-compose.yml
-
-- name: Enable watchtower docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/watchtower
-    wait: true
-    wait_timeout: 90
+- name: Run watchtower container
+  community.docker.docker_container:
+    name: watchtower
+    image: containrrr/watchtower
+    state: started
+    restart_policy: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
