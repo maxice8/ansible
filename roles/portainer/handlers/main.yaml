@@ -1,0 +1,8 @@
+---
+- name: Restart Portainer
+  community.docker.docker_compose_v2:
+    project_src: /srv/portainer
+    wait: true
+    state: restarted
+    services:
+      - portainer

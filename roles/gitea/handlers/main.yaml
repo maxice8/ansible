@@ -1,0 +1,6 @@
+---
+- name: Restart Gitea
+  community.docker.docker_compose_v2:
+    project_src: /srv/gitea
+    wait: true
+    state: restarted
