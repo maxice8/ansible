@@ -1,2 +1,3 @@
 monitoring_discord_webhook_url: ""
 gitea_tsclient_key: ""
+portainer_tsclient_key: ""

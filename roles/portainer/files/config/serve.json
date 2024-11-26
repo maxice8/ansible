@@ -1,0 +1,16 @@
+{
+    "TCP": {
+        "443": {
+            "HTTPS": true
+        }
+    },
+    "Web": {
+        "portainer.neko-great.ts.net:443": {
+            "Handlers": {
+                "/": {
+                    "Proxy": "https+insecure://127.0.0.1:9443"
+                }
+            }
+        }
+    }
+}
