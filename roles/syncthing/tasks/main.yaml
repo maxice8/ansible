@@ -1,4 +1,9 @@
 ---
+- name: Fail if syncthing_tsclient_key is not filled
+  ansible.builtin.fail:
+    msg: "Please set the variable 'syncthing_tsclient_key' in settings.local.yaml"
+  when: syncthing_tsclient_key == ""
+
 - name: Get the PUID for the user
   ansible.builtin.command: id -u {{ syncthing_username }}
   register: puid
@@ -30,28 +35,16 @@
     syncthing_user_id: "{{ puid.stdout }}"
     syncthing_user_group_id: "{{ pgid.stdout }}"
 
+- name: Copy configuration files to /srv/syncthing/config
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0755'
+    dest: /srv/syncthing/
+    src: config
+
 - name: Enable syncthing docker
   community.docker.docker_compose_v2:
     project_src: /srv/syncthing
     wait: true
     wait_timeout: 90
-
-- name: Expose syncthing over tailscale on port 8384
-  ansible.builtin.command: tailscale serve --bg --https=8384 38384
-  register: tailscale_serve_output
-  failed_when: tailscale_serve_output.rc != 0
-  changed_when: true
-  # Here we access Web.<hostname>.<tailnet_name>.ts.net:<tailscale-port>.Handlers./.Proxy
-  # and check if matches http://127.0.0.1:<service-port>
-  when: >
-    tailscale_active and
-    tailscale_serve_status.Web.get(
-      ansible_facts['hostname'] ~ '.' ~ tailnet_name ~ '.ts.net:8384',
-      {}
-    ).get(
-      'Handlers',
-      {}
-    ).get(
-      '/',
-      {}
-    ).get('Proxy', '') != 'http://127.0.0.1:38384'
