@@ -22,6 +22,8 @@ services:
     environment:
       - PUID={{ syncthing_user_id }}
       - PGID={{ syncthing_user_group_id }}
+    depends_on:
+      - ts-syncthing
     network_mode: service:ts-syncthing
     volumes:
       - data:/var/syncthing

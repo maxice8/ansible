@@ -20,6 +20,8 @@ services:
     image: portainer/portainer-ce:2.21.4
     container_name: portainer
     restart: always
+    depends_on:
+      - ts-portainer
     network_mode: service:ts-portainer
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
