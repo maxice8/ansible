@@ -1,20 +1,12 @@
 ---
-- name: Create docker-compose directory for portainer-agent
-  ansible.builtin.file:
-    owner: root
-    group: root
-    mode: '0755'
-    state: directory
-    path: /srv/portainer-agent
-
-- name: Copy docker-compose files to /srv/portainer-agent
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /srv/portainer-agent/
-    src: docker-compose.yml
-
-- name: Enable portainer-agent docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/portainer-agent
+- name: Enable Portainer Agent container
+  community.docker.docker_container:
+    name: portainer_agent
+    image: portainer/agent:2.21.4
+    ports:
+      - 9001:9001
+    restart_policy: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - /:/host
