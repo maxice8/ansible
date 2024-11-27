@@ -1,0 +1,35 @@
+---
+- name: Fail if vaultwarden_tsclient_key is not filled
+  ansible.builtin.fail:
+    msg: "Please set the variable 'vaultwarden_tsclient_key' in settings.local.yaml"
+  when: vaultwarden_tsclient_key == ""
+
+- name: Create docker-compose directory for vaultwarden
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/vaultwarden
+
+- name: Copy docker-compose files to /srv/vaultwarden
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/vaultwarden/docker-compose.yml
+    src: docker-compose.yml.j2
+  notify: Restart Vaultwarden
+
+- name: Copy configuration files to /srv/vaultwarden/config
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0755'
+    dest: /srv/vaultwarden/
+    src: config
+  notify: Restart Vaultwarden
+
+- name: Enable vaultwarden docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/vaultwarden

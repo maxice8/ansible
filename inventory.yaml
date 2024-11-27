@@ -15,6 +15,7 @@ servers:
         - keep-vm-alive
         - monitoring
         - portainer
+        - vaultwarden
       user_shell: /usr/bin/fish
     shu:
       host_services:
