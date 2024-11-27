@@ -17,7 +17,7 @@ services:
       - sys_module
     restart: unless-stopped
   portainer:
-    image: portainer/portainer-ce:2.21.4
+    image: portainer/portainer-ce:sts
     container_name: portainer
     restart: always
     depends_on:
