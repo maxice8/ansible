@@ -7,7 +7,7 @@ datasources:
     type: prometheus
     access: proxy
     orgId: 1
-    url: "https://mika.neko-great.ts.net:9090"
+    url: "https://prometheus.neko-great.ts.net"
     version: 1
     isDefault: true
     editable: true

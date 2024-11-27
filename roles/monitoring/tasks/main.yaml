@@ -1,4 +1,14 @@
 ---
+- name: Fail if monitoring_prometheus_tsclient_key is not filled
+  ansible.builtin.fail:
+    msg: "Please set the variable 'monitoring_prometheus_tsclient_key' in settings.local.yaml"
+  when: monitoring_prometheus_tsclient_key == ""
+
+- name: Fail if monitoring_grafana_tsclient_key is not filled
+  ansible.builtin.fail:
+    msg: "Please set the variable 'monitoring_grafana_tsclient_key' in settings.local.yaml"
+  when: monitoring_grafana_tsclient_key == ""
+
 - name: Create docker-compose directory for monitoring
   ansible.builtin.file:
     owner: root
@@ -8,12 +18,21 @@
     path: /srv/monitoring
 
 - name: Copy docker-compose files to /srv/monitoring
-  ansible.builtin.copy:
+  ansible.builtin.template:
     owner: root
     group: root
     mode: '0644'
+    dest: /srv/monitoring/docker-compose.yml
+    src: docker-compose.yml.j2
+
+
+- name: Copy configuration files to /srv/monitoring/config
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0755'
     dest: /srv/monitoring/
-    src: docker-compose.yml
+    src: config
 
 - name: Include pre-activation tasks
   block:
@@ -27,10 +46,3 @@
     project_src: /srv/monitoring
     wait: true
     wait_timeout: 90
-
-- name: Include post-activation tasks
-  block:
-    - name: Include prometheus post-activation tasks
-      ansible.builtin.import_tasks: prometheus-post.yaml
-    - name: Include grafana post-activation tasks
-      ansible.builtin.import_tasks: grafana-post.yaml

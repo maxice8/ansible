@@ -1,0 +1,88 @@
+services:
+  ts-grafana:
+    image: tailscale/tailscale:latest
+    hostname: grafana
+    container_name: ts-grafana
+    networks:
+      - net
+    environment:
+      - TS_AUTHKEY={{ monitoring_grafana_tsclient_key }}?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:grafana
+      - TS_SERVE_CONFIG=/config/serve-grafana.json
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - tailscale-data-grafana:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+      - ./config:/config
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    network_mode: service:ts-grafana
+    volumes:
+      - 'grafana-data:/var/lib/grafana'
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - ts-grafana
+
+  ts-prometheus:
+    image: tailscale/tailscale:latest
+    hostname: prometheus
+    container_name: ts-prometheus
+    networks:
+      - net
+    environment:
+      - TS_AUTHKEY={{ monitoring_prometheus_tsclient_key }}?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:prometheus
+      - TS_SERVE_CONFIG=/config/serve-prometheus.json
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - tailscale-data-prometheus:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+      - ./config:/config
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    network_mode: service:ts-prometheus
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - ts-prometheus
+  
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    networks:
+      - net
+    volumes:
+      - alertmanager-data:/alertmanager
+      - ./prometheus/config.yml:/etc/alertmanager/config.yml
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  alertmanager-data:
+  tailscale-data-grafana:
+  tailscale-data-prometheus:
+
+networks:
+  net:
+    driver: bridge
