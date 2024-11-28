@@ -25,7 +25,6 @@
     dest: /srv/monitoring/docker-compose.yml
     src: docker-compose.yml.j2
 
-
 - name: Copy configuration files to /srv/monitoring/config
   ansible.builtin.copy:
     owner: root
