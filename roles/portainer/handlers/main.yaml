@@ -4,5 +4,3 @@
     project_src: /srv/portainer
     wait: true
     state: restarted
-    services:
-      - portainer

@@ -4,5 +4,3 @@
     project_src: /srv/vaultwarden
     wait: true
     state: restarted
-    services:
-      - vaultwarden
