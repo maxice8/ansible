@@ -16,11 +16,11 @@ services:
       - TS_USERSPACE=false
     volumes:
       - tailscale-data-gitea:/var/lib/tailscale
-      - /dev/net/tun:/dev/net/tun
       - ./config:/config
+    devices:
+      - /dev/net/tun
     cap_add:
       - net_admin
-      - sys_module
     restart: unless-stopped
   server:
     image: gitea/gitea:1.22.2
