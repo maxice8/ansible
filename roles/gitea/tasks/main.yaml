@@ -28,6 +28,7 @@
     mode: '0755'
     dest: /srv/gitea/
     src: config
+  notify: Restart Gitea
 
 - name: Enable gitea docker
   community.docker.docker_compose_v2:

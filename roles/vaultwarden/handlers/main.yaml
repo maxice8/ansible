@@ -1,6 +1,10 @@
 ---
 - name: Restart Vaultwarden
-  community.docker.docker_compose_v2:
-    project_src: /srv/vaultwarden
-    wait: true
-    state: restarted
+  block:
+    - name: Bring down vaultwarden
+      community.docker.docker_compose_v2:
+        project_src: /srv/vaultwarden
+        state: absent
+    - name: Bring up vaultwarden
+      community.docker.docker_compose_v2:
+        project_src: /srv/vaultwarden

@@ -1,6 +1,10 @@
 ---
 - name: Restart Gitea
-  community.docker.docker_compose_v2:
-    project_src: /srv/gitea
-    wait: true
-    state: restarted
+  block:
+    - name: Bring down Gitea
+      community.docker.docker_compose_v2:
+        project_src: /srv/gitea
+        state: absent
+    - name: Bring up Gitea
+      community.docker.docker_compose_v2:
+        project_src: /srv/gitea

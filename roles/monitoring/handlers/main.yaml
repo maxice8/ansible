@@ -12,3 +12,13 @@
     services:
       - grafana
     state: restarted
+
+- name: Restart monitoring
+  block:
+    - name: Bring down monitoring
+      community.docker.docker_compose_v2:
+        project_src: /srv/monitoring
+        state: absent
+    - name: Bring up monitoring
+      community.docker.docker_compose_v2:
+        project_src: /srv/monitoring

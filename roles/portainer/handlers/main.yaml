@@ -1,6 +1,10 @@
 ---
 - name: Restart Portainer
-  community.docker.docker_compose_v2:
-    project_src: /srv/portainer
-    wait: true
-    state: restarted
+  block:
+    - name: Bring down Portainer
+      community.docker.docker_compose_v2:
+        project_src: /srv/portainer
+        state: absent
+    - name: Bring up Portainer
+      community.docker.docker_compose_v2:
+        project_src: /srv/portainer
