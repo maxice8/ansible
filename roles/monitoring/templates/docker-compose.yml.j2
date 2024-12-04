@@ -69,8 +69,9 @@ services:
     image: prom/alertmanager:latest
     container_name: alertmanager
     restart: unless-stopped
-    networks:
-      - net
+    network_mode: service:prometheus
+    depends_on:
+      - prometheus
     volumes:
       - alertmanager-data:/alertmanager
       - ./prometheus/config.yml:/etc/alertmanager/config.yml
