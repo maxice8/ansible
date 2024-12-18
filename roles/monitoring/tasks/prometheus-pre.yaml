@@ -39,7 +39,7 @@
     mode: '0644'
     url: https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/host-and-hardware/node-exporter.yml
     dest: /srv/monitoring/prometheus/rules/
-  notify: Restart Prometheus
+
 
 - name: Add cAdvisor alerts for prometheus
   ansible.builtin.copy:
@@ -48,4 +48,3 @@
     mode: '0644'
     src: prometheus/google-cadvisor.yml
     dest: /srv/monitoring/prometheus/rules/
-  notify: Restart Prometheus
