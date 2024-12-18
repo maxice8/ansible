@@ -11,7 +11,7 @@ services:
       - TS_USERSPACE=false
     volumes:
       - tailscale-data-vaultwarden:/var/lib/tailscale
-      - ./config:/config
+      - ./srv/vaultwarden/config:/config
     devices:
       - /dev/net/tun
     cap_add:
@@ -26,7 +26,7 @@ services:
       - EXPERIMENTAL_CLIENT_FEATURE_FLAGS=fido2-vault-credentials,ssh-key-vault-item,ssh-agent
       - SIGNUPS_ALLOWED=False
     volumes:
-      - ./vw-data/:/data/
+      - /srv/vaultwarden/vw-data/:/data/
     depends_on:
       - ts-vaultwarden
     network_mode: service:ts-vaultwarden

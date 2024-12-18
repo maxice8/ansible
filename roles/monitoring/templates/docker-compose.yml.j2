@@ -13,7 +13,7 @@ services:
       - TS_USERSPACE=false
     volumes:
       - tailscale-data-grafana:/var/lib/tailscale
-      - ./config:/config
+      - /srv/monitoring/config:/config
     devices:
       - /dev/net/tun
     cap_add:
@@ -26,7 +26,7 @@ services:
     network_mode: service:ts-grafana
     volumes:
       - 'grafana-data:/var/lib/grafana'
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - /srv/monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - ts-grafana
 
@@ -44,7 +44,7 @@ services:
       - TS_USERSPACE=false
     volumes:
       - tailscale-data-prometheus:/var/lib/tailscale
-      - ./config:/config
+      - /srv/monitoring/config:/config
     devices:
       - /dev/net/tun
     cap_add:
@@ -57,8 +57,8 @@ services:
     network_mode: service:ts-prometheus
     volumes:
       - prometheus-data:/prometheus
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus/rules:/etc/prometheus/rules
+      - /srv/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /srv/monitoring/prometheus/rules:/etc/prometheus/rules
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -74,7 +74,7 @@ services:
       - prometheus
     volumes:
       - alertmanager-data:/alertmanager
-      - ./prometheus/config.yml:/etc/alertmanager/config.yml
+      - /srv/monitoring/prometheus/config.yml:/etc/alertmanager/config.yml
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'

@@ -11,7 +11,7 @@ services:
       - TS_USERSPACE=false
     volumes:
       - tailscale-data-portainer:/var/lib/tailscale
-      - ./config:/config
+      - /srv/portainer/config:/config
     devices:
       - /dev/net/tun
     cap_add:
