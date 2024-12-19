@@ -17,6 +17,11 @@ services:
     cap_add:
       - net_admin
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
   syncthing:
     image: syncthing/syncthing
     container_name: syncthing
@@ -24,7 +29,8 @@ services:
       - PUID={{ syncthing_user_id }}
       - PGID={{ syncthing_user_group_id }}
     depends_on:
-      - ts-syncthing
+      ts-syncthing:
+        condition: service_healthy
     network_mode: service:ts-syncthing
     volumes:
       - data:/var/syncthing

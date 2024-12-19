@@ -14,6 +14,11 @@ services:
       - TS_SERVE_CONFIG=/config/serve.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
     volumes:
       - tailscale-data-gitea:/var/lib/tailscale
       - /srv/gitea/config:/config
@@ -32,4 +37,5 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     depends_on:
-      - ts-gitea
+      ts-gitea:
+        condition: service_healthy
