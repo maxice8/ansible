@@ -1,9 +1,4 @@
 ---
-- name: Fail if portainer_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'portainer_tsclient_key' in settings.local.yaml"
-  when: portainer_tsclient_key == ""
-
 - name: Create docker-compose directory for portainer
   ansible.builtin.file:
     owner: root

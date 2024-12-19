@@ -6,8 +6,8 @@ services:
     networks:
       - net
     environment:
-      - TS_AUTHKEY={{ monitoring_grafana_tsclient_key }}?ephemeral=false
-      - TS_EXTRA_ARGS=--advertise-tags=tag:grafana
+      - TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
       - TS_SERVE_CONFIG=/config/serve-grafana.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
@@ -43,8 +43,8 @@ services:
     networks:
       - net
     environment:
-      - TS_AUTHKEY={{ monitoring_prometheus_tsclient_key }}?ephemeral=false
-      - TS_EXTRA_ARGS=--advertise-tags=tag:prometheus
+      - TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
       - TS_SERVE_CONFIG=/config/serve-prometheus.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false

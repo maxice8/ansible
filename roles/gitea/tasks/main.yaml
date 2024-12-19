@@ -1,9 +1,4 @@
 ---
-- name: Fail if gitea_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'gitea_tsclient_key' in settings.local.yaml"
-  when: gitea_tsclient_key == ""
-
 - name: Create docker-compose directory for gitea
   ansible.builtin.file:
     owner: root

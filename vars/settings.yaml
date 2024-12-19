@@ -1,7 +1,1 @@
 monitoring_discord_webhook_url: ""
-gitea_tsclient_key: ""
-portainer_tsclient_key: ""
-syncthing_tsclient_key: ""
-monitoring_prometheus_tsclient_key: ""
-monitoring_grafana_tsclient_key: ""
-vaultwarden_tsclient_key: ""

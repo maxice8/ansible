@@ -1,14 +1,4 @@
 ---
-- name: Fail if monitoring_prometheus_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'monitoring_prometheus_tsclient_key' in settings.local.yaml"
-  when: monitoring_prometheus_tsclient_key == ""
-
-- name: Fail if monitoring_grafana_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'monitoring_grafana_tsclient_key' in settings.local.yaml"
-  when: monitoring_grafana_tsclient_key == ""
-
 - name: Create docker-compose directory for monitoring
   ansible.builtin.file:
     owner: root

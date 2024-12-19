@@ -1,9 +1,4 @@
 ---
-- name: Fail if vaultwarden_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'vaultwarden_tsclient_key' in settings.local.yaml"
-  when: vaultwarden_tsclient_key == ""
-
 - name: Create docker-compose directory for vaultwarden
   ansible.builtin.file:
     owner: root

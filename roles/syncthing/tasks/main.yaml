@@ -1,9 +1,4 @@
 ---
-- name: Fail if syncthing_tsclient_key is not filled
-  ansible.builtin.fail:
-    msg: "Please set the variable 'syncthing_tsclient_key' in settings.local.yaml"
-  when: syncthing_tsclient_key == ""
-
 - name: Get the PUID for the user
   ansible.builtin.command: id -u {{ syncthing_username }}
   register: puid
