@@ -20,7 +20,17 @@ client = {
     read_only = false
   }
   {% endif -%}
+  
+  host_network "tailscale" {
+    inteface = "tailscale0"
+    reserved_ports = "22"
+  }  
 }
+
+consul {
+  address = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}:8500"' }}
+}
+
 
 plugin "docker" {
   config {
