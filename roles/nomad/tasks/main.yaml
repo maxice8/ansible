@@ -29,11 +29,10 @@
       deb [arch={{ deb_architecture.stdout }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main
     dest: /etc/apt/sources.list.d/hashicorp.list
 
-- name: Install nomad, consul, and containernetwork-plugins
+- name: Install Nomad and containernetwork-plugins
   ansible.builtin.apt:
     name:
       - nomad
-      - consul
       - containernetworking-plugins
     state: present
     update_cache: true
@@ -46,15 +45,6 @@
     dest: /etc/nomad.d/host.hcl
     src: nomad-host.hcl.j2
   notify: Restart nomad
-
-- name: Install drop-in configuration for consul
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /etc/consul.d/host.hcl
-    src: consul-host.hcl.j2
-  notify: Restart consul
 
 - name: Create host volume directories for vaultwarden
   ansible.builtin.file:
@@ -73,10 +63,4 @@
   ansible.builtin.service:
     name: nomad
     enabled: true
-    state: started
-
-- name: Enable consul
-  ansible.builtin.service:
-    name: consul
-    enabled : true
     state: started

@@ -3,8 +3,3 @@
   ansible.builtin.service:
     name: nomad
     state: restarted
-
-- name: Restart consul
-  ansible.builtin.service:
-    name: nomad
-    state: restarted
