@@ -50,6 +50,7 @@ job "vaultwarden" {
         env = true
         data        = <<EOF
 DOMAIN=https://vault.{{ with nomadVar "tailscale" }}{{ .tailnet }}{{ end }}.ts.net
+ADMIN_TOKEN={{ with nomadVar "vaultwarden" }}{{ .admin_token }}{{ end }}
 EOF
       }
     }
