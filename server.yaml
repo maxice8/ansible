@@ -51,6 +51,11 @@
       vars:
         docker_username: "{{ username }}"
 
+    # Setup nomad
+    - name: Setup nomad
+      ansible.builtin.include_role:
+        name: nomad
+
     - name: Setup services
       ansible.builtin.include_role:
         name: "{{ service }}"

@@ -1,0 +1,66 @@
+---
+- name: Install prerequisites (ca-certificates, curl) and update apt cache
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: true
+
+- name: Create directory for Hashicorp keyring
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download and add HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /etc/apt/keyrings/hashicorp.asc
+    mode: '0644'
+
+- name: Add Hashicorp repository
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    # yamllint disable-line rule:line-length
+    content: |
+      deb [arch={{ deb_architecture.stdout }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main
+    dest: /etc/apt/sources.list.d/hashicorp.list
+
+- name: Install Nomad and containernetwork-plugins
+  ansible.builtin.apt:
+    name:
+      - nomad
+      - containernetworking-plugins
+    state: present
+    update_cache: true
+
+- name: Install drop-in configuration
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/nomad.d/host.hcl
+    src: host.hcl.j2
+  notify: Restart nomad
+
+- name: Create host volume directories for vaultwarden
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: "{{ item }}"
+  loop:
+    - /srv/vaultwarden/vaultwarden-data
+    - /srv/vaultwarden/tailscale-data
+  when: "'vaultwarden' in services"
+
+
+- name: Enable nomad
+  ansible.builtin.service:
+    name: nomad
+    enabled: true
+    state: started
