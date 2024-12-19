@@ -1,4 +1,4 @@
-advertise_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }} 
+
 bind_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }}
 
 client = {
@@ -6,16 +6,6 @@ client = {
   {% if inventory_hostname == "mika" -%}
   # 'mika' is an Oracle Cloud Ampere instance with 4 cores
   cpu_total_compute = 8000
-  {% endif -%}
-
-  {% if inventory_hostname == "shu" -%}
-  # 'shu' is a Hetzner instance with 2 cores
-  cpu_total_compute = 4000
-  {% endif -%}
-  
-  {% if inventory_hostname != "mika" -%}
-  enabled = true
-  servers = ["mika:4646"]
   {% endif -%}
 
   cni_path = "/usr/lib/cni"
