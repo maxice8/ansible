@@ -9,6 +9,11 @@ services:
       - TS_SERVE_CONFIG=/config/serve.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
     volumes:
       - tailscale-data-portainer:/var/lib/tailscale
       - /srv/portainer/config:/config
@@ -22,7 +27,8 @@ services:
     container_name: portainer
     restart: always
     depends_on:
-      - ts-portainer
+      ts-portainer:
+        condition: service_healthy
     network_mode: service:ts-portainer
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

@@ -19,6 +19,11 @@ services:
     cap_add:
       - net_admin
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
   grafana:
     image: grafana/grafana-enterprise
     container_name: grafana
@@ -28,7 +33,8 @@ services:
       - 'grafana-data:/var/lib/grafana'
       - /srv/monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
-      - ts-grafana
+      ts-grafana:
+        condition: service_healthy
 
   ts-prometheus:
     image: tailscale/tailscale:latest
@@ -50,6 +56,11 @@ services:
     cap_add:
       - net_admin
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -63,7 +74,8 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     depends_on:
-      - ts-prometheus
+      ts-prometheus:
+        condition: service_healthy
   
   alertmanager:
     image: prom/alertmanager:latest
