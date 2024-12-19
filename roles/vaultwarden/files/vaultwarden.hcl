@@ -56,7 +56,6 @@ job "vaultwarden" {
 
       config {
         image = "vaultwarden/server"
-        ports = ["web"]
       }
 
       env {
