@@ -1,6 +1,4 @@
-advertise {
-  http = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }} 
-}
+advertise_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }} 
 bind_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }}
 
 client = {
