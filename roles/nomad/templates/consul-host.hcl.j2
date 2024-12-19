@@ -6,3 +6,8 @@ server = true
 bootstrap_expect = 1
 
 ui = true
+
+{% if inventory_hostname != "mika" -%}
+retry_join = ["mika:8500"]
+server = false
+{% endif -%}
