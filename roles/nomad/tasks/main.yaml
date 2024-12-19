@@ -37,13 +37,13 @@
     state: present
     update_cache: true
 
-- name: Install drop-in configuration for nomad
+- name: Install drop-in configuration
   ansible.builtin.template:
     owner: root
     group: root
     mode: '0644'
     dest: /etc/nomad.d/host.hcl
-    src: nomad-host.hcl.j2
+    src: host.hcl.j2
   notify: Restart nomad
 
 - name: Create host volume directories for vaultwarden
