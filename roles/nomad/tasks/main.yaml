@@ -78,5 +78,5 @@
 - name: Enable consul
   ansible.builtin.service:
     name: consul
-    enabled: true
+    enabled : true
     state: started
