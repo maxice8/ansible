@@ -19,6 +19,7 @@
     mode: '0644'
     dest: /srv/vaultwarden/docker-compose.yml
     src: docker-compose.yml.j2
+  notify: Restart Vaultwarden
 
 - name: Copy configuration files to /srv/vaultwarden/config
   ansible.builtin.copy:
@@ -27,3 +28,8 @@
     mode: '0755'
     dest: /srv/vaultwarden/
     src: config
+  notify: Restart Vaultwarden
+
+- name: Enable vaultwarden docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/vaultwarden
