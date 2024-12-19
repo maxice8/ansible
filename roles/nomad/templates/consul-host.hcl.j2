@@ -2,10 +2,8 @@ client_addr =  {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }}
 bind_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }}
 advertise_addr = {{ '"{{ GetInterfaceIP \\"tailscale0\\" }}"' }}
 
-{% if inventory_hostname == "mika" -%}
 server = true
 bootstrap_expect = 1
-{% endif -%}
 
 ui = true
 
