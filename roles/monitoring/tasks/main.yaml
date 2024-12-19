@@ -24,6 +24,7 @@
     mode: '0644'
     dest: /srv/monitoring/docker-compose.yml
     src: docker-compose.yml.j2
+  notify: Restart monitoring
 
 - name: Copy configuration files to /srv/monitoring/config
   ansible.builtin.copy:
@@ -32,6 +33,7 @@
     mode: '0755'
     dest: /srv/monitoring/
     src: config
+  notify: Restart monitoring
 
 - name: Include pre-activation tasks
   block:
@@ -39,3 +41,9 @@
       ansible.builtin.import_tasks: prometheus-pre.yaml
     - name: Include grafana pre-activation tasks
       ansible.builtin.import_tasks: grafana-pre.yaml
+
+- name: Enable monitoring docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+    wait: true
+    wait_timeout: 90

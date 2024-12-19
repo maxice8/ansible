@@ -44,3 +44,4 @@
     mode: '0644'
     dest: /srv/monitoring/grafana/provisioning
     src: grafana/provisioning/
+  notify: Restart Grafana
