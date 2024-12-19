@@ -8,11 +8,6 @@ job "vaultwarden" {
     network {
       mode = "bridge"
       hostname = "vault"
-
-      port "web" {
-        static = 80
-        host_network = "tailscale"
-      }
     }
 
     volume "vaultwarden-volume" {
@@ -29,19 +24,6 @@ job "vaultwarden" {
 
     task "vaultwarden" {
       driver = "docker"
-
-      service {
-        name = "vaultwarden"
-        port = "web"
-        check {
-          name = "Web check"
-          path = "/"
-          type = "http"
-          port = "web"
-          interval = "5s"
-          timeout = "2s"
-        }
-      }
 
       logs {
         max_files     = 10
