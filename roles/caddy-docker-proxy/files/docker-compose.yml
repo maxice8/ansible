@@ -5,8 +5,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      # /metrics (prometheus)
-      - "2019:2019"
+      # /metrics
+      - "2020:2020"
+    labels:
+      # Have caddy listen on :2020 and reverse proxy to itself in :2019 to get /metrics
+      - caddy_1=:2020
+      - caddy_1.handle=/metrics
+      - caddy_1.handle.reverse_proxy=localhost:2019
+      - caddy_1.handle.reverse_proxy.header_up=Host localhost:2019
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - caddy_data:/data
