@@ -8,12 +8,12 @@
     path: /srv/vaultwarden
 
 - name: Copy docker-compose files to /srv/vaultwarden
-  ansible.builtin.template:
+  ansible.builtin.copy:
     owner: root
     group: root
     mode: '0644'
     dest: /srv/vaultwarden/docker-compose.yml
-    src: docker-compose.yml.j2
+    src: docker-compose.yml
   notify: Restart Vaultwarden
 
 - name: Copy configuration files to /srv/vaultwarden/config
