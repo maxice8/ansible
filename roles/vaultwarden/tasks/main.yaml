@@ -16,15 +16,6 @@
     src: docker-compose.yml
   notify: Restart Vaultwarden
 
-- name: Copy configuration files to /srv/vaultwarden/config
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: '0755'
-    dest: /srv/vaultwarden/
-    src: config
-  notify: Restart Vaultwarden
-
 - name: Enable vaultwarden docker
   community.docker.docker_compose_v2:
     project_src: /srv/vaultwarden
