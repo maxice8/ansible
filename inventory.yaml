@@ -17,6 +17,7 @@ servers:
         - monitoring
         - portainer
         - vaultwarden
+        - forgejo
       user_shell: /usr/bin/fish
     shu:
       host_services:

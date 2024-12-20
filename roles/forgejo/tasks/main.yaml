@@ -1,0 +1,23 @@
+---
+- name: Create docker-compose directory for forgejo
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/forgejo
+
+- name: Copy docker-compose files to /srv/forgejo
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/forgejo/docker-compose.yml
+    src: docker-compose.yml
+  notify: Restart Forgejo
+
+- name: Enable forgejo docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/forgejo
+    wait: true
+    wait_timeout: 30
