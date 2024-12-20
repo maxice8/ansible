@@ -12,7 +12,7 @@ servers:
   hosts:
     mika:
       host_services:
-        - caddy-docker-proxy
+        - caddy
         - keep-vm-alive
         - monitoring
         - portainer
