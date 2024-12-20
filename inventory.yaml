@@ -21,6 +21,5 @@ servers:
       user_shell: /usr/bin/fish
     shu:
       host_services:
-        - gitea
         - syncthing
         - portainer-agent
