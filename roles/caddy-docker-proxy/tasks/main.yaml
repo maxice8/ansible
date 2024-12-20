@@ -1,21 +1,21 @@
 ---
-- name: Create docker-compose directory for caddy
+- name: Create docker-compose directory for caddy-docker-proxy
   ansible.builtin.file:
     owner: root
     group: root
     mode: '0755'
     state: directory
-    path: /srv/caddy
+    path: /srv/caddy-docker-proxy
 
-- name: Copy docker-compose files to /srv/caddy
+- name: Copy docker-compose files to /srv/caddy-docker-proxy
   ansible.builtin.copy:
     owner: root
     group: root
     mode: '0644'
-    dest: /srv/caddy/docker-compose.yml
+    dest: /srv/caddy-docker-proxy/docker-compose.yml
     src: docker-compose.yml
-  notify: Restart Caddy
+  notify: Restart caddy-docker-proxy
 
-- name: Enable caddy docker
+- name: Enable caddy-docker-proxy docker
   community.docker.docker_compose_v2:
-    project_src: /srv/caddy
+    project_src: /srv/caddy-docker-proxy

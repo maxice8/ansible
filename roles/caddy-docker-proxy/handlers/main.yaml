@@ -1,5 +1,5 @@
 ---
-- name: Restart Caddy
+- name: Restart caddy-docker-proxy
   community.docker.docker_compose_v2:
-    project_src: /srv/caddy
+    project_src: /srv/caddy-docker-proxy
     state: restarted
