@@ -3,6 +3,9 @@ services:
     image: codeberg.org/forgejo/forgejo:9
     container_name: forgejo
     restart: always
+    labels:
+      caddy: git.maxice8.com
+      caddy.reverse_proxy: "{{upstreams 3000}}"
     environment:
       - USER_UID=1000
       - USER_GID=1000

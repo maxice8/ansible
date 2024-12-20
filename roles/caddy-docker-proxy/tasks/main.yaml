@@ -8,7 +8,7 @@
     path: /srv/caddy
 
 - name: Copy docker-compose files to /srv/caddy
-  ansible.builtin.file:
+  ansible.builtin.copy:
     owner: root
     group: root
     mode: '0644'
