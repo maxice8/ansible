@@ -1,0 +1,5 @@
+{% if 'vaultwarden' in services -%}
+vault.maxice8.com {
+    reverse_proxy vaultwarden:80
+}
+{% endif -%}
