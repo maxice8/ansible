@@ -3,17 +3,17 @@ services:
     image: vaultwarden/server:latest
     container_name: vaultwarden
     restart: unless-stopped
+    labels:
+      caddy: vault.maxice8.com
+      caddy.reverse_proxy: "{{upstreams 80}}"
     environment:
-      - DOMAIN=https://vault.{{ tailnet_name }}.ts.net
+      - DOMAIN=https://vault.maxice8.com
       - EXPERIMENTAL_CLIENT_FEATURE_FLAGS=fido2-vault-credentials,ssh-key-vault-item,ssh-agent
       - SIGNUPS_ALLOWED=False
     volumes:
-      - /srv/vaultwarden/vw-data/:/data/
+      - ./vw-data/:/data/
     networks: 
       - caddy_network
-
-volumes:
-  tailscale-data-vaultwarden:
 
 networks:
   caddy_network:
