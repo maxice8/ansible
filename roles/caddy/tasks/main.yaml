@@ -8,21 +8,12 @@
     path: /srv/caddy
 
 - name: Copy docker-compose files to /srv/caddy
-  ansible.builtin.copy:
+  ansible.builtin.file:
     owner: root
     group: root
     mode: '0644'
     dest: /srv/caddy/docker-compose.yml
     src: docker-compose.yml
-  notify: Restart Caddy
-
-- name: Copy Caddyfile template to /srv/caddy
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: '0644'
-    dest: /srv/caddy/Caddyfile
-    src: Caddyfile.j2
   notify: Restart Caddy
 
 - name: Enable caddy docker
