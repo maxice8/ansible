@@ -1,0 +1,21 @@
+---
+- name: Create docker-compose directory for whoami
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/whoami
+
+- name: Copy docker-compose files to /srv/whoami
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/whoami/docker-compose.yml
+    src: docker-compose.yml
+  notify: Restart whoami
+
+- name: Enable whoami docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/whoami

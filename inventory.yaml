@@ -18,6 +18,7 @@ servers:
         - portainer
         - vaultwarden
         - forgejo
+        - whoami
       user_shell: /usr/bin/fish
     shu:
       host_services:
