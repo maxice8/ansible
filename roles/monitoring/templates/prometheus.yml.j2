@@ -39,3 +39,7 @@ scrape_configs:
         target_label: 'service'
       - source_labels: ['name']
         target_label: 'container'
+
+  - job_name: 'caddy'
+    static_configs:
+      - targets: ['mika:2020']
