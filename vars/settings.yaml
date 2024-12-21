@@ -1,1 +1,3 @@
 monitoring_discord_webhook_url: ""
+container_tsclient_key: ""
+vaultwarden_admin_token: ""

@@ -16,6 +16,15 @@
     src: docker-compose.yml
   notify: Restart Vaultwarden
 
+- name: Install admin_token.env file to /srv/vaultwarden
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0600'
+    dest: /srv/vaultwarden/admin_token.env
+    src: admin_token.env.j2
+  notify: Restart Vaultwarden
+
 - name: Enable vaultwarden docker
   community.docker.docker_compose_v2:
     project_src: /srv/vaultwarden

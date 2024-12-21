@@ -10,6 +10,7 @@ services:
       - DOMAIN=https://vault.maxice8.com
       - EXPERIMENTAL_CLIENT_FEATURE_FLAGS=fido2-vault-credentials,ssh-key-vault-item,ssh-agent
       - SIGNUPS_ALLOWED=False
+    env_file: "admin_token.env"
     volumes:
       - ./vw-data/:/data/
     networks: 
