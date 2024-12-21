@@ -30,26 +30,11 @@
     - 172.16.0.0/12
     - 192.168.0.0/16
 
-- name: Allow all access from RFC1918 networks to this host on the interface tailscale0
-  community.general.ufw:
-    rule: allow
-    interface_in: tailscale0
-    src: '{{ item }}'
-  loop:
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
-
-- name: Allow OpenSSH access on the interface tailscale0
-  community.general.ufw:
-    rule: allow
-    name: OpenSSH
-    interface_in: tailscale0
-
 - name: Allow any access on the interface tailscale0
   community.general.ufw:
     rule: allow
     interface_in: tailscale0
+    comment: "Tailscale is fully trusted"
 
 - name: Enable UFW
   community.general.ufw:
