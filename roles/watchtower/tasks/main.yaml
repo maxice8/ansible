@@ -4,6 +4,13 @@
     name: watchtower
     image: containrrr/watchtower
     state: started
-    restart_policy: unless-stopped
+    restart_policy: always
+    read_only: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime
+    command:
+      # Remove old images after updating
+      - '--cleanup'
+      # Check every 4 hours
+      - '--schedule=0 0 4 * * *'
