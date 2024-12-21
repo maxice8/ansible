@@ -18,7 +18,7 @@ services:
       - /dev/net/tun
     cap_add:
       - net_admin
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "tailscale status"]
       interval: 1s
@@ -27,7 +27,7 @@ services:
   grafana:
     image: grafana/grafana-enterprise
     container_name: grafana
-    restart: unless-stopped
+    restart: always
     network_mode: service:ts-grafana
     volumes:
       - 'grafana-data:/var/lib/grafana'
@@ -55,7 +55,7 @@ services:
       - /dev/net/tun
     cap_add:
       - net_admin
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "tailscale status"]
       interval: 1s
@@ -64,7 +64,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    restart: unless-stopped
+    restart: always
     network_mode: service:ts-prometheus
     volumes:
       - prometheus-data:/prometheus
@@ -80,7 +80,7 @@ services:
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager
-    restart: unless-stopped
+    restart: always
     network_mode: service:prometheus
     depends_on:
       - prometheus

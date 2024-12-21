@@ -21,7 +21,7 @@ services:
       - /dev/net/tun
     cap_add:
       - net_admin
-    restart: unless-stopped
+    restart: always
   portainer:
     image: portainer/portainer-ce:sts
     container_name: portainer

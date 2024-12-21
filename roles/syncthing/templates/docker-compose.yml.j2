@@ -16,7 +16,7 @@ services:
       - /dev/net/tun
     cap_add:
       - net_admin
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "tailscale status"]
       interval: 1s
@@ -34,7 +34,7 @@ services:
     network_mode: service:ts-syncthing
     volumes:
       - data:/var/syncthing
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1
       interval: 15s

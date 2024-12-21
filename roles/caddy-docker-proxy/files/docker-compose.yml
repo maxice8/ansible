@@ -1,7 +1,7 @@
 services:
   caddy:
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -24,7 +24,7 @@ services:
     labels:
       caddy: whoami.maxice8.com
       caddy.reverse_proxy: "{{upstreams 80}}"
-    restart: unless-stopped
+    restart: always
     networks:
       - caddy_network
 

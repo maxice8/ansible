@@ -14,4 +14,4 @@
       - 9180:8080
     devices:
       - /dev/kmsg
-    restart_policy: unless-stopped
+    restart_policy: always
