@@ -3,9 +3,6 @@ services:
     image: vaultwarden/server:latest
     container_name: vaultwarden
     restart: always
-    labels:
-      caddy: vault.maxice8.com
-      caddy.reverse_proxy: "{{upstreams 80}}"
     environment:
       - DOMAIN=https://vault.maxice8.com
       - EXPERIMENTAL_CLIENT_FEATURE_FLAGS=fido2-vault-credentials,ssh-key-vault-item,ssh-agent
@@ -14,10 +11,5 @@ services:
     env_file: "admin_token.env"
     volumes:
       - ./vw-data/:/data/
-    networks: 
-      - caddy_network
-
-networks:
-  caddy_network:
-    name: caddy_network
-    external: true
+    ports:
+      - '30001:80'

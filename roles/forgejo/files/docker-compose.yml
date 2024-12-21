@@ -3,9 +3,6 @@ services:
     image: codeberg.org/forgejo/forgejo:9
     container_name: forgejo
     restart: always
-    labels:
-      caddy: git.maxice8.com
-      caddy.reverse_proxy: "{{upstreams 3000}}"
     environment:
       - USER_UID=1000
       - USER_GID=1000
@@ -16,10 +13,5 @@ services:
       - ./forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - caddy_network
-
-networks:
-  caddy_network:
-    name: caddy_network
-    external: true
+    ports:
+      - '30002:3000'

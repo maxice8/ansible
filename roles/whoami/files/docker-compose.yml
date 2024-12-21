@@ -3,10 +3,5 @@ services:
     image: traefik/whoami
     container_name: whoami
     restart: always
-    networks:
-      - caddy_network
-
-networks:
-  caddy_network:
-    name: caddy_network
-    external: true
+    ports:
+      - '30003:80'
