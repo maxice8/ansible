@@ -3,3 +3,13 @@ vault.maxice8.com {
     reverse_proxy vaultwarden:80
 }
 {% endif -%}
+{% if 'forgejo' in services -%}
+git.maxice8.com {
+    reverse_proxy forgejo:3000
+}
+{% endif -%}
+{% if 'whoami' in services -%}
+whoami.maxice8.com {
+    reverse_proxy whoami:80
+}
+{% endif -%}
