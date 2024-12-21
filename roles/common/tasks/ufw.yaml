@@ -10,6 +10,7 @@
     rule: allow
     port: 80
     proto: tcp
+    comment: "Incoming HTTP requests"
 
 
 - name: Allow all access to tcp port 443
@@ -17,11 +18,13 @@
     rule: allow
     port: 443
     proto: tcp
+    comment: "Incoming HTTPS requests"
 
 - name: Allow all access from RFC1918 networks to this host
   community.general.ufw:
     rule: allow
     src: '{{ item }}'
+    comment: "Internal networking between docker"
   loop:
     - 10.0.0.0/8
     - 172.16.0.0/12
