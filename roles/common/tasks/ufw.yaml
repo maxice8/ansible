@@ -48,20 +48,6 @@
     rule: allow
     interface_in: tailscale0
 
-- name: Allow access from docker to tailscale
-  community.general.ufw:
-    rule: allow
-    route: true
-    from_ip: "172.18.0.0/16"
-    to_ip: "10.0.0.0/8"
-
-- name: Allow access from tailscale to docker
-  community.general.ufw:
-    rule: allow
-    route: true
-    from_ip: "10.0.0.0/8"
-    to_ip: "172.18.0.0/16"
-
 - name: Enable UFW
   community.general.ufw:
     state: enabled
