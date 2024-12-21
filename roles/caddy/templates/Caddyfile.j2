@@ -1,15 +1,20 @@
+{
+    servers {
+            metrics
+     }
+}
 {% if 'vaultwarden' in services -%}
 vault.maxice8.com {
-    reverse_proxy vaultwarden:80
+    reverse_proxy localhost:30001
 }
 {% endif -%}
 {% if 'forgejo' in services -%}
 git.maxice8.com {
-    reverse_proxy forgejo:3000
+    reverse_proxy localhost:30002
 }
 {% endif -%}
 {% if 'whoami' in services -%}
 whoami.maxice8.com {
-    reverse_proxy whoami:80
+    reverse_proxy localhost:30003
 }
 {% endif -%}
