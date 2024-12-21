@@ -37,12 +37,6 @@
     - 172.16.0.0/12
     - 192.168.0.0/16
 
-
-- name: Allow OpenSSH access on any interface
-  community.general.ufw:
-    rule: allow
-    name: OpenSSH
-
 - name: Allow OpenSSH access on the interface tailscale0
   community.general.ufw:
     rule: allow
