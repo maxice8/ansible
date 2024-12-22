@@ -1,0 +1,8 @@
+---
+- name: Copy promtail config
+  ansible.builtin.copy:
+    src: promtail-config.yaml
+    dest: /srv/monitoring/promtail-config.yaml
+    owner: root
+    group: root
+    mode: '0644'

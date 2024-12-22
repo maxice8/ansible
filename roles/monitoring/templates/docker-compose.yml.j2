@@ -91,6 +91,27 @@ services:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
 
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    networks:
+      - net
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: always
+    volumes:
+      - /var/log:/var/log:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    command:
+      - -config.file=/etc/promtail/config.yaml
+    networks:
+      - net
+    depends_on:
+      - loki
+
 volumes:
   grafana-data:
   prometheus-data:

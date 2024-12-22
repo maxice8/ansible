@@ -31,6 +31,8 @@
       ansible.builtin.import_tasks: prometheus-pre.yaml
     - name: Include grafana pre-activation tasks
       ansible.builtin.import_tasks: grafana-pre.yaml
+    - name: Include promtail pre-activation tasks
+      ansible.builtin.import_tasks: promtail-pre.yaml
 
 - name: Enable monitoring docker
   community.docker.docker_compose_v2:
