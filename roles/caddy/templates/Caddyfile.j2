@@ -1,4 +1,7 @@
 {
+    servers {
+        metrics
+    }
     # Global options block
     log {
         output file /var/log/caddy/caddy_main.log {
@@ -11,10 +14,6 @@
     }
 }
 
-# Enable /metrics on :2019
-:2019 {
-    metrics
-}
 {% if 'vaultwarden' in services -%}
 vault.maxice8.com {
     reverse_proxy localhost:30001
