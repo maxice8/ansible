@@ -13,12 +13,20 @@
       - grafana
     state: restarted
 
+- name: Bring up monitoring
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+
 - name: Restart monitoring
-  block:
-    - name: Bring down monitoring
-      community.docker.docker_compose_v2:
-        project_src: /srv/monitoring
-        state: absent
-    - name: Bring up monitoring
-      community.docker.docker_compose_v2:
-        project_src: /srv/monitoring
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+    state: absent
+  notify:
+    - Bring up monitoring
+
+- name: Restart promtail
+  community.docker.docker_compose_v2:
+    project_src: /srv/monitoring
+    services:
+      - promtail
+    state: restarted
