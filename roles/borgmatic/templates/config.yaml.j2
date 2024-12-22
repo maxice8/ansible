@@ -13,7 +13,7 @@ source_directories:
 # ReadWritePaths list. Prior to borgmatic 1.7.10, repositories was a
 # list of plain path strings.
 repositories:
-    - path: ssh://{{ borgmatic_ssh_username }}@{{ borgmatic_ssh_hostname }}/./mika.borg
+    - path: ssh://{{ borgmatic_ssh_username }}@{{ borgmatic_ssh_hostname }}/./{{ inventory_hostname }}.borg
       label: backupserver
 
 # Any paths matching these patterns are excluded from backups. Globs
