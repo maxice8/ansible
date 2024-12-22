@@ -11,14 +11,14 @@
   ansible.builtin.template:
     src: prometheus.yml.j2
     dest: /srv/monitoring/prometheus/prometheus.yml
-    owner: prometheus
-    group: prometheus
+    owner: root
+    group: root
     mode: '0644'
 
 - name: Copy alertManager config using Jinja templating
   ansible.builtin.template:
-    owner: prometheus
-    group: prometheus
+    owner: root
+    group: root
     mode: '0644'
     src: config.yml.j2
     dest: /srv/monitoring/prometheus/config.yml
