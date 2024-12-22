@@ -1,0 +1,53 @@
+# List of source directories and files to back up. Globs and tildes
+# are expanded. Do not backslash spaces in path names.
+source_directories:
+    - /
+
+# A required list of local or remote repositories with paths and
+# optional labels (which can be used with the --repository flag to
+# select a repository). Tildes are expanded. Multiple repositories are
+# backed up to in sequence. Borg placeholders can be used. See the
+# output of "borg help placeholders" for details. See ssh_command for
+# SSH options like identity file or port. If systemd service is used,
+# then add local repository paths in the systemd service file to the
+# ReadWritePaths list. Prior to borgmatic 1.7.10, repositories was a
+# list of plain path strings.
+repositories:
+    - path: ssh://{{ borgmatic_ssh_username }}@{{ borgmatic_ssh_hostname }}/./mika.borg
+      label: backupserver
+
+# Any paths matching these patterns are excluded from backups. Globs
+# and tildes are expanded. Note that a glob pattern must either start
+# with a glob or be an absolute path. Do not backslash spaces in path
+# names. See the output of "borg help patterns" for more details.
+exclude_patterns:
+    - /dev
+    - /proc
+    - /sys
+    - /var/run
+    - /run
+    - /mnt
+    - /tmp
+
+# Passphrase to unlock the encryption key with. Only use on
+# repositories that were initialized with passphrase/repokey/keyfile
+# encryption. Quote the value if it contains punctuation, so it parses
+# correctly. And backslash any quote or backslash literals as well.
+# Defaults to not set.
+# encryption_passphrase: "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+encryption_passphrase: "{{ borgmatic_repository_passphrase }}"
+
+# Command to use instead of "ssh". This can be used to specify ssh
+# options. Defaults to not set.
+# ssh_command: ssh -i /path/to/private/key
+ssh_command: ssh -p 23 -i /root/.ssh/borgbackup
+
+# List of checks to run to validate your backups.
+checks:
+    - name: repository
+    - name: archives
+      frequency: 2 weeks
+
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 6

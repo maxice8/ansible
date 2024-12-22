@@ -1,0 +1,62 @@
+---
+- name: Fail if borgmatic_ssh_hostname is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'borgmatic_ssh_hostname' needs to be a non-empty value
+  when: borgmatic_ssh_hostname == ""
+
+- name: Fail if borgmatic_ssh_username is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'borgmatic_ssh_username' needs to be a non-empty value
+  when: borgmatic_ssh_username == ""
+
+- name: Fail if borgmatic_ssh_password is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'borgmatic_ssh_password' needs to be a non-empty value
+  when: borgmatic_ssh_password == ""
+
+- name: Install borgmatic
+  ansible.builtin.apt:
+    name:
+      - borgmatic
+      - sshpass
+    state: present
+    update_cache: true
+
+- name: Generate backup-rsync SSH key
+  community.crypto.openssh_keypair:
+    path: /root/.ssh/borgbackup
+    type: ed25519
+    size: 4096
+    passphrase: ""
+    owner: root
+    mode: "0600"
+    comment: "root@{{ inventory_hostname }}"
+
+- name: Install SSH key
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: |
+      set -o pipefail; \
+      cat /root/.ssh/borgbackup.pub | \
+      sshpass -p '{{ borgmatic_ssh_password }}' \
+      ssh -o StrictHostKeyChecking=no -p 23 \
+      '{{ borgmatic_ssh_username }}@{{ borgmatic_ssh_hostname }}' \
+      install-ssh-key
+  register: install_key_output
+  changed_when: "not 'is already configured' in install_key_output.stdout"
+
+- name: Install configuration from template
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: '0600'
+    dest: /etc/borgmatic/config.yaml
+    src: config.yaml.j2
+
+- name: Enable borgmatic timer
+  ansible.builtin.systemd:
+    name: borgmatic.timer
+    enabled: true

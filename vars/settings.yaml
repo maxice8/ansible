@@ -1,3 +1,8 @@
 monitoring_discord_webhook_url: ""
 container_tsclient_key: ""
 vaultwarden_admin_token: ""
+
+borgmatic_ssh_hostname: ""
+borgmatic_ssh_username: ""
+borgmatic_ssh_password: ""
+borgmatic_repository_passphrase: ""

@@ -19,8 +19,10 @@ servers:
         - vaultwarden
         - forgejo
         - whoami
+        - borgmatic
       user_shell: /usr/bin/fish
     shu:
       host_services:
         - syncthing
         - portainer-agent
+        - borgmatic

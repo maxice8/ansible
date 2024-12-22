@@ -1,0 +1,9 @@
+---
+# Hostname for it
+borgmatic_ssh_hostname: ""
+# Username
+borgmatic_ssh_username: ""
+# This is the password to SSH-ing into the server, so we can install the keys
+borgmatic_ssh_password: ""
+# This is the password used in the repository
+borgmatic_repository_passphrase: ""
