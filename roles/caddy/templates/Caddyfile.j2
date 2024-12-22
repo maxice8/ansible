@@ -1,8 +1,7 @@
-{
-    servers {
-            metrics
-     }
+:2019 {
+    metrics
 }
+
 {% if 'vaultwarden' in services -%}
 vault.maxice8.com {
     reverse_proxy localhost:30001
