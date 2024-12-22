@@ -46,8 +46,8 @@ ssh_command: ssh -p 23 -i /root/.ssh/borgbackup
 checks:
     - name: repository
     - name: archives
-      frequency: 2 weeks
+      frequency: 1 week
 
 keep_daily: 7
-keep_weekly: 4
-keep_monthly: 6
+keep_weekly: 1
+keep_monthly: 1
