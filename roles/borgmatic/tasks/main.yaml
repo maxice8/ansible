@@ -48,6 +48,14 @@
   register: install_key_output
   changed_when: "not 'is already configured' in install_key_output.stdout"
 
+- name: Create configuration directory
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    dest: /etc/borgmatic
+
 - name: Install configuration from template
   ansible.builtin.template:
     owner: root
