@@ -62,13 +62,10 @@ apprise:
       label: discord
   start:
     title: Ping from {{ inventory_hostname }}!
-    body: Starting backup process.
   finish:
     title: Ping from {{ inventory_hostname }}!
-    body: Backups successfully made.
   fail:
     title: Ping from {{ inventory_hostname }}!
-    body: Your backups have failed.
   states:
     - start
     - finish
