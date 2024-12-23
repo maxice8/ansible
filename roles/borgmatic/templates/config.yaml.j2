@@ -51,3 +51,25 @@ checks:
 keep_daily: 7
 keep_weekly: 1
 keep_monthly: 1
+
+# A list of Apprise services to publish to with URLs and
+# labels. The labels are used for logging. A full list of
+# services and their configuration can be found at
+# https://github.com/caronc/apprise/wiki.
+apprise:
+  services:
+    - url: discord://{{ borgmatic_discord_hook }}
+      label: discord
+  start:
+    title: Ping from {{ inventory_hostname }}!
+    body: Starting backup process.
+  finish:
+    title: Ping from {{ inventory_hostname }}!
+    body: Backups successfully made.
+  fail:
+    title: Ping from {{ inventory_hostname }}!
+    body: Your backups have failed.
+  states:
+    - start
+    - finish
+    - fail

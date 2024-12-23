@@ -7,3 +7,6 @@ borgmatic_ssh_username: ""
 borgmatic_ssh_password: ""
 # This is the password used in the repository
 borgmatic_repository_passphrase: ""
+# This is the hook for discord in the format of <channel-id>/<hook-id>
+# this is plugged into 'discord://{{ borgmatic_discord_hook }}'
+borgmatic_discord_hook: ""
