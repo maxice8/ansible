@@ -62,11 +62,16 @@ apprise:
       label: discord
   start:
     title: Ping from {{ inventory_hostname }}!
+    body: Backup started.
   finish:
     title: Ping from {{ inventory_hostname }}!
+    body: Backup finished.
   fail:
     title: Ping from {{ inventory_hostname }}!
+    body: Backup failed.
   states:
     - start
     - finish
     - fail
+  logs_size_limit: 1000
+  send_logs: true
