@@ -1,16 +1,20 @@
 ---
-- name: Add Caddy repository
-  ansible.builtin.apt_key:
-    url: "https://dl.cloudsmith.io/public/caddy/stable/gpg.key"
-    state: present
+- name: Download Caddy GPG key
+  ansible.builtin.get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+    dest: /root/caddy-stable.gpg
+    mode: '0644'
 
-- name: Add Caddy repository to sources list
-  ansible.builtin.apt_repository:
-    repo:
-      "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian
-      any-version main"
-    state: present
-    filename: caddy-stable
+- name: Dearmor GPG key
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /root/caddy-stable.gpg
+    creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+- name: Add Caddy repository
+  ansible.builtin.get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt
+    dest: /etc/apt/sources.list.d/caddy-stable.list
+    mode: '0644'
 
 - name: Copy Caddyfile template to /etc/caddy
   ansible.builtin.template:
