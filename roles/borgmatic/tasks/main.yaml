@@ -67,4 +67,5 @@
 - name: Enable borgmatic timer
   ansible.builtin.systemd:
     name: borgmatic.timer
+    state: started
     enabled: true
