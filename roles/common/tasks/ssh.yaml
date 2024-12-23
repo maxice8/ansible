@@ -1,33 +1,23 @@
 ---
+- name: Create drop-in directory for SSH
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    mode: '0755'
+
 - name: Disable root login on SSH
-  block:
-
-    - name: Set PermitRootLogin no
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        line: 'PermitRootLogin no'
-        state: present
-
-    - name: Remove PermitRootLogin yes
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        line: 'PermitRootLogin yes'
-        state: absent
-
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/disable_root_login.conf
+    content: |
+      PermitRootLogin no
+    mode: '0644'
 
 - name: Disable password authentication on SSH
-  block:
-    - name: Set PasswordAuthentication no
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        line: 'PasswordAuthentication no'
-        state: present
-
-    - name: Remove PasswordAuthentication yes
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        line: 'PasswordAuthentication yes'
-        state: absent
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/disable_password_auth.conf
+    content: |
+      PasswordAuthentication no
+    mode: '0644'
 
 - name: Restart SSH service
   ansible.builtin.service:
