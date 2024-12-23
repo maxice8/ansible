@@ -1,3 +1,2 @@
 - Find a way to install monitord (rust cargo package), send its data to metrics and set up alerts for it
 - Install ghost for blogging
-- Setup Discord hook to notify of borgmatic
