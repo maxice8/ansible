@@ -17,11 +17,12 @@
     msg: The variable 'borgmatic_ssh_password' needs to be a non-empty value
   when: borgmatic_ssh_password == ""
 
-- name: Install borgmatic
+- name: Install sshpass and pipx
   ansible.builtin.apt:
     name:
       - borgmatic
-      - sshpass
+      - pipx
+      - apprise # Just to be sure
     state: present
     update_cache: true
 
@@ -48,6 +49,18 @@
   register: install_key_output
   changed_when: "not 'is already configured' in install_key_output.stdout"
 
+# Ubuntu has 1.4.3 which is an old version (very bad!), and only 1.7.x has
+# proper (bugless) support for --global which install to /usr/local/bin
+# but no problem (so far) as the systemd service uses /root/.local/bin
+# TODO: fix this when we upgrade Ubuntu
+- name: Install borgmatic pipx via pipx
+  community.general.pipx:
+    name: borgmatic
+    # Use source as this value is passed as-is
+    source: borgmatic[Apprise]
+    # Install+Upgrade
+    state: latest
+
 - name: Create configuration directory
   ansible.builtin.file:
     owner: root
@@ -63,6 +76,26 @@
     mode: '0600'
     dest: /etc/borgmatic/config.yaml
     src: config.yaml.j2
+
+- name: Create /etc/systemd/system
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/borgmatic.service
+    src: borgmatic.service
+
+- name: Create /etc/systemd/system
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /etc/systemd/system/borgmatic.timer
+    src: borgmatic.timer
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 - name: Enable borgmatic timer
   ansible.builtin.systemd:
