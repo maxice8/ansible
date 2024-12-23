@@ -7,6 +7,7 @@ servers:
       - node-exporter
       - cadvisor
       - watchtower
+      - borgmatic
     # Change this to the name of the tailscale network
     tailnet_name: neko-great
   hosts:
@@ -19,10 +20,8 @@ servers:
         - vaultwarden
         - forgejo
         - whoami
-        - borgmatic
       user_shell: /usr/bin/fish
     shu:
       host_services:
         - syncthing
         - portainer-agent
-        - borgmatic
