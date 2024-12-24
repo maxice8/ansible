@@ -1,7 +1,9 @@
 {
+    {% if caddy_crowdsec_api_key != "" -%}
     crowdsec {
         api_key {{ caddy_crowdsec_api_key }}
     }
+    {% endif -%}
     servers {
         metrics
     }
@@ -24,9 +26,11 @@
 {% if 'vaultwarden' in services -%}
 vault.maxice8.com {
     reverse_proxy localhost:30001
+    {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
     }
+    {% endif -%}
     log {
         output file /var/log/caddy/vault.maxice8.com.log {
             roll_size 100MiB
@@ -41,9 +45,11 @@ vault.maxice8.com {
 {% if 'forgejo' in services -%}
 git.maxice8.com {
     reverse_proxy localhost:30002
+    {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
     }
+    {% endif -%}
     log {
         output file /var/log/caddy/git.maxice8.com.log {
             roll_size 100MiB
@@ -58,9 +64,11 @@ git.maxice8.com {
 {% if 'whoami' in services -%}
 whoami.maxice8.com {
     reverse_proxy localhost:30003
+    {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
     }
+    {% endif -%}
     log {
         output file /var/log/caddy/whoami.maxice8.com.log {
             roll_size 100MiB
