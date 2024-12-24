@@ -24,14 +24,18 @@ scrape_configs:
     static_configs:
       - targets:
         {% for host, details in hostvars.items() %}
+        {% if host != "localhost" -%}
         - '{{ host }}:9100'
+        {% endif -%}
         {% endfor %}
 
   - job_name: 'cadvisor'
     static_configs:
       - targets:
         {% for host, details in hostvars.items() %}
+        {% if host != "localhost" -%}
         - '{{ host }}:9180'
+        {% endif -%}
         {% endfor %}
         
     metric_relabel_configs:
