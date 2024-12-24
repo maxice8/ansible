@@ -1,0 +1,32 @@
+---
+- name: Install caddy-crowdsec-bouncer
+  ansible.builtin.command:
+    cmd: caddy add-package github.com/hslatman/caddy-crowdsec-bouncer
+  register: result
+  changed_when: "'Error: package is already added' not in result.stderr"
+  notify: Restart Caddy
+  failed_when:
+    - result.rc != 0
+    - "'Error: package is already added' not in result.stderr"
+
+- name: Create /etc/crowdsec/acquis.d
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    dest: /etc/crowdsec/acquis.d
+    recurse: true
+
+- name: Create /etc/crowdsec/acquis.d/caddy.yaml
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      filenames:
+        - /var/log/caddy/*.log
+      labels:
+        type: caddy
+    dest: /etc/crowdsec/acquis.d/caddy.yaml
+  notify: Reload Crowdsec

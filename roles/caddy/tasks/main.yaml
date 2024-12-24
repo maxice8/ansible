@@ -33,15 +33,9 @@
     state: present
     update_cache: true
 
-- name: Install caddy-crowdsec-bouncer
-  ansible.builtin.command:
-    cmd: caddy add-package github.com/hslatman/caddy-crowdsec-bouncer
-  register: result
-  changed_when: "'Error: package is already added' not in result.stderr"
-  notify: Restart Caddy
-  failed_when:
-    - result.rc != 0
-    - "'Error: package is already added' not in result.stderr"
+- name: Import crowdsec support
+  ansible.builtin.include_tasks: crowdsec.yaml
+  when: caddy_crowdsec_api_key != ""
 
 - name: Enable caddy service
   ansible.builtin.service:

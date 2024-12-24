@@ -3,3 +3,8 @@
   ansible.builtin.service:
     name: caddy
     state: restarted
+
+- name: Reload Crowdsec
+  ansible.builtin.service:
+    name: crowdsec
+    state: reloaded
