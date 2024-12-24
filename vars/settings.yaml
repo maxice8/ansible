@@ -7,3 +7,5 @@ borgmatic_ssh_username: ""
 borgmatic_ssh_password: ""
 borgmatic_repository_passphrase: ""
 borgmatic_discord_hook: ""
+
+caddy_crowdsec_api_key: ""

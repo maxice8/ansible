@@ -1,4 +1,7 @@
 {
+    crowdsec {
+        api_key {{ caddy_crowdsec_api_key }}
+    }
     servers {
         metrics
     }
@@ -21,6 +24,9 @@
 {% if 'vaultwarden' in services -%}
 vault.maxice8.com {
     reverse_proxy localhost:30001
+    route {
+        crowdsec
+    }
     log {
         output file /var/log/caddy/vault.maxice8.com.log {
             roll_size 100MiB
@@ -35,6 +41,9 @@ vault.maxice8.com {
 {% if 'forgejo' in services -%}
 git.maxice8.com {
     reverse_proxy localhost:30002
+    route {
+        crowdsec
+    }
     log {
         output file /var/log/caddy/git.maxice8.com.log {
             roll_size 100MiB
@@ -49,6 +58,9 @@ git.maxice8.com {
 {% if 'whoami' in services -%}
 whoami.maxice8.com {
     reverse_proxy localhost:30003
+    route {
+        crowdsec
+    }
     log {
         output file /var/log/caddy/whoami.maxice8.com.log {
             roll_size 100MiB
