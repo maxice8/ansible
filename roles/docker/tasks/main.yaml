@@ -99,3 +99,5 @@
     image: hello-world
     state: started
     auto_remove: true
+  # This auto-cleans itself and just serves to test if we can use docker
+  changed_when: false
