@@ -16,7 +16,6 @@
     mode: '0755'
     state: directory
     dest: /etc/crowdsec/acquis.d
-    recurse: true
 
 - name: Create /etc/crowdsec/acquis.d/caddy.yaml
   ansible.builtin.copy:
