@@ -92,12 +92,3 @@
 - name: Create systemd timer to prune images
   ansible.builtin.import_tasks:
     file: docker-system-prune.yaml
-
-- name: Run hello-world container
-  community.docker.docker_container:
-    name: hello-world
-    image: hello-world
-    state: started
-    auto_remove: true
-  # This auto-cleans itself and just serves to test if we can use docker
-  changed_when: false
