@@ -24,7 +24,7 @@
 }
 
 {% if 'vaultwarden' in services -%}
-vault.maxice8.com {
+vault.{{ domain_name }} {
     reverse_proxy localhost:30001
     {% if caddy_crowdsec_api_key != "" -%}
     route {
@@ -32,7 +32,7 @@ vault.maxice8.com {
     }
     {% endif -%}
     log {
-        output file /var/log/caddy/vault.maxice8.com.log {
+        output file /var/log/caddy/vault.{{ domain_name }}.log {
             roll_size 100MiB
             roll_keep 5
             roll_keep_for 100d
@@ -43,7 +43,7 @@ vault.maxice8.com {
 }
 {% endif -%}
 {% if 'forgejo' in services -%}
-git.maxice8.com {
+git.{{ domain_name }} {
     reverse_proxy localhost:30002
     {% if caddy_crowdsec_api_key != "" -%}
     route {
@@ -51,7 +51,7 @@ git.maxice8.com {
     }
     {% endif -%}
     log {
-        output file /var/log/caddy/git.maxice8.com.log {
+        output file /var/log/caddy/git.{{ domain_name }}.log {
             roll_size 100MiB
             roll_keep 5
             roll_keep_for 100d
@@ -62,7 +62,7 @@ git.maxice8.com {
 }
 {% endif -%}
 {% if 'whoami' in services -%}
-whoami.maxice8.com {
+whoami.{{ domain_name }} {
     reverse_proxy localhost:30003
     {% if caddy_crowdsec_api_key != "" -%}
     route {
@@ -70,7 +70,7 @@ whoami.maxice8.com {
     }
     {% endif -%}
     log {
-        output file /var/log/caddy/whoami.maxice8.com.log {
+        output file /var/log/caddy/whoami.{{ domain_name }}.log {
             roll_size 100MiB
             roll_keep 5
             roll_keep_for 100d

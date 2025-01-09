@@ -4,7 +4,7 @@ services:
     container_name: vaultwarden
     restart: always
     environment:
-      - DOMAIN=https://vault.maxice8.com
+      - DOMAIN=https://vault.{{ domain_name }}
       - EXPERIMENTAL_CLIENT_FEATURE_FLAGS=fido2-vault-credentials,ssh-key-vault-item,ssh-agent
       - SIGNUPS_ALLOWED=False
       - IP_HEADER=Cf-Connecting-IP

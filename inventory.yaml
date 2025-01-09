@@ -10,6 +10,8 @@ servers:
       - borgmatic
     # Change this to the name of the tailscale network
     tailnet_name: neko-great
+    # Change this to tha name of the domain
+    domain_name: maxice8.com
   hosts:
     mika:
       host_services:
