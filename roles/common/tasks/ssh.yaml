@@ -11,6 +11,7 @@
     content: |
       PermitRootLogin no
     mode: '0644'
+  notify: Restart sshd
 
 - name: Disable password authentication on SSH
   ansible.builtin.copy:
@@ -18,13 +19,4 @@
     content: |
       PasswordAuthentication no
     mode: '0644'
-
-- name: Restart SSH service
-  ansible.builtin.service:
-    name: ssh
-    state: restarted
-
-- name: Wait for SSH to return
-  ansible.builtin.wait_for_connection:
-    timeout: 300
-    delay: 10
+  notify: Restart sshd

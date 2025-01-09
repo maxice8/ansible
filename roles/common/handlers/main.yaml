@@ -1,0 +1,12 @@
+---
+- name: Restart sshd
+  block:
+    - name: Restart SSH service
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+    - name: Wait for SSH to return
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+        delay: 10
