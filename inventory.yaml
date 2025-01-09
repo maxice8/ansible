@@ -17,7 +17,6 @@ servers:
         - keep-vm-alive
         - monitoring
         - portainer
-        - vaultwarden
         - forgejo
         - whoami
       user_shell: /usr/bin/fish
