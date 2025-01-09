@@ -67,7 +67,7 @@
     state: present
     persistent: present
 
-- name: Setup sysctl value of {{ item }}
+- name: Setup sysctl value
   ansible.posix.sysctl:
     name: "{{ item }}"
     value: 1
