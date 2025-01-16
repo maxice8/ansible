@@ -21,6 +21,7 @@ servers:
         - portainer
         - forgejo
         - whoami
+        - beszel
       user_shell: /usr/bin/fish
     shu:
       host_services:
