@@ -77,7 +77,7 @@
     dest: /etc/borgmatic/config.yaml
     src: config.yaml.j2
 
-- name: Create /etc/systemd/system
+- name: Create borgmatic systemd service
   ansible.builtin.copy:
     owner: root
     group: root
@@ -85,7 +85,7 @@
     dest: /etc/systemd/system/borgmatic.service
     src: borgmatic.service
 
-- name: Create /etc/systemd/system
+- name: Create borgmatic systemd timer
   ansible.builtin.copy:
     owner: root
     group: root
