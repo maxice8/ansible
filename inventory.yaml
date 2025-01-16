@@ -4,8 +4,6 @@ servers:
     username: max
     user_shell: /bin/bash
     group_services:
-      - node-exporter
-      - cadvisor
       - watchtower
       - borgmatic
     # Change this to the name of the tailscale network
@@ -17,7 +15,6 @@ servers:
       host_services:
         - caddy
         - keep-vm-alive
-        - monitoring
         - portainer
         - forgejo
         - whoami
