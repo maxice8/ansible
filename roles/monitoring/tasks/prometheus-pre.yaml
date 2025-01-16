@@ -39,7 +39,7 @@
     mode: '0644'
     url: https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/host-and-hardware/node-exporter.yml
     dest: /srv/monitoring/prometheus/rules/
-    checksum: sha256:fc7d7ea356adcdf5548e8b79648509a5b1cc895860c2bcf05e28bfb49543278b
+    checksum: sha256:96108aac87c637528d7c75a52512d930bbe09087af28d2ca110519b9941c7ce3
   notify: Restart Prometheus
 
 - name: Add cAdvisor alerts for prometheus
