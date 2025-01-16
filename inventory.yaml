@@ -21,9 +21,6 @@ servers:
         - portainer
         - forgejo
         - whoami
+        - syncthing
         - beszel
       user_shell: /usr/bin/fish
-    shu:
-      host_services:
-        - syncthing
-        - portainer-agent
