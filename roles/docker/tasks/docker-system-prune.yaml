@@ -19,7 +19,7 @@
 
       [Service]
       Type=oneshot
-      ExecStart=/usr/bin/docker system prune -f
+      ExecStart=/usr/bin/docker system prune -af
 
 - name: Create docker-system-prune timer
   ansible.builtin.copy:
