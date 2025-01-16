@@ -1,4 +1,3 @@
-monitoring_discord_webhook_url: ""
 container_tsclient_key: ""
 
 borgmatic_ssh_hostname: ""
