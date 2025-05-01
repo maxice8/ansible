@@ -1,0 +1,5 @@
+---
+- name: Restart pocket-id
+  community.docker.docker_compose_v2:
+    project_src: /srv/pocket-id
+    state: restarted

@@ -20,4 +20,6 @@ servers:
         - whoami
         - syncthing
         - beszel
+        # TODO: fix this
+        #- pocket-id
       user_shell: /usr/bin/fish

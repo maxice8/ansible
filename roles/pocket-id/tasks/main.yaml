@@ -1,0 +1,21 @@
+---
+- name: Create docker-compose directory for pocket-id
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+    path: /srv/pocket-id
+
+- name: Copy docker-compose files to /srv/pocket-id
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    dest: /srv/pocket-id/docker-compose.yml
+    src: docker-compose.yml
+  notify: Restart pocket-id
+
+- name: Enable pocket-id docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/pocket-id
