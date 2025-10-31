@@ -7,6 +7,14 @@
     state: directory
     path: /srv/tsidp
 
+- name: Create volume with correct userid
+  ansible.builtin.file:
+    path: /srv/tsidp/data
+    state: directory
+    owner: "1001"
+    group: "1001"
+    mode: "0755"
+
 - name: Copy docker-compose files to /srv/tsidp
   ansible.builtin.template:
     owner: root
