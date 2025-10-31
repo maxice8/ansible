@@ -16,10 +16,8 @@ servers:
         - caddy
         - keep-vm-alive
         - portainer
-        - forgejo
+        #- forgejo
         - whoami
         - syncthing
         - beszel
-        # TODO: fix this
-        #- pocket-id
       user_shell: /usr/bin/fish
