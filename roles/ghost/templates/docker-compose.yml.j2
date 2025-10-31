@@ -9,7 +9,7 @@ services:
     volumes:
       # This creates a persistent Docker volume named 'ghost-content'
       # It's the equivalent of your PersistentVolumeClaim
-      - ./data:/var/lib/ghost/content
+      - data:/var/lib/ghost/content
     environment:
       DOMAIN: {{ ghost_domain_name }}
 
@@ -28,3 +28,5 @@ services:
       mail__options__port: "587"
       mail__options__auth__user: {{ ghost_email_user }}
       mail__options__auth__pass: {{ ghost_email_pass }}
+volumes:
+  data:
