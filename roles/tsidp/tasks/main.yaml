@@ -1,0 +1,21 @@
+---
+- name: Create docker-compose directory for tsidp
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: "0755"
+    state: directory
+    path: /srv/tsidp
+
+- name: Copy docker-compose files to /srv/tsidp
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: /srv/tsidp/docker-compose.yml
+    src: docker-compose.yml.j2
+  notify: Restart tsidp
+
+- name: Enable tsidp docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/tsidp

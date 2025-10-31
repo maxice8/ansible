@@ -1,0 +1,15 @@
+services:
+  tsidp:
+    container_name: tsidp
+    image: ghcr.io/tailscale/tsidp:latest
+    volumes:
+      - data:/data
+    environment:
+      - TAILSCALE_USE_WIP_CODE=1 # tsidp is experimental - needed while version <1.0.0
+      - TSIDP_STATE_DIR=/data # store persistent tsnet and tsidp state
+      - TSIDP_HOSTNAME=idp # Hostname on tailnet (becomes idp.your-tailnet.ts.net)
+      - TSIDP_ENABLE_STS=1 # Enable OAuth token exchange
+      # Optional: Tailscale auth key for automatic node registration
+      - TS_AUTHKEY={{ container_tskey }}
+volumes:
+  data:
