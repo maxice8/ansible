@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 60
     volumes:
-      - tailscale-data-portainer:/var/lib/tailscale
+      - ts-data:/var/lib/tailscale
       - /srv/portainer/config:/config
     devices:
       - /dev/net/tun
@@ -36,4 +36,4 @@ services:
 
 volumes:
   data:
-  tailscale-data-portainer:
+  ts-data:

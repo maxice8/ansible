@@ -10,7 +10,7 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
     volumes:
-      - tailscale-data-syncthing:/var/lib/tailscale
+      - ts-data:/var/lib/tailscale
       - /srv/syncthing/config:/config
     devices:
       - /dev/net/tun
@@ -44,4 +44,4 @@ services:
 volumes:
   data:
     driver: local
-  tailscale-data-syncthing:
+  ts-data:
