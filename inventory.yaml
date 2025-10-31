@@ -24,4 +24,5 @@ servers:
         # to avoid eternal redirect loops
         - ghost
         - tsidp
+        - uptime-kuma
       user_shell: /usr/bin/fish
