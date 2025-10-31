@@ -16,7 +16,7 @@ servers:
         - caddy
         - keep-vm-alive
         - portainer
-        #- forgejo
+        - forgejo
         - whoami
         - syncthing
         - beszel
