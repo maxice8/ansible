@@ -1,0 +1,41 @@
+---
+- name: Fail if ghost_domain_name is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'ghost_domain_name' needs to be a non-empty value
+  when: ghost_domain_name == ""
+
+- name: Fail if ghost_email_user is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'ghost_email_user' needs to be a non-empty value
+  when: ghost_email_user == ""
+
+- name: Fail if ghost_email_pass is empty
+  delegate_to: localhost
+  ansible.builtin.fail:
+    msg: The variable 'ghost_email_pass' needs to be a non-empty value
+  when: ghost_email_pass == ""
+
+- name: Create docker-compose directory for Ghost
+  ansible.builtin.file:
+    owner: root
+    group: root
+    mode: "0755"
+    state: directory
+    path: /srv/ghost
+
+- name: Copy docker-compose files to /srv/ghost
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0600"
+    dest: /srv/ghost/docker-compose.yml
+    src: docker-compose.yml.j2
+  notify: Restart Ghost
+
+- name: Enable Ghost docker
+  community.docker.docker_compose_v2:
+    project_src: /srv/ghost
+    wait: true
+    wait_timeout: 30

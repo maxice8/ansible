@@ -7,3 +7,7 @@ borgmatic_repository_passphrase: ""
 borgmatic_discord_hook: ""
 
 caddy_crowdsec_api_key: ""
+
+ghost_domain_name: ""
+ghost_email_user: ""
+ghost_email_pass: ""

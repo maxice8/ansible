@@ -20,4 +20,7 @@ servers:
         - whoami
         - syncthing
         - beszel
+        # Don't forget to set your domain to Full (strict) instead of the default Flexible
+        # to avoid eternal redirect loops
+        - ghost
       user_shell: /usr/bin/fish

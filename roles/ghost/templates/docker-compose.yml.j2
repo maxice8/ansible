@@ -1,0 +1,30 @@
+services:
+  ghost:
+    image: ghost
+    restart: unless-stopped
+    ports:
+      # Exposes Ghost on port 2368, but only on the host's loopback interface.
+      # Your Caddy reverse proxy should point to: 127.0.0.1:2368 or localhost:2368
+      - '30004:2368'
+    volumes:
+      # This creates a persistent Docker volume named 'ghost-content'
+      # It's the equivalent of your PersistentVolumeClaim
+      - ./data:/var/lib/ghost/content
+    environment:
+      DOMAIN: {{ ghost_domain_name }}
+
+      # Database configuration (using SQLite as in your example)
+      database__client: sqlite3
+      database__connection__filename: content/data/ghost.db
+      database__useNullAsDefault: "true"
+      database__debug: "false"
+
+      # URL and Mail configuration
+      # These values are pulled from the .env file
+      url: https://{{ ghost_domain_name }}
+      mail__transport: "SMTP"
+      mail__options__service: "Google"
+      mail__options__host: "smtp.gmail.com"
+      mail__options__port: "587"
+      mail__options__auth__user: {{ ghost_email_user }}
+      mail__options__auth__pass: {{ ghost_email_pass }}

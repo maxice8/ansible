@@ -62,3 +62,25 @@ whoami.{{ domain_name }} {
     }
 }
 {% endif -%}
+{% if 'ghost' in services -%}
+{{ ghost_domain_name }} {
+    reverse_proxy localhost:30004
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+    log {
+        output file /var/log/caddy/{{ ghost_domain_name }}.log {
+            roll_size 100MiB
+            roll_keep 5
+            roll_keep_for 100d
+        }
+        format json
+        level INFO
+    }
+
+	# Optional: Enable gzip compression
+	encode gzip
+}
+{% endif -%}

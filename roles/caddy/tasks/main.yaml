@@ -3,7 +3,7 @@
   ansible.builtin.get_url:
     url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
     dest: /root/caddy-stable.gpg
-    mode: '0644'
+    mode: "0644"
     checksum: sha256:5791c2fb6b6e82feb5a69834dd2131f4bcc30af0faec37783b2dc1c5c224a82a
 
 - name: Dearmor GPG key
@@ -15,14 +15,14 @@
   ansible.builtin.get_url:
     url: https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt
     dest: /etc/apt/sources.list.d/caddy-stable.list
-    mode: '0644'
+    mode: "0644"
     checksum: sha256:b27d8e3f353b8e77214793ab7dfa5111cd502978461c43b4e54e0833ba49e199
 
 - name: Copy Caddyfile template to /etc/caddy
   ansible.builtin.template:
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     dest: /etc/caddy/Caddyfile
     src: Caddyfile.j2
   notify: Restart Caddy

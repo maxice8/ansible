@@ -13,7 +13,7 @@
   ansible.builtin.file:
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     state: directory
     dest: /etc/crowdsec/acquis.d
 
@@ -21,7 +21,7 @@
   ansible.builtin.copy:
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     content: |
       filenames:
         - /var/log/caddy/*.log

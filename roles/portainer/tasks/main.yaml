@@ -3,7 +3,7 @@
   ansible.builtin.file:
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     state: directory
     path: /srv/portainer
 
@@ -11,7 +11,7 @@
   ansible.builtin.template:
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     dest: /srv/portainer/docker-compose.yml
     src: docker-compose.yml.j2
   notify: Restart Portainer
@@ -20,7 +20,7 @@
   ansible.builtin.copy:
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     dest: /srv/portainer/
     src: config
   notify: Restart Portainer
