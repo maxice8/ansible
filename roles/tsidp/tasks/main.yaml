@@ -7,7 +7,7 @@
     state: directory
     path: /srv/tsidp
 
-- name: Create volume with correct userid
+- name: Create tsidp data folder with 1001 user expected by the container
   ansible.builtin.file:
     path: /srv/tsidp/data
     state: directory

@@ -3,6 +3,8 @@ services:
     container_name: tsidp
     image: ghcr.io/tailscale/tsidp:latest
     volumes:
+      # Here we use a bind-mount instead of a docker volume because
+      # we use Ansible to set the proper permissions
       - ./data:/data
     environment:
       - TAILSCALE_USE_WIP_CODE=1 # tsidp is experimental - needed while version <1.0.0
