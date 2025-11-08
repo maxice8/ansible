@@ -1,5 +1,5 @@
 container_tsclient_key: ""
-container_tskey: ""
+tsidp_tskey: ""
 
 borgmatic_ssh_hostname: ""
 borgmatic_ssh_username: ""
