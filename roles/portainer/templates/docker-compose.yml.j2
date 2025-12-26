@@ -16,7 +16,9 @@ services:
       retries: 60
     volumes:
       - ts-data:/var/lib/tailscale
-      - /srv/portainer/config:/config
+    configs:
+      - source: tailscale_serve.json
+        target: /config/serve.json
     devices:
       - /dev/net/tun
     cap_add:
@@ -37,3 +39,23 @@ services:
 volumes:
   data:
   ts-data:
+
+configs:
+  tailscale_serve.json:
+    content: |
+      {
+          "TCP": {
+              "443": {
+                  "HTTPS": true
+              }
+          },
+          "Web": {
+              "$${TS_CERT_DOMAIN}:443": {
+                  "Handlers": {
+                      "/": {
+                          "Proxy": "https+insecure://127.0.0.1:9443"
+                      }
+                  }
+              }
+          }
+      }

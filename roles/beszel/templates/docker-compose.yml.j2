@@ -11,7 +11,9 @@ services:
       - TS_USERSPACE=false
     volumes:
       - ./tailscale-state:/var/lib/tailscale
-      - ./config:/config
+    configs:
+      - source: tailscale_serve.json
+        target: /config/serve.json
     devices:
       - /dev/net/tun
     cap_add:
@@ -32,3 +34,26 @@ services:
     volumes:
       - ./beszel_data:/beszel_data
     restart: always
+
+configs:
+  tailscale_serve.json:
+    content: |
+      {
+          "TCP": {
+              "443": {
+                  "HTTPS": true
+              }
+          },
+          "Web": {
+              "$${TS_CERT_DOMAIN}:443": {
+                  "Handlers": {
+                      "/": {
+                          "Proxy": "http://127.0.0.1:8090"
+                      }
+                  }
+              }
+          },
+          "AllowFunnel": {
+              "$${TS_CERT_DOMAIN}:443": false
+          }
+      }

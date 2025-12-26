@@ -31,15 +31,6 @@
     syncthing_user_group_id: "{{ pgid.stdout }}"
   notify: Restart Syncthing
 
-- name: Copy configuration files to /srv/syncthing/config
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: "0755"
-    dest: /srv/syncthing/
-    src: config
-  notify: Restart Syncthing
-
 - name: Enable syncthing docker
   community.docker.docker_compose_v2:
     project_src: /srv/syncthing

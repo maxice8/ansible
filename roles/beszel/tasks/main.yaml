@@ -16,15 +16,6 @@
     src: docker-compose.yml.j2
   notify: Restart Beszel
 
-- name: Copy configuration files to /srv/beszel/config
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: "0755"
-    dest: /srv/beszel/
-    src: config
-  notify: Restart Beszel
-
 - name: Enable beszel docker
   community.docker.docker_compose_v2:
     project_src: /srv/beszel

@@ -16,15 +16,6 @@
     src: docker-compose.yml.j2
   notify: Restart Portainer
 
-- name: Copy configuration files to /srv/portainer/config
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: "0755"
-    dest: /srv/portainer/
-    src: config
-  notify: Restart Portainer
-
 - name: Enable portainer docker
   community.docker.docker_compose_v2:
     project_src: /srv/portainer

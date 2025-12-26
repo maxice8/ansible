@@ -16,15 +16,6 @@
     src: docker-compose.yml.j2
   notify: Restart Uptime Kuma
 
-- name: Copy configuration files to /srv/uptime-kuma/config
-  ansible.builtin.copy:
-    owner: root
-    group: root
-    mode: "0755"
-    dest: /srv/uptime-kuma/
-    src: config
-  notify: Restart Uptime Kuma
-
 - name: Enable Uptime Kuma docker
   community.docker.docker_compose_v2:
     project_src: /srv/uptime-kuma

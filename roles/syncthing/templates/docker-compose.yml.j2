@@ -11,7 +11,9 @@ services:
       - TS_USERSPACE=false
     volumes:
       - ts-data:/var/lib/tailscale
-      - /srv/syncthing/config:/config
+    configs:
+      - source: tailscale_serve.json
+        target: /config/serve.json
     devices:
       - /dev/net/tun
     cap_add:
@@ -45,3 +47,23 @@ volumes:
   data:
     driver: local
   ts-data:
+
+configs:
+  tailscale_serve.json:
+    content: |
+      {
+        "TCP": {
+              "443": {
+                  "HTTPS": true
+              }
+          },
+          "Web": {
+              "$${TS_CERT_DOMAIN}:443": {
+                  "Handlers": {
+                      "/": {
+                          "Proxy": "http://127.0.0.1:8384"
+                      }
+                  }
+              }
+          }
+      }
