@@ -1,3 +1,4 @@
+---
 # Usuario que vai ser ativado no syncthing
 syncthing_username: ""
 syncthing_tskey_client: ""

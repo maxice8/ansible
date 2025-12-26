@@ -3,14 +3,14 @@
   ansible.builtin.file:
     path: /etc/ssh/sshd_config.d
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Disable root login on SSH
   ansible.builtin.copy:
     dest: /etc/ssh/sshd_config.d/disable_root_login.conf
     content: |
       PermitRootLogin no
-    mode: '0644'
+    mode: "0644"
   notify: Restart sshd
 
 - name: Disable password authentication on SSH
@@ -18,5 +18,5 @@
     dest: /etc/ssh/sshd_config.d/disable_password_auth.conf
     content: |
       PasswordAuthentication no
-    mode: '0644'
+    mode: "0644"
   notify: Restart sshd

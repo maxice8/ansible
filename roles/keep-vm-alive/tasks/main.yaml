@@ -1,3 +1,4 @@
+---
 - name: Install sysstat for mpstat support
   ansible.builtin.apt:
     name: sysstat
@@ -7,7 +8,7 @@
   ansible.builtin.copy:
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     dest: /usr/local/bin/keep-vm-alive
     content: |
       #!/usr/bin/env bash
@@ -66,18 +67,18 @@
   ansible.builtin.copy:
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     dest: /etc/systemd/system/keep-vm-alive.service
     content: |
-        [Unit]
-        Description=Service to keep VM resource usage high to prevent reclamation
+      [Unit]
+      Description=Service to keep VM resource usage high to prevent reclamation
 
-        [Service]
-        ExecStart=/usr/local/bin/keep-vm-alive
-        Type=simple
+      [Service]
+      ExecStart=/usr/local/bin/keep-vm-alive
+      Type=simple
 
-        [Install]
-        WantedBy=multi-user.target
+      [Install]
+      WantedBy=multi-user.target
 
 - name: Reload systemd daemon
   ansible.builtin.systemd:

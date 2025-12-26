@@ -3,7 +3,7 @@
   ansible.builtin.file:
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     state: directory
     path: /etc/apt/apt.conf.d
 
@@ -11,7 +11,7 @@
   ansible.builtin.copy:
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     dest: /etc/apt/apt.conf.d/no-extra-packages
     content: |
       APT::Install-Recommends "false";

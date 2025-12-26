@@ -1,7 +1,8 @@
+---
 services:
   whoami:
     image: traefik/whoami
     container_name: whoami
     restart: always
     ports:
-      - '30003:80'
+      - "30003:80"

@@ -1,3 +1,4 @@
+---
 services:
   server:
     image: codeberg.org/forgejo/forgejo:9
@@ -14,4 +15,4 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - '30002:3000'
+      - "30002:3000"
