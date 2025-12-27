@@ -1,0 +1,21 @@
+---
+- name: Download the installation script
+  ansible.builtin.get_url:
+    url: https://my-netdata.io/kickstart.sh
+    dest: ~/kickstart.sh
+    mode: +x
+    checksum: sha256:201a378dbeb012e96fb4299e2acfb8d5dffaceb48d7953e6a4054624a9954bed
+  register: netdata_script
+
+- name: Install Netdata # noqa: no-handler
+  ansible.builtin.command: ~/kickstart.sh --dont-wait
+  changed_when: true
+
+- name: Create health_alarm_notify.conf on parent node
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    src: health_alarm_notify.conf.j2
+    dest: /etc/netdata/health_alarm_notify.conf
+  notify: Restart Netdata

@@ -12,3 +12,5 @@ caddy_crowdsec_api_key: ""
 ghost_domain_name: ""
 ghost_email_user: ""
 ghost_email_pass: ""
+
+netdata_discord_alarm_webhook_url: ""
