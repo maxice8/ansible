@@ -4,7 +4,6 @@ servers:
     username: max
     user_shell: /bin/bash
     group_services:
-      - watchtower
       - borgmatic
     # Change this to the name of the tailscale network
     tailnet_name: neko-great
