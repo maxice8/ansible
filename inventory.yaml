@@ -25,4 +25,5 @@ servers:
         - ghost
         - tsidp
         - uptime-kuma
+        - cupdate
       user_shell: /usr/bin/fish
