@@ -7,7 +7,20 @@ services:
     environment:
       - USER_UID=1000
       - USER_GID=1000
-      - FORGEJO__service__DISABLE_REGISTRATION=true
+      # 1. Disable the Username/Password form entirely (Force SSO)
+      #    WARNING: Ensure you have linked your Admin account before enabling this!
+      - FORGEJO__service__ENABLE_BASIC_AUTHENTICATION=false
+      - FORGEJO__service__SHOW_REGISTRATION_BUTTON=false
+
+      # No OpenID Connect, only the Tailscale we configured
+      - FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
+      - FORGEJO__openid__ENABLE_OPENID_SIGNUP=false
+
+      # Allow new users to register, but only from external sources, and the
+      # only external source we have will be tsidp as 'tailscale'
+      - FORGEJO__service__DISABLE_REGISTRATION=false
+      - FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION=true
+
       - FORGEJO__service_0x2E__REQUIRE_SIGNIN_VIEW=false
       - FORGEJO__service__REQUIRE_SIGNIN_VIEW=false
     volumes:
