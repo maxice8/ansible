@@ -7,11 +7,16 @@
     checksum: sha256:201a378dbeb012e96fb4299e2acfb8d5dffaceb48d7953e6a4054624a9954bed
   register: netdata_script
 
-- name: Install Netdata # noqa: no-handler
+- name: Install Netdata
   ansible.builtin.command: ~/kickstart.sh --dont-wait
-  changed_when: true
+  register: netdata_install
+  # The script always says "Successfully updated", so we check if apt
+  # reported "already the newest version" to determine if a change really happened.
+  changed_when:
+    - netdata_install.rc == 0
+    - "'netdata is already the newest version' not in netdata_install.stdout"
 
-- name: Create health_alarm_notify.conf on parent node
+- name: Create /etc/netdata/health_alarm_notify.conf
   ansible.builtin.template:
     owner: root
     group: root
@@ -19,3 +24,9 @@
     src: health_alarm_notify.conf.j2
     dest: /etc/netdata/health_alarm_notify.conf
   notify: Restart Netdata
+
+- name: Expose Netdata through Tailscale
+  ansible.builtin.command: tailscale serve --service=svc:netdata --https=443 localhost:19999
+  # Tailscale serve configures the daemon; running it repeatedly enforces state but
+  # doesn't "change" the system in the Ansible sense once applied.
+  changed_when: false
