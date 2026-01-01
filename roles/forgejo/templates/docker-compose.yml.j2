@@ -23,9 +23,14 @@ services:
 
       - FORGEJO__service_0x2E__REQUIRE_SIGNIN_VIEW=false
       - FORGEJO__service__REQUIRE_SIGNIN_VIEW=false
+
+      - FORGEJO__server__DOMAIN=git.{{ domain_name }}
+      - FORGEJO__server__ROOT_URL=https://git.{{ domain_name }}
+      - FORGEJO__server__SSH_DOMAIN=git.{{ domain_name }}
     volumes:
       - ./forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "30002:3000"
+      - "22:22"
