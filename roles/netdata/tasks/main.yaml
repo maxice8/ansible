@@ -14,7 +14,7 @@
   # reported "already the newest version" to determine if a change really happened.
   changed_when:
     - netdata_install.rc == 0
-    - "'netdata is already the newest version' not in netdata_install.stdout"
+    - "'netdata is already the newest version' not in netdata_install.stderr"
 
 - name: Create /etc/netdata/health_alarm_notify.conf
   ansible.builtin.template:
