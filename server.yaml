@@ -4,9 +4,11 @@
   hosts: all
 
   tasks:
-    - name: Merge group and host specific services
+    - name: Set services list
       ansible.builtin.set_fact:
-        services: "{{ group_services + host_services }}"
+        # If 'svcs' is defined, split it by comma and trim whitespace.
+        # Otherwise, default to merging group and host services.
+        services: "{{ svcs.split(',') | map('trim') | list if svcs is defined else (group_services + host_services) }}"
 
     - name: Check tailscale status
       ansible.builtin.command: tailscale status --json
@@ -40,22 +42,33 @@
         file: vars/settings.local.yaml
       when: "'vars/settings.local.yaml' is file"
 
-    - name: Setup User, SSH, and UFW
+    # -----------------------------------------------------------
+    # Base Setup (skipped if svcs is provided)
+    # -----------------------------------------------------------
+
+    - name: Setup User, SSH, and UFW (Base)
       ansible.builtin.import_role:
         name: common
+      # Only run this explicitly if we are NOT overriding the service list
+      when: svcs is not defined
 
-    # We have to setup docker for everyone first
-    - name: Setup docker
+    - name: Setup docker (Base)
       ansible.builtin.include_role:
         name: docker
       vars:
         docker_username: "{{ username }}"
+      when: svcs is not defined
+
+    # -----------------------------------------------------------
+    # Service Loop
+    # -----------------------------------------------------------
 
     - name: Setup services
       ansible.builtin.include_role:
-        name: "{{ service }}"
+        name: "{{ service_item }}"
       loop_control:
-        loop_var: service
+        loop_var: service_item
       loop: "{{ services }}"
       vars:
         syncthing_username: "{{ username }}"
+        docker_username: "{{ username }}"
