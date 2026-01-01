@@ -8,15 +8,25 @@
   register: netdata_script
 
 - name: Install Netdata
-  ansible.builtin.command: ~/kickstart.sh --dont-wait
-  register: netdata_install
-  # The script always says "Successfully updated", so we check if apt
-  # reported "already the newest version" to determine if a change really happened.
-  changed_when:
-    - netdata_install.rc == 0
-    - "'netdata is already the newest version' not in netdata_install.stderr"
+  ansible.builtin.shell: |
+    # Get current version or set to 'none' if not found
+    OLD_VER=$(netdata -v 2>/dev/null || echo "none")
 
-- name: Create /etc/netdata/health_alarm_notify.conf
+    # Run the installer
+    ~/kickstart.sh --dont-wait
+
+    # Get new version
+    NEW_VER=$(netdata -v 2>/dev/null || echo "fail")
+
+    # Compare versions to detect change
+    if [ "$OLD_VER" != "$NEW_VER" ]; then
+      echo "NETDATA_UPDATED_STATUS: CHANGED"
+    fi
+  register: netdata_install
+  # Mark as changed only if our custom marker is present
+  changed_when: "'NETDATA_UPDATED_STATUS: CHANGED' in netdata_install.stdout"
+
+- name: Create health_alarm_notify.conf on parent node
   ansible.builtin.template:
     owner: root
     group: root
@@ -27,6 +37,5 @@
 
 - name: Expose Netdata through Tailscale
   ansible.builtin.command: tailscale serve --service=svc:netdata --https=443 localhost:19999
-  # Tailscale serve configures the daemon; running it repeatedly enforces state but
-  # doesn't "change" the system in the Ansible sense once applied.
+  # Tailscale serve is idempotent in configuration but doesn't report status changes simply, so we silence the change status.
   changed_when: false
