@@ -4,11 +4,15 @@
   hosts: all
 
   tasks:
-    - name: Set services list
+    - name: Set configured services list
+      ansible.builtin.set_fact:
+        configured_services: "{{ (group_services | default([])) + (host_services | default([])) }}"
+
+    - name: Set services to configure list
       ansible.builtin.set_fact:
         # If 'svcs' is defined, split it by comma and trim whitespace.
-        # Otherwise, default to merging group and host services.
-        services: "{{ svcs.split(',') | map('trim') | list if svcs is defined else (group_services + host_services) }}"
+        # Otherwise, default to configured_services.
+        services: "{{ svcs.split(',') | map('trim') | list if svcs is defined else configured_services }}"
 
     - name: Check tailscale status
       ansible.builtin.command: tailscale status --json

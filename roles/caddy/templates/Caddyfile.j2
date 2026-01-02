@@ -24,7 +24,7 @@
     metrics
 }
 
-{% if 'forgejo' in services -%}
+{% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
     reverse_proxy localhost:30002
     {% if caddy_crowdsec_api_key != "" -%}
@@ -43,7 +43,7 @@ git.{{ domain_name }} {
     }
 }
 {% endif -%}
-{% if 'whoami' in services -%}
+{% if 'whoami' in configured_services -%}
 whoami.{{ domain_name }} {
     reverse_proxy localhost:30003
     {% if caddy_crowdsec_api_key != "" -%}
@@ -62,7 +62,7 @@ whoami.{{ domain_name }} {
     }
 }
 {% endif -%}
-{% if 'ghost' in services -%}
+{% if 'ghost' in configured_services -%}
 {{ ghost_domain_name }} {
     reverse_proxy localhost:30004
     {% if caddy_crowdsec_api_key != "" -%}
