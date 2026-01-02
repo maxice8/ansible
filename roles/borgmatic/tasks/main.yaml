@@ -36,6 +36,7 @@
     comment: "root@{{ inventory_hostname }}"
 
 - name: Install SSH key
+  no_log: true # Do not leak passwords on failure
   ansible.builtin.shell:
     executable: /bin/bash
     cmd: |
