@@ -1,0 +1,31 @@
+---
+- name: Create runner directory
+  ansible.builtin.file:
+    path: /srv/forgejo-runner/data
+    state: directory
+    owner: 1000
+    group: 1000
+    mode: "0755"
+
+- name: Template configuration
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /srv/forgejo-runner/data/config.yml
+    owner: 1000
+    group: 1000
+    mode: "0644"
+  notify: Restart Forgejo Runner
+
+- name: Template docker-compose
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /srv/forgejo-runner/docker-compose.yml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Forgejo Runner
+
+- name: Enable Runner Service
+  community.docker.docker_compose_v2:
+    project_src: /srv/forgejo-runner
+    state: present

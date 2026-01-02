@@ -1,0 +1,36 @@
+services:
+  docker-in-docker:
+      image: docker:dind
+      container_name: 'docker_dind'
+      privileged: 'true'
+      command: ['dockerd', '-H', 'tcp://0.0.0.0:2375', '--tls=false']
+      restart: 'unless-stopped'
+
+  runner:
+    image: code.forgejo.org/forgejo/runner:11
+    container_name: forgejo-runner
+    links:
+      - docker-in-docker
+    depends_on:
+      docker-in-docker:
+        condition: service_started
+    environment:
+      # 2. Tell the runner how to talk to the Host Docker Daemon
+      DOCKER_HOST: tcp://docker-in-docker:2375
+    volumes:
+      - ./data:/data
+    user: 1000:1000
+    restart: always
+    # 4. Standard daemon command
+    {% if 'forgejo_needs_registration' is true %}
+    # Start an idling shell so we can perform the runner registration
+    # bit ourselves
+    # TODO: rework this so we do offline registration 
+    command: '/bin/sh -c "while : ; do sleep 1 ; done ;"'
+    {% else -%}
+    # Give us time to start docker-in-docker by sleeping a bit
+    command: '/bin/sh -c "sleep 5; forgejo-runner daemon"'
+    {% endif %}
+
+volumes:
+  ts-data:
