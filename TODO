@@ -1,2 +1,4 @@
 - Find a way to install monitord (rust cargo package), send its data to metrics and set up alerts for it
-- Install ghost for blogging
+- Improve the forgejo-runner role so:
+  - It register offline instead of requiring manual intervention
+	- It uses tailscale for communication
