@@ -51,7 +51,7 @@
     # -----------------------------------------------------------
 
     - name: Setup User, SSH, and UFW (Base)
-      ansible.builtin.import_role:
+      ansible.builtin.include_role:
         name: common
       # Only run this explicitly if we are NOT overriding the service list
       when: svcs is not defined
