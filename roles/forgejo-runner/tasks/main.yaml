@@ -1,5 +1,5 @@
 ---
-- name: Create runner directory
+- name: Create /srv/forgejo-runner/data
   ansible.builtin.file:
     path: /srv/forgejo-runner/data
     state: directory
@@ -7,7 +7,7 @@
     group: 1000
     mode: "0755"
 
-- name: Template configuration
+- name: Template /srv/forgejo-runner/data/config.yml
   ansible.builtin.template:
     src: config.yaml.j2
     dest: /srv/forgejo-runner/data/config.yml
@@ -16,7 +16,7 @@
     mode: "0644"
   notify: Restart Forgejo Runner
 
-- name: Template entrypoint script
+- name: Template /srv/forgejo-runner/data/entrypoint.sh
   ansible.builtin.template:
     src: entrypoint.sh.j2
     dest: /srv/forgejo-runner/data/entrypoint.sh
@@ -25,7 +25,7 @@
     mode: "0755"
   notify: Restart Forgejo Runner
 
-- name: Template docker-compose
+- name: Template /srv/forgejo-runner/docker-compose.yml
   ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: /srv/forgejo-runner/docker-compose.yml
@@ -34,7 +34,7 @@
     mode: "0644"
   notify: Restart Forgejo Runner
 
-- name: Enable Runner Service
+- name: Enable /srv/forgejo-runner
   community.docker.docker_compose_v2:
     project_src: /srv/forgejo-runner
     state: present
