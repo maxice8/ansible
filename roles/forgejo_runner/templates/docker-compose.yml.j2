@@ -30,6 +30,8 @@ services:
     container_name: docker_dind
     privileged: true
     command: ["dockerd", "-H", "tcp://0.0.0.0:2375", "--tls=false"]
+    volumes:
+      - dind-data:/var/lib/docker
     restart: unless-stopped
     network_mode: service:ts-forgejo-runner
     depends_on:
@@ -65,3 +67,4 @@ services:
 
 volumes:
   ts-data:
+  dind-data:
