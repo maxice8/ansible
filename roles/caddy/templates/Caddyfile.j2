@@ -26,7 +26,7 @@
 
 {% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
-    reverse_proxy localhost:30002
+    reverse_proxy localhost:{{ forgejo_port }}
     {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
@@ -45,7 +45,7 @@ git.{{ domain_name }} {
 {% endif -%}
 {% if 'whoami' in configured_services -%}
 whoami.{{ domain_name }} {
-    reverse_proxy localhost:30003
+    reverse_proxy localhost:{{ whoami_port }}
     {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
@@ -64,7 +64,7 @@ whoami.{{ domain_name }} {
 {% endif -%}
 {% if 'ghost' in configured_services -%}
 {{ ghost_domain_name }} {
-    reverse_proxy localhost:30004
+    reverse_proxy localhost:{{ ghost_port }}
     {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec

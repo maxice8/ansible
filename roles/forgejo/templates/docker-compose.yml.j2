@@ -59,8 +59,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - "30002:3000"
-      - "22:22"
+      - 127.0.0.1:{{ forgejo_port }}:3000
+      - '{{ forgejo_ssh_port }}:22'
 
 volumes:
   ts-data:

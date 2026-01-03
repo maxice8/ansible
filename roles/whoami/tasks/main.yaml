@@ -8,12 +8,12 @@
     path: /srv/whoami
 
 - name: Copy docker-compose files to /srv/whoami
-  ansible.builtin.copy:
+  ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
     dest: /srv/whoami/docker-compose.yml
-    src: docker-compose.yml
+    src: docker-compose.yml.j2
   notify: Restart whoami
 
 - name: Enable whoami docker

@@ -8,12 +8,12 @@
     path: /srv/cupdate
 
 - name: Copy docker-compose files to /srv/cupdate
-  ansible.builtin.copy:
+  ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
     dest: /srv/cupdate/docker-compose.yml
-    src: docker-compose.yml
+    src: docker-compose.yml.j2
   notify: Restart Cupdate
 
 - name: Enable Cupdate docker

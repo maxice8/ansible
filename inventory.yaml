@@ -27,3 +27,9 @@ servers:
         - uptime-kuma
         - cupdate
       user_shell: /usr/bin/fish
+      # Ports used by the services
+      forgejo_port: 30002
+      forgejo_ssh_port: 22
+      whoami_port: 30003
+      ghost_port: 30004
+      cupdate_port: 30005

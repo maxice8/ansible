@@ -5,4 +5,4 @@ services:
     container_name: whoami
     restart: always
     ports:
-      - "30003:80"
+      - 127.0.0.1:{{ whoami_port }}:80
