@@ -1,32 +1,65 @@
 services:
+  ts-forgejo-runner:
+    image: tailscale/tailscale:stable
+    hostname: runner
+    container_name: ts-forgejo-runner
+    environment:
+      - TS_AUTHKEY={{ container_tsclient_key }}
+      # Explicitly enable DNS so we can reach git.{{ tailnet_name }}.ts.net
+      # for the runner
+      - TS_ACCEPT_DNS=true
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ts-data:/var/lib/tailscale
+    devices:
+      - /dev/net/tun
+    cap_add:
+      - net_admin
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
+
   docker-in-docker:
       image: docker:dind
       container_name: 'docker_dind'
       privileged: 'true'
       command: ['dockerd', '-H', 'tcp://0.0.0.0:2375', '--tls=false']
       restart: 'unless-stopped'
+      network_mode: service:ts-forgejo-runner
+      depends_on:
+        ts-forgejo-runner:
+          condition: service_healthy
 
   runner:
     image: code.forgejo.org/forgejo/runner:11
     container_name: forgejo-runner
-    links:
-      - docker-in-docker
     depends_on:
       docker-in-docker:
         condition: service_started
+      ts-forgejo-runner:
+        condition: service_healthy
     environment:
-      # 2. Tell the runner how to talk to the Host Docker Daemon
-      DOCKER_HOST: tcp://docker-in-docker:2375
+      # 2. Tell the runner how to talk
+      # to the Host Docker Daemon
+      # Since we share the network stack, dind is on localhost
+      DOCKER_HOST: tcp://localhost:2375
     volumes:
       - ./data:/data
     user: 1000:1000
     restart: always
+    network_mode: service:ts-forgejo-runner
     # 4. Standard daemon command
-    {% if 'forgejo_needs_registration' is true %}
+    {% if forgejo_needs_registration %}
     # Start an idling shell so we can perform the runner registration
     # bit ourselves
     # TODO: rework this so we do offline registration 
     command: '/bin/sh -c "while : ; do sleep 1 ; done ;"'
+
     {% else -%}
     # Give us time to start docker-in-docker by sleeping a bit
     command: '/bin/sh -c "sleep 5; forgejo-runner daemon"'
