@@ -10,5 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Ansible Lint
-        uses: ansible/ansible-lint@main
+
+      - name: Lint with Docker Image
+        # This runs the command directly inside the container
+        uses: docker://pipelinecomponents/ansible-lint:latest
+        with:
+          args: "ansible-lint"
