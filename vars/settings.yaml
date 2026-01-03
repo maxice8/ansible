@@ -16,6 +16,7 @@ ghost_email_pass: ""
 
 netdata_discord_alarm_webhook_url: ""
 
-# Set this to 'false' after setting up registration on a node
-# See: https://forgejo.org/docs/latest/admin/actions/runner-installation/#standard-registration
-forgejo_needs_registration: true
+# Token provided by the Forgejo to register runners
+# can be shared across all runners and we --name them
+# differently based on the inventory hostname
+forgejo_runner_token: ""
