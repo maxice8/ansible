@@ -49,7 +49,7 @@ services:
       DOCKER_HOST: tcp://localhost:2375
       
       # Registration Details
-      FORGEJO_INSTANCE_URL: "https://git.{{ domain_name }}"
+      FORGEJO_INSTANCE_URL: "https://git.{{ tailnet_name }}.ts.net"
       # Token is shared; Name must be unique
       FORGEJO_RUNNER_TOKEN: "{{ forgejo_runner_token | default('') }}"
       
