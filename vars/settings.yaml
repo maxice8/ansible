@@ -1,19 +1,44 @@
+# Auth key used to register tailscale devices that will have the
+# tag:container tag associated to it, this is a generic tag that
+# allows all communications between them and is suitable for most
+# devices.
 container_tsclient_key: ""
+
+# Auth key used by tsidp to register itself, everything from
+# tag:container and user devices should have access to it to
+# allow for OAuth2 authentication.
 tsidp_tskey: ""
+
+# Auth key used to register tailscale devices that will have
+# the tag:syncthing associated to it, this tag allows tcp and
+# udp on port 22000 which is used by Syncthing's sync protocol
+# all devices with tag:syncthing can reach every other device
+# with the same tag on that port, plus any user device which
+# is assumedly running syncthing.
 syncthing_tskey: ""
 
+# Hostname of the Hetzner StorageBox
 borgmatic_ssh_hostname: ""
+# Username to access the Hetzner StorageBox
 borgmatic_ssh_username: ""
+# Password to access the Hetzner StorageBox
 borgmatic_ssh_password: ""
+# Passphrase for Borgmatic to backup
 borgmatic_repository_passphrase: ""
+# Webhook URL to send notifications on Discord
 borgmatic_discord_hook: ""
 
+# API Key to auth to Crowdsec with Caddy
 caddy_crowdsec_api_key: ""
 
+# Domain name used by ghost, we do not use {{ domain_name }} that is
+# tied to inventory because we use a different domain
 ghost_domain_name: ""
+# Email and password used to shoot magic login links
 ghost_email_user: ""
 ghost_email_pass: ""
 
+# Webhook URL to send notifications on Discord
 netdata_discord_alarm_webhook_url: ""
 
 # Token provided by the Forgejo to register runners
