@@ -13,9 +13,10 @@ servers:
     mika:
       host_services:
         - caddy
-        - keep-vm-alive
+        - keep_vm_alive
         - portainer
         - forgejo
+        - forgejo_runner
         - whoami
         - syncthing
         #- beszel
@@ -24,7 +25,7 @@ servers:
         # to avoid eternal redirect loops
         - ghost
         - tsidp
-        - uptime-kuma
+        - uptime_kuma
         - cupdate
       user_shell: /usr/bin/fish
       # Ports used by the services
