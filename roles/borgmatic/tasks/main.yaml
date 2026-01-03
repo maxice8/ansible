@@ -46,8 +46,8 @@
       ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -p 23 \
       '{{ borgmatic_ssh_username }}@{{ borgmatic_ssh_hostname }}' \
       install-ssh-key
-  register: install_key_output
-  changed_when: "not 'is already configured' in install_key_output.stdout"
+  register: borgmatic_install_key_output
+  changed_when: "not 'is already configured' in borgmatic_install_key_output.stdout"
 
 # Ubuntu has 1.4.3 which is an old version (very bad!), and only 1.7.x has
 # proper (bugless) support for --global which install to /usr/local/bin

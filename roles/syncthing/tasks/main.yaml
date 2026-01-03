@@ -1,13 +1,13 @@
 ---
 - name: Get the PUID for the user
   ansible.builtin.command: id -u {{ syncthing_username }}
-  register: puid
+  register: syncthing_puid
   check_mode: false
   changed_when: false
 
 - name: Get the PGID for the user
   ansible.builtin.command: id -g {{ syncthing_username }}
-  register: pgid
+  register: syncthing_pgid
   check_mode: false
   changed_when: false
 
@@ -27,8 +27,8 @@
     dest: /srv/syncthing/docker-compose.yml
     src: docker-compose.yml.j2
   vars:
-    syncthing_user_id: "{{ puid.stdout }}"
-    syncthing_user_group_id: "{{ pgid.stdout }}"
+    syncthing_user_id: "{{ syncthing_puid.stdout }}"
+    syncthing_user_group_id: "{{ syncthing_pgid.stdout }}"
   notify: Restart Syncthing
 
 - name: Enable syncthing docker
