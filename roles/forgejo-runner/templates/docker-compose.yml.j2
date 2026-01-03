@@ -37,7 +37,7 @@ services:
         condition: service_healthy
 
   runner:
-    image: code.forgejo.org/forgejo/runner:11
+    image: code.forgejo.org/forgejo/runner:12
     container_name: forgejo-runner
     depends_on:
       docker-in-docker:
