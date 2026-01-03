@@ -16,7 +16,6 @@
     mode: "0644"
   notify: Restart Forgejo Runner
 
-# [NEW] Template the registration entrypoint script
 - name: Template entrypoint script
   ansible.builtin.template:
     src: entrypoint.sh.j2

@@ -18,9 +18,7 @@ if [ ! -f .runner ]; then
   # --no-interactive: prevents prompts
   forgejo-runner register --no-interactive \
     --instance "$FORGEJO_INSTANCE_URL" \
-    --token "$FORGEJO_RUNNER_TOKEN" \
-    --name "$FORGEJO_RUNNER_NAME" \
-    --labels "$FORGEJO_RUNNER_LABELS"
+    --token "$FORGEJO_RUNNER_TOKEN"
     
   echo "Registration successful."
 else

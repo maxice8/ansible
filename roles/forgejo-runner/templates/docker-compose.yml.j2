@@ -52,8 +52,6 @@ services:
       FORGEJO_INSTANCE_URL: "https://git.{{ domain_name }}"
       # Token is shared; Name must be unique
       FORGEJO_RUNNER_TOKEN: "{{ forgejo_runner_token | default('') }}"
-      FORGEJO_RUNNER_NAME: "{{ inventory_hostname }}-runner"
-      FORGEJO_RUNNER_LABELS: "docker:docker://docker:dind"
       
     volumes:
       # Mount the data directory which contains config.yml and entrypoint.sh

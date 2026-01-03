@@ -1,0 +1,5 @@
+---
+# Default labels for the runner.
+# These define the container images used when a workflow requests a specific "runs-on" label.
+# Syntax: label_name:host_type://docker_image_path
+forgejo_runner_labels: "alpine:docker://alpine:latest,docker:docker://docker:dind,ubuntu-latest:docker://node:20-bookworm"

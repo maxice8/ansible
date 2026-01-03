@@ -3,6 +3,7 @@ log:
 
 runner:
   file: .runner
+  name: "{{ inventory_hostname }}-runner"
   capacity: 1
   # Environment variables injected into every job
   envs:
@@ -11,6 +12,15 @@ runner:
   timeout: 3h
   shutdown_timeout: 3h
   fetch_interval: 2s
+
+  labels:
+{% if forgejo_runner_labels is defined %}
+{% for label in forgejo_runner_labels.split(',') %}
+    - "{{ label | trim }}"
+{% endfor %}
+{% else %}
+    []
+{% endif %}
 
 cache:
   enabled: true
