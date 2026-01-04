@@ -19,7 +19,6 @@ servers:
         - forgejo_runner
         - whoami
         - syncthing
-        # - beszel
         - netdata
         # Don't forget to set your domain to Full (strict) instead of the default Flexible
         # to avoid eternal redirect loops
