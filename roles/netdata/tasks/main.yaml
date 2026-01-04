@@ -39,3 +39,11 @@
   ansible.builtin.command: tailscale serve --service=svc:netdata --https=443 localhost:19999
   # Tailscale serve is idempotent in configuration but doesn't report status changes simply, so we silence the change status.
   changed_when: false
+
+- name: Setup Heartbeat Cron for Netdata
+  ansible.builtin.cron:
+    name: "Netdata Heartbeat"
+    # Check local API (Host) -> Ping Pulsetic
+    job: "curl -f -s http://127.0.0.1:19999/api/v1/info > /dev/null && curl -fsS -m 5 --retry 3 {{ heartbeat_netdata }} > /dev/null"
+    minute: "*/5"
+  when: (heartbeat_netdata | default('')) != ""
