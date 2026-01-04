@@ -1,10 +1,14 @@
 ---
-- name: Install sysstat for mpstat support
+- name: Install dependencies for keep-vm-alive
   ansible.builtin.apt:
-    name: sysstat
+    name:
+      - sysstat
+      - bc
+      - curl
     state: present
 
 - name: Install keep-vm-alive script
+  notify: Restart keep-vm-alive
   ansible.builtin.copy:
     owner: root
     group: root
@@ -13,21 +17,35 @@
     content: |
       #!/usr/bin/env bash
 
+      # Ansible Injected Variable via host_vars
+      HEARTBEAT_URL="{{ heartbeat_keep_vm_alive | default('') }}"
+
       min_cpu=10 # Minimum CPU utilization percentage
       duration=$((60 * 60 * 24 * 7)) # Duration of each cycle in seconds (7 days)
       min_time=$((duration / 20)) # 5% of the total duration (in seconds)
       cpu_stress_time=60 # Time spent stressing the CPU in each cycle (in seconds)
       interval=300 # Time between CPU stress cycles (in seconds)
 
-      # Function to stress the CPU for a specified time
       stress_cpu() {
           echo "Stressing the CPU for $cpu_stress_time seconds..."
-          timeout $cpu_stress_time bash -c "while true; do echo 'Running...'; done"
+          # Burn CPU silently
+          timeout $cpu_stress_time bash -c "while true; do :; done"
+      }
+
+      echo "Initializing keep-vm-alive..."
+      echo "Configuration: Min CPU=${min_cpu}%, Cycle Duration=$((duration/86400)) days"
+      echo "Target Active Time: $((min_time/60)) minutes ($((min_time/3600)) hours)"
+
+      send_heartbeat() {
+          if [ -n "$HEARTBEAT_URL" ]; then
+              echo "Sending heartbeat..."
+              curl -fsS -m 5 --retry 3 "$HEARTBEAT_URL" > /dev/null 2>&1
+          fi
       }
 
       while true; do
-          start_time=$(date +%s) # Start time of the current cycle
-          time_above_min=0 # Initialize the time_above_min variable
+          start_time=$(date +%s)
+          time_above_min=0
 
           echo "Starting a new 7-day cycle..."
 
@@ -40,26 +58,33 @@
                   break
               fi
 
-              # Run the CPU stress and check CPU utilization
               stress_cpu
 
-              # Measure CPU utilization for the last stress period
-              cpu_utilization=$(mpstat 1 10 | awk '/all/ {print 100 - $NF}')
+              # Measure CPU (average over 10 seconds)
+              cpu_utilization=$(mpstat 10 1 | awk '/all/ {val=100-$NF} END {print val}')
 
+              # Compare and Log
               if (( $(echo "$cpu_utilization > $min_cpu" | bc -l) )); then
                   time_above_min=$((time_above_min + cpu_stress_time))
+                  echo "Status: OK | CPU: ${cpu_utilization}% (> ${min_cpu}%) | Added ${cpu_stress_time}s to bank."
+              else
+                  echo "Status: LOW | CPU: ${cpu_utilization}% (<= ${min_cpu}%) | No time added."
               fi
 
+              # Log Progress
+              percent_complete=$((time_above_min * 100 / min_time))
+              echo "Progress: ${time_above_min}/${min_time} seconds (${percent_complete}%)"
+
+              send_heartbeat
+
               if [ $time_above_min -ge $min_time ]; then
-                  echo "CPU utilization has been above $min_cpu% for the required time."
+                  echo "SUCCESS: CPU utilization requirement met for this cycle."
                   break
               fi
 
               echo "Sleeping for $interval seconds before the next CPU stress cycle..."
               sleep $interval
           done
-
-          # After 7 days, start a new cycle
           echo "Restarting another 7-day cycle..."
       done
 

@@ -1,0 +1,5 @@
+﻿---
+- name: Restart keep-vm-alive
+  ansible.builtin.service:
+    name: keep-vm-alive
+    state: restarted
