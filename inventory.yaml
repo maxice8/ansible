@@ -25,7 +25,6 @@ servers:
         # to avoid eternal redirect loops
         - ghost
         - tsidp
-        - uptime_kuma
         - cupdate
       user_shell: /usr/bin/fish
       # Ports used by the services
@@ -34,4 +33,3 @@ servers:
       whoami_port: 30003
       ghost_port: 30004
       cupdate_port: 30005
-      uptime_kuma_port: 30006
