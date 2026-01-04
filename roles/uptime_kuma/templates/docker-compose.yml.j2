@@ -14,6 +14,8 @@ services:
     configs:
       - source: tailscale_serve.json
         target: /config/serve.json
+    ports:
+      - 127.0.0.1:{{ uptime_kuma_port }}:3001
     devices:
       - /dev/net/tun
     cap_add:

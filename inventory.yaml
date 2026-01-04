@@ -34,3 +34,4 @@ servers:
       whoami_port: 30003
       ghost_port: 30004
       cupdate_port: 30005
+      uptime_kuma_port: 30006
