@@ -36,3 +36,13 @@
     project_src: /srv/syncthing
     wait: true
     wait_timeout: 90
+
+- name: Setup Heartbeat Cron for Syncthing
+  ansible.builtin.cron:
+    name: "Syncthing Heartbeat"
+    # Uses the existing Docker Healthcheck
+    job: >
+      docker inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' syncthing
+      | grep -q healthy && curl -fsS -m 5 --retry 3 {{ heartbeat_syncthing }} > /dev/null
+    minute: "*/5"
+  when: (heartbeat_syncthing | default('')) != ""
