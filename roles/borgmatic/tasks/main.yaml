@@ -20,7 +20,7 @@
 - name: Install sshpass and apprise
   ansible.builtin.apt:
     name:
-      - borgmatic
+      - sshpass
       - apprise # Just to be sure
     state: present
     update_cache: true
