@@ -21,13 +21,14 @@
 
       # CONFIGURATION
       # ----------------------------------------------------------------
-      # Target Load: 25% (Must be > 20% to satisfy Oracle)
-      # Duty Cycle: 20% (Active 2m / Total 10m)
-      # This guarantees the 95th percentile metric captures the usage.
+      # Total Cycle: 5 Minutes (Matches Pulsetic config)
+      # Active: 45 Seconds
+      # Sleep:  255 Seconds
+      # Duty Cycle: 15% (Safe: >5% ensures 95th percentile is captured)
       # ----------------------------------------------------------------
-      CPU_LOAD=25
-      RUN_TIME=120  # 2 Minutes
-      SLEEP_TIME=480 # 8 Minutes
+      CPU_LOAD=25    # Target CPU load %
+      RUN_TIME=45    # 45 Seconds
+      SLEEP_TIME=255 # 4 Minutes 15 Seconds
 
       send_heartbeat() {
           if [ -n "$HEARTBEAT_URL" ]; then
@@ -38,19 +39,18 @@
 
       echo "Initializing keep-vm-alive..."
       echo "Method: stress-ng (All Cores)"
-      echo "Configuration: $CPU_LOAD% Load | Active: ${RUN_TIME}s | Sleep: ${SLEEP_TIME}s"
+      echo "Configuration: Cycle 5m | Load $CPU_LOAD% | Active ${RUN_TIME}s | Sleep ${SLEEP_TIME}s"
 
       while true; do
-          echo "Starting stress cycle..."
+          # 1. Send Heartbeat (Every 5 mins)
+          send_heartbeat
 
-          # --cpu 0       : Spawns a worker for EVERY online CPU core (fixes single-core bug)
-          # --cpu-load N  : Tries to maintain N% load on the cores
-          # --timeout N   : Stops automatically after N seconds
+          # 2. Stress CPU (Active Phase)
+          echo "Starting stress cycle..."
           stress-ng --cpu 0 --cpu-load $CPU_LOAD --timeout $RUN_TIME --metrics-brief
 
-          send_heartbeat
-          echo "Cycle finished. sleeping..."
-
+          # 3. Sleep (Idle Phase)
+          echo "Cycle finished. Sleeping for ${SLEEP_TIME}s..."
           sleep $SLEEP_TIME
       done
 
