@@ -2,9 +2,8 @@
 - name: Install dependencies for keep-vm-alive
   ansible.builtin.apt:
     name:
-      - sysstat
-      - bc
-      - curl
+      - stress-ng # Required for multi-core load generation
+      - curl # Required for heartbeat
     state: present
 
 - name: Install keep-vm-alive script
@@ -20,21 +19,15 @@
       # Ansible Injected Variable via host_vars
       HEARTBEAT_URL="{{ heartbeat_keep_vm_alive | default('') }}"
 
-      min_cpu=10 # Minimum CPU utilization percentage
-      duration=$((60 * 60 * 24 * 7)) # Duration of each cycle in seconds (7 days)
-      min_time=$((duration / 20)) # 5% of the total duration (in seconds)
-      cpu_stress_time=60 # Time spent stressing the CPU in each cycle (in seconds)
-      interval=300 # Time between CPU stress cycles (in seconds)
-
-      stress_cpu() {
-          echo "Stressing the CPU for $cpu_stress_time seconds..."
-          # Burn CPU silently
-          timeout $cpu_stress_time bash -c "while true; do :; done"
-      }
-
-      echo "Initializing keep-vm-alive..."
-      echo "Configuration: Min CPU=${min_cpu}%, Cycle Duration=$((duration/86400)) days"
-      echo "Target Active Time: $((min_time/60)) minutes ($((min_time/3600)) hours)"
+      # CONFIGURATION
+      # ----------------------------------------------------------------
+      # Target Load: 25% (Must be > 20% to satisfy Oracle)
+      # Duty Cycle: 20% (Active 2m / Total 10m)
+      # This guarantees the 95th percentile metric captures the usage.
+      # ----------------------------------------------------------------
+      CPU_LOAD=25
+      RUN_TIME=120  # 2 Minutes
+      SLEEP_TIME=480 # 8 Minutes
 
       send_heartbeat() {
           if [ -n "$HEARTBEAT_URL" ]; then
@@ -43,49 +36,22 @@
           fi
       }
 
+      echo "Initializing keep-vm-alive..."
+      echo "Method: stress-ng (All Cores)"
+      echo "Configuration: $CPU_LOAD% Load | Active: ${RUN_TIME}s | Sleep: ${SLEEP_TIME}s"
+
       while true; do
-          start_time=$(date +%s)
-          time_above_min=0
+          echo "Starting stress cycle..."
 
-          echo "Starting a new 7-day cycle..."
+          # --cpu 0       : Spawns a worker for EVERY online CPU core (fixes single-core bug)
+          # --cpu-load N  : Tries to maintain N% load on the cores
+          # --timeout N   : Stops automatically after N seconds
+          stress-ng --cpu 0 --cpu-load $CPU_LOAD --timeout $RUN_TIME --metrics-brief
 
-          while true; do
-              current_time=$(date +%s)
-              elapsed_time=$((current_time - start_time))
+          send_heartbeat
+          echo "Cycle finished. sleeping..."
 
-              if [ $elapsed_time -ge $duration ]; then
-                  echo "7-day cycle completed."
-                  break
-              fi
-
-              stress_cpu
-
-              # Measure CPU (average over 10 seconds)
-              cpu_utilization=$(mpstat 10 1 | awk '/all/ {val=100-$NF} END {print val}')
-
-              # Compare and Log
-              if (( $(echo "$cpu_utilization > $min_cpu" | bc -l) )); then
-                  time_above_min=$((time_above_min + cpu_stress_time))
-                  echo "Status: OK | CPU: ${cpu_utilization}% (> ${min_cpu}%) | Added ${cpu_stress_time}s to bank."
-              else
-                  echo "Status: LOW | CPU: ${cpu_utilization}% (<= ${min_cpu}%) | No time added."
-              fi
-
-              # Log Progress
-              percent_complete=$((time_above_min * 100 / min_time))
-              echo "Progress: ${time_above_min}/${min_time} seconds (${percent_complete}%)"
-
-              send_heartbeat
-
-              if [ $time_above_min -ge $min_time ]; then
-                  echo "SUCCESS: CPU utilization requirement met for this cycle."
-                  break
-              fi
-
-              echo "Sleeping for $interval seconds before the next CPU stress cycle..."
-              sleep $interval
-          done
-          echo "Restarting another 7-day cycle..."
+          sleep $SLEEP_TIME
       done
 
 - name: Create keep-vm-alive systemd service
@@ -96,11 +62,14 @@
     dest: /etc/systemd/system/keep-vm-alive.service
     content: |
       [Unit]
-      Description=Service to keep VM resource usage high to prevent reclamation
+      Description=Oracle Cloud Reclamation Prevention (stress-ng)
+      After=network.target
 
       [Service]
       ExecStart=/usr/local/bin/keep-vm-alive
       Type=simple
+      Restart=always
+      RestartSec=10
 
       [Install]
       WantedBy=multi-user.target
