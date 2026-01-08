@@ -24,6 +24,11 @@
     metrics
 }
 
+# Health check
+{{ domain_name }} {
+    respond /_health 200
+}
+
 {% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
     reverse_proxy localhost:{{ forgejo_port }}
