@@ -3,5 +3,4 @@
 
 heartbeat_keep_vm_alive: ""
 heartbeat_syncthing: ""
-heartbeat_caddy: ""
 heartbeat_netdata: ""

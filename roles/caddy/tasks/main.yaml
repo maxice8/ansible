@@ -42,11 +42,3 @@
     name: caddy
     state: started
     enabled: true
-
-- name: Setup Heartbeat Cron for Caddy
-  ansible.builtin.cron:
-    name: "Caddy Heartbeat"
-    # Check local API (Host) -> Ping Pulsetic
-    job: "curl -f -s http://127.0.0.1:2019/metrics > /dev/null && curl -fsS -m 5 --retry 3 {{ heartbeat_caddy }} > /dev/null"
-    minute: "*/5"
-  when: (heartbeat_caddy | default('')) != ""
