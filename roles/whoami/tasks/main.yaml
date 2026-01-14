@@ -19,3 +19,4 @@
 - name: Enable whoami docker
   community.docker.docker_compose_v2:
     project_src: /srv/whoami
+    build: never

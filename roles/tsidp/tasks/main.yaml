@@ -27,3 +27,4 @@
 - name: Enable tsidp docker
   community.docker.docker_compose_v2:
     project_src: /srv/tsidp
+    build: never

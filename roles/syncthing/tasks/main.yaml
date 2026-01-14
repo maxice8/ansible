@@ -36,6 +36,7 @@
     project_src: /srv/syncthing
     wait: true
     wait_timeout: 90
+    build: never
 
 - name: Setup Heartbeat Cron for Syncthing
   ansible.builtin.cron:

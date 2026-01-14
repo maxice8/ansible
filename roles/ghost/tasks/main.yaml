@@ -39,3 +39,4 @@
     project_src: /srv/ghost
     wait: true
     wait_timeout: 30
+    build: never

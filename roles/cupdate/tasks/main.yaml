@@ -21,3 +21,4 @@
     project_src: /srv/cupdate
     wait: true
     wait_timeout: 90
+    build: never
