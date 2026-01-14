@@ -1,0 +1,29 @@
+# .forgejo/workflows/gitleaks.yml
+name: Gitleaks Security Audit
+
+on:
+  # Trigger on push to ANY branch.
+  # This covers main, feature branches, and "orphan" branches 
+  # that never get a PR.
+  push:
+    branches: ["**"]
+
+jobs:
+  scan:
+    name: Gitleaks Scan
+    runs-on: ubuntu-latest
+    steps:
+      # 1. We MUST check out the code first.
+      # Without this, the runner workspace is empty.
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Run the Gitleaks Docker container directly
+      # The 'docker://' prefix tells Forgejo to pull this image and run it.
+      - name: Run Gitleaks (Docker)
+        uses: docker://zricethezav/gitleaks
+        with:
+          # Arguments passed to the container's entrypoint
+          args: detect --source=. -v --redact
