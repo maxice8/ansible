@@ -29,3 +29,54 @@
         type: caddy
     dest: /etc/crowdsec/acquis.d/caddy.yaml
   notify: Reload Crowdsec
+
+- name: Whitelist static trusted IPs in CrowdSec
+  ansible.builtin.copy:
+    dest: /etc/crowdsec/parsers/s02-enrich/ansible-whitelist-static.yaml
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # This file is auto-generated and will be overwritten by ansible.
+      name: ansible-whitelist-static
+      description: "Whitelist for static trusted IPs defined in Ansible"
+      whitelist:
+        reason: "Trusted via Ansible (Static)"
+        ip:
+          {{ crowdsec_trusted_ips | to_nice_yaml(indent=2) | indent(10) }}
+  notify: Reload Crowdsec
+  when: crowdsec_trusted_ips | default([]) | length > 0
+
+- name: Get current controller public IP
+  ansible.builtin.uri:
+    url: https://api.ipify.org
+    return_content: true
+  register: caddy_controller_ip_result
+  delegate_to: localhost
+  check_mode: false
+  changed_when: false
+
+- name: Get current controller hostname
+  ansible.builtin.command: hostname
+  register: caddy_controller_hostname_result
+  delegate_to: localhost
+  check_mode: false
+  changed_when: false
+
+- name: Whitelist controller IP in CrowdSec (Hostname Versioned)
+  ansible.builtin.copy:
+    dest: "/etc/crowdsec/parsers/s02-enrich/ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # This file is auto-generated and will be overwritten by ansible.
+      name: "ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}"
+      description: "Whitelist for controller {{ caddy_controller_hostname_result.stdout }}"
+      whitelist:
+        reason: "Trusted via Ansible ({{ caddy_controller_hostname_result.stdout }})"
+        ip:
+          - "{{ caddy_controller_ip_result.content }}"
+  notify: Reload Crowdsec
+  when:
+    - caddy_controller_ip_result.content is defined

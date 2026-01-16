@@ -30,6 +30,8 @@ borgmatic_discord_hook: ""
 
 # API Key to auth to Crowdsec with Caddy
 caddy_crowdsec_api_key: ""
+# List of IPs which are to be trusted by Crowdsec
+crowdsec_trusted_ips: []
 
 # Domain name used by ghost, we do not use {{ domain_name }} that is
 # tied to inventory because we use a different domain
