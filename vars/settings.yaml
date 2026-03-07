@@ -47,3 +47,7 @@ netdata_discord_alarm_webhook_url: ""
 # can be shared across all runners and we --name them
 # differently based on the inventory hostname
 forgejo_runner_token: ""
+
+# ansible/vars/settings.yaml (Append to the bottom)
+# Password for the ArchiSteamFarm Web UI (IPC)
+asf_ipc_password: ""

@@ -1,0 +1,65 @@
+# ansible/roles/asf/templates/docker-compose.yml.j2
+services:
+  ts-asf:
+    image: tailscale/tailscale:stable
+    hostname: asf
+    container_name: ts-asf
+    environment:
+      - TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status"]
+      interval: 1s
+      timeout: 5s
+      retries: 60
+    volumes:
+      - ts-data:/var/lib/tailscale
+    configs:
+      - source: tailscale_serve.json
+        target: /config/serve.json
+    devices:
+      - /dev/net/tun
+    cap_add:
+      - net_admin
+    restart: always
+
+  asf:
+    image: justarchi/archisteamfarm:latest
+    container_name: asf
+    restart: always
+    depends_on:
+      ts-asf:
+        condition: service_healthy
+    # Attaches ASF to the Tailscale container's network namespace
+    network_mode: service:ts-asf
+    environment:
+      - ASF_UID=1000
+    volumes:
+      # Bound directly to the folder we created via Ansible Tasks
+      - ./config:/app/config
+
+volumes:
+  ts-data:
+
+configs:
+  tailscale_serve.json:
+    content: |
+      {
+          "TCP": {
+              "443": {
+                  "HTTPS": true
+              }
+          },
+          "Web": {
+              "$${TS_CERT_DOMAIN}:443": {
+                  "Handlers": {
+                      "/": {
+                          "Proxy": "http://127.0.0.1:1242"
+                      }
+                  }
+              }
+          }
+      }

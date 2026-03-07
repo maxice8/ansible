@@ -25,6 +25,7 @@ servers:
         - ghost
         - tsidp
         - cupdate
+        - asf
       user_shell: /usr/bin/fish
       # Ports used by the services
       forgejo_port: 30002
