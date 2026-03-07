@@ -2,6 +2,7 @@ services:
   tsidp:
     container_name: tsidp
     image: ghcr.io/tailscale/tsidp:latest
+    restart: unless-stopped
     volumes:
       # Here we use a bind-mount instead of a docker volume because
       # we use Ansible to set the proper permissions
