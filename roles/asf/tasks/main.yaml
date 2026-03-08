@@ -12,7 +12,7 @@
   ansible.builtin.file:
     owner: "1000"
     group: "1000"
-    mode: "0755"
+    mode: "0700"
     state: directory
     path: /srv/asf/config
 
@@ -22,7 +22,7 @@
     dest: /srv/asf/config/ASF.json
     owner: "1000"
     group: "1000"
-    mode: "0644"
+    mode: "0600"
     force: false # Ensures we don't overwrite settings if you edit them via the Web UI later
   notify: Restart ASF
 
