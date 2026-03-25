@@ -26,11 +26,19 @@ services:
       interval: 1s
       timeout: 5s
       retries: 60
+    # Since 'server' uses this container's network stack, we need to publish the ports here instead of on 'server'
+    ports:
+      - 127.0.0.1:{{ forgejo_port }}:3000
+      - '{{ forgejo_ssh_port }}:22'
 
   server:
     image: codeberg.org/forgejo/forgejo:14
     container_name: forgejo
     restart: always
+    depends_on:
+      ts-forgejo:
+        condition: service_healthy
+    network_mode: service:ts-forgejo
     environment:
       - USER_UID=1000
       - USER_GID=1000
@@ -58,9 +66,6 @@ services:
       - ./forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 127.0.0.1:{{ forgejo_port }}:3000
-      - '{{ forgejo_ssh_port }}:22'
 
 volumes:
   ts-data:
