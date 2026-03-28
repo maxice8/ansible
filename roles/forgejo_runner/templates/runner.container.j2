@@ -1,0 +1,33 @@
+[Unit]
+Description=Forgejo Runner
+Requires=dind.service
+After=dind.service
+BindsTo=ts-forgejo-runner.service
+
+[Container]
+Image=code.forgejo.org/forgejo/runner:12
+ContainerName=forgejo-runner
+
+# Attach to the Tailscale network namespace
+Network=container:ts-forgejo-runner
+
+# Run as the specific UID/GID
+User=1000:1000
+
+# Environment Variables
+Environment=DOCKER_HOST=tcp://127.0.0.1:2375
+Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
+Environment=FORGEJO_RUNNER_TOKEN={{ forgejo_runner_token | default('') }}
+
+# Volume bind mount for config and entrypoint
+Volume=/srv/forgejo-runner/data:/data
+
+# Custom Entrypoint Command
+Exec=/bin/sh /data/entrypoint.sh
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

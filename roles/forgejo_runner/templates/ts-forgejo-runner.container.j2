@@ -1,0 +1,33 @@
+[Unit]
+Description=Tailscale Sidecar for Forgejo Runner
+After=network-online.target
+
+[Container]
+Image=docker.io/tailscale/tailscale:stable
+ContainerName=ts-forgejo-runner
+
+HostName=forgejo-runner-{{ inventory_hostname }}
+
+Environment=TS_AUTHKEY={{ container_tsclient_key }}
+Environment=TS_ACCEPT_DNS=true
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_STATE_DIR=/var/lib/tailscale
+Environment=TS_USERSPACE=false
+
+Volume=ts-forgejo-runner-data.volume:/var/lib/tailscale
+
+AddDevice=/dev/net/tun
+AddCapability=NET_ADMIN
+
+HealthCmd=tailscale status
+HealthInterval=1s
+HealthTimeout=5s
+HealthRetries=60
+Notify=healthy
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

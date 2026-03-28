@@ -1,11 +1,14 @@
 ---
-- name: Create /srv/forgejo-runner/data
+- name: Create directories
   ansible.builtin.file:
-    path: /srv/forgejo-runner/data
+    path: "{{ item.path }}"
     state: directory
-    owner: 1000
-    group: 1000
-    mode: "0755"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: /srv/forgejo-runner/data, owner: 1000, group: 1000 }
+    - { path: /etc/containers/systemd }
 
 - name: Template /srv/forgejo-runner/data/config.yml
   ansible.builtin.template:
@@ -25,17 +28,23 @@
     mode: "0755"
   notify: Restart Forgejo Runner
 
-- name: Template /srv/forgejo-runner/docker-compose.yml
+- name: Deploy Forgejo Runner Quadlets
   ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /srv/forgejo-runner/docker-compose.yml
     owner: root
     group: root
     mode: "0644"
-  notify: Restart Forgejo Runner
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - ts-forgejo-runner-data.volume
+    - dind-data.volume
+    - ts-forgejo-runner.container.j2
+    - dind.container.j2
+    - runner.container.j2
+  notify: Reload systemd and Restart Runner
 
-- name: Enable /srv/forgejo-runner
-  community.docker.docker_compose_v2:
-    project_src: /srv/forgejo-runner
-    state: present
-    build: never
+- name: Ensure Forgejo Runner service is started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: runner.service
+    state: started
