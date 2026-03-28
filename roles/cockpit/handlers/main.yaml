@@ -1,0 +1,5 @@
+---
+- name: Restart Cockpit
+  ansible.builtin.systemd:
+    name: cockpit
+    state: restarted

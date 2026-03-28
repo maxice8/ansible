@@ -1,0 +1,31 @@
+---
+- name: Install Cockpit and dependencies
+  ansible.builtin.apt:
+    name:
+      - cockpit
+      - cockpit-podman
+    state: present
+    update_cache: true
+
+- name: Configure Cockpit Origins and Proxy Headers
+  ansible.builtin.copy:
+    dest: /etc/cockpit/cockpit.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [WebService]
+      # Allows your Tailscale domain and WebSocket connections
+      Origins = https://cockpit.{{ tailnet_name }}.ts.net wss://cockpit.{{ tailnet_name }}.ts.net
+      ProtocolHeader = X-Forwarded-Proto
+  notify: Restart Cockpit
+
+- name: Ensure Cockpit is started and enabled
+  ansible.builtin.systemd:
+    name: cockpit.socket
+    enabled: true
+    state: started
+
+- name: Expose Cockpit through Tailscale
+  ansible.builtin.command: tailscale serve --service=svc:cockpit --https=443 localhost:9090
+  changed_when: false
