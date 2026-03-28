@@ -19,7 +19,8 @@ Environment=TS_HOSTNAME=asf
 
 # Volumes
 Volume=ts-asf-data.volume:/var/lib/tailscale
-Volume=/srv/asf/tailscale_serve.json:/config/serve.json:ro
+# Centralized Tailscale Serve config
+Volume=/etc/asf/serve.json:/config/serve.json:ro
 
 # Permissions
 AddDevice=/dev/net/tun

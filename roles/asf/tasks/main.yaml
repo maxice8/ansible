@@ -1,42 +1,36 @@
-- name: Create working directories for ASF
+---
+- name: Create unified configuration directory
   ansible.builtin.file:
-    owner: root
-    group: root
-    mode: "0755"
-    state: directory
     path: "{{ item }}"
-  loop:
-    - /srv/asf
-    - /etc/containers/systemd
-
-- name: Create config directory for ASF
-  ansible.builtin.file:
+    state: directory
     owner: "1000"
     group: "1000"
-    mode: "0700"
-    state: directory
-    path: /srv/asf/config
+    mode: "0755"
+  loop:
+    - /etc/asf
+    - /etc/containers/systemd
 
-- name: Template ASF.json to /srv/asf/config
+- name: Template ASF.json to centralized location
   ansible.builtin.template:
     src: ASF.json.j2
-    dest: /srv/asf/config/ASF.json
+    dest: /etc/asf/ASF.json
     owner: "1000"
     group: "1000"
     mode: "0600"
+    # Ensure changes via ASF Web UI aren't reverted
     force: false
   notify: Restart ASF
 
-- name: Copy Tailscale serve.json
+- name: Copy Tailscale serve.json to unified location
   ansible.builtin.copy:
     src: tailscale_serve.json
-    dest: /srv/asf/tailscale_serve.json
+    dest: /etc/asf/serve.json
     owner: root
     group: root
     mode: "0644"
   notify: Restart Tailscale
 
-- name: Deploy Podman Quadlets
+- name: Deploy ASF Quadlets
   ansible.builtin.template:
     src: "{{ item }}"
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
@@ -45,11 +39,12 @@
     mode: "0644"
   loop:
     - ts-asf-data.volume
+    - asf-data.volume
     - ts-asf.container.j2
     - asf.container
   notify: Reload systemd and Restart ASF
 
-- name: Ensure Quadlet services are enabled and started
+- name: Ensure ASF service is started
   ansible.builtin.systemd:
     daemon_reload: true
     name: asf.service
