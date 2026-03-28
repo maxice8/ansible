@@ -26,6 +26,7 @@ Volume=/srv/syncthing/tailscale_serve.json:/config/serve.json:ro
 # Permissions
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
+AddCapability=NET_RAW
 
 # Healthcheck
 HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'

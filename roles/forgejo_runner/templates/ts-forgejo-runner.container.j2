@@ -20,6 +20,7 @@ Volume=ts-forgejo-runner-data.volume:/var/lib/tailscale
 
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
+AddCapability=NET_RAW
 
 # Healthcheck
 HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'
