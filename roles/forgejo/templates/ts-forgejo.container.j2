@@ -1,0 +1,44 @@
+[Unit]
+Description=Tailscale Sidecar for Forgejo
+After=network-online.target
+
+[Container]
+Image=docker.io/tailscale/tailscale:stable
+ContainerName=ts-forgejo
+
+# Ensure Tailscale registers cleanly as "git"
+Environment=TS_HOSTNAME=git
+HostName=git
+
+# Published Ports (Handling the mapping originally defined in Compose)
+PublishPort=127.0.0.1:{{ forgejo_port }}:3000
+PublishPort={{ forgejo_ssh_port }}:22
+
+# Environment Variables
+Environment=TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_SERVE_CONFIG=/config/serve.json
+Environment=TS_STATE_DIR=/var/lib/tailscale
+Environment=TS_USERSPACE=false
+
+# Volumes
+Volume=ts-forgejo-data.volume:/var/lib/tailscale
+Volume=/srv/forgejo/tailscale_serve.json:/config/serve.json:ro
+
+# Permissions
+AddDevice=/dev/net/tun
+AddCapability=NET_ADMIN
+
+# Healthcheck
+HealthCmd=tailscale status
+HealthInterval=1s
+HealthTimeout=5s
+HealthRetries=60
+Notify=healthy
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,18 @@
 ---
+- name: Reload systemd and Restart Forgejo
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: forgejo.service
+    state: restarted
+
+- name: Restart Tailscale
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: ts-forgejo.service
+    state: restarted
+
 - name: Restart Forgejo
-  community.docker.docker_compose_v2:
-    project_src: /srv/forgejo
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: forgejo.service
     state: restarted

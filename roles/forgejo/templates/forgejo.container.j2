@@ -1,0 +1,40 @@
+[Unit]
+Description=Forgejo Server
+Requires=ts-forgejo.service
+After=ts-forgejo.service
+BindsTo=ts-forgejo.service
+PartOf=ts-forgejo.service
+
+[Container]
+Image=codeberg.org/forgejo/forgejo:14
+ContainerName=forgejo
+
+# Attaches to Tailscale's network namespace
+Network=container:ts-forgejo
+
+# Environment Variables
+Environment=USER_UID=1000
+Environment=USER_GID=1000
+Environment=FORGEJO__service__ENABLE_BASIC_AUTHENTICATION=false
+Environment=FORGEJO__service__SHOW_REGISTRATION_BUTTON=false
+Environment=FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
+Environment=FORGEJO__openid__ENABLE_OPENID_SIGNUP=false
+Environment=FORGEJO__service__DISABLE_REGISTRATION=false
+Environment=FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION=true
+Environment=FORGEJO__service_0x2E__REQUIRE_SIGNIN_VIEW=false
+Environment=FORGEJO__service__REQUIRE_SIGNIN_VIEW=false
+Environment=FORGEJO__server__DOMAIN=git.{{ domain_name }}
+Environment=FORGEJO__server__ROOT_URL=https://git.{{ domain_name }}
+Environment=FORGEJO__server__SSH_DOMAIN=git.{{ domain_name }}
+
+# Volumes
+Volume=/srv/forgejo/forgejo:/data
+Volume=/etc/timezone:/etc/timezone:ro
+Volume=/etc/localtime:/etc/localtime:ro
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
