@@ -30,7 +30,7 @@ Environment=FORGEJO__server__ROOT_URL=https://git.{{ domain_name }}
 Environment=FORGEJO__server__SSH_DOMAIN=git.{{ domain_name }}
 
 # Volumes
-Volume=/srv/forgejo/forgejo:/data
+Volume=forgejo-data.volume:/data
 Volume=/etc/timezone:/etc/timezone:ro
 Volume=/etc/localtime:/etc/localtime:ro
 

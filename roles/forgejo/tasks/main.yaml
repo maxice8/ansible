@@ -1,20 +1,19 @@
 ---
-- name: Create working directories for forgejo
+- name: Create unified configuration directories
   ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
     owner: root
     group: root
     mode: "0755"
-    state: directory
-    path: "{{ item }}"
   loop:
-    - /srv/forgejo
-    - /srv/forgejo/forgejo
+    - /etc/forgejo
     - /etc/containers/systemd
 
-- name: Copy Tailscale serve.json
+- name: Copy Tailscale serve.json to unified location
   ansible.builtin.copy:
     src: tailscale_serve.json
-    dest: /srv/forgejo/tailscale_serve.json
+    dest: /etc/forgejo/serve.json
     owner: root
     group: root
     mode: "0644"
@@ -29,6 +28,7 @@
     src: "{{ item }}"
   loop:
     - ts-forgejo-data.volume
+    - forgejo-data.volume
     - ts-forgejo.container.j2
     - forgejo.container.j2
   notify: Reload systemd and Restart Forgejo

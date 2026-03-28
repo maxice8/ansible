@@ -26,7 +26,7 @@ Environment=TS_ACCEPT_DNS=true
 
 # Volumes
 Volume=ts-forgejo-data.volume:/var/lib/tailscale
-Volume=/srv/forgejo/tailscale_serve.json:/config/serve.json:ro
+Volume=/etc/forgejo/serve.json:/config/serve.json:ro
 
 # Permissions
 AddDevice=/dev/net/tun

@@ -1,0 +1,2 @@
+[Volume]
+# Persists Forgejo repositories, database, and SSH keys
