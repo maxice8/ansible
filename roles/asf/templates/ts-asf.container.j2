@@ -1,0 +1,38 @@
+[Unit]
+Description=Tailscale Sidecar for ASF
+After=network-online.target
+
+[Container]
+Image=docker.io/tailscale/tailscale:stable
+ContainerName=ts-asf
+HostName=asf
+
+# Environment Variables
+Environment=TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_SERVE_CONFIG=/config/serve.json
+Environment=TS_STATE_DIR=/var/lib/tailscale
+Environment=TS_USERSPACE=false
+Environment=TS_HOSTNAME=asf
+
+# Volumes
+Volume=ts-asf-data.volume:/var/lib/tailscale
+Volume=/srv/asf/tailscale_serve.json:/config/serve.json:ro
+
+# Permissions
+AddDevice=/dev/net/tun
+AddCapability=NET_ADMIN
+
+# Healthcheck
+HealthCmd=tailscale status
+HealthInterval=1s
+HealthTimeout=5s
+HealthRetries=60
+Notify=healthy
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,2 @@
+[Volume]
+# This instructs Podman to create the named volume for Tailscale data

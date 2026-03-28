@@ -1,0 +1,22 @@
+[Unit]
+Description=ArchiSteamFarm
+Requires=ts-asf.service
+After=ts-asf.service
+BindsTo=ts-asf.service
+PartOf=ts-asf.service
+
+[Container]
+Image=docker.io/justarchi/archisteamfarm:latest
+ContainerName=asf
+
+# Attaches ASF to the Tailscale container's network namespace
+Network=container:ts-asf
+Environment=ASF_UID=1000
+Volume=/srv/asf/config:/app/config
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
