@@ -6,6 +6,8 @@ BindsTo=ts-forgejo-runner.service
 
 [Container]
 Image=docker.io/library/docker:dind
+AutoUpdate=registry
+
 ContainerName=docker_dind
 
 # Attach to the Tailscale network namespace

@@ -7,6 +7,8 @@ PartOf=ts-asf.service
 
 [Container]
 Image=docker.io/justarchi/archisteamfarm:latest
+AutoUpdate=registry
+
 ContainerName=asf
 
 # Attaches ASF to the Tailscale container's network namespace

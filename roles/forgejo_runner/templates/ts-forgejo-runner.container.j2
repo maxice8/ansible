@@ -4,6 +4,8 @@ After=network-online.target
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable
+AutoUpdate=registry
+
 ContainerName=ts-forgejo-runner
 
 HostName=forgejo-runner-{{ inventory_hostname }}
