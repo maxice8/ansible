@@ -1,19 +1,14 @@
 ---
-# ansible/roles/asf/handlers/main.yaml
-- name: Reload systemd and Restart ASF
+- name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: true
-    name: asf.service
-    state: restarted
 
 - name: Restart Tailscale
   ansible.builtin.systemd:
-    daemon_reload: true
     name: ts-asf.service
     state: restarted
 
 - name: Restart ASF
   ansible.builtin.systemd:
-    daemon_reload: true
     name: asf.service
     state: restarted

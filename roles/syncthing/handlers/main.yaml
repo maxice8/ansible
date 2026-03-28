@@ -1,18 +1,14 @@
 ---
-- name: Reload systemd and Restart Syncthing
+- name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: true
-    name: syncthing.service
-    state: restarted
 
 - name: Restart Tailscale
   ansible.builtin.systemd:
-    daemon_reload: true
     name: ts-syncthing.service
     state: restarted
 
 - name: Restart Syncthing
   ansible.builtin.systemd:
-    daemon_reload: true
     name: syncthing.service
     state: restarted

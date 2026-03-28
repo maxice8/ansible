@@ -1,12 +1,19 @@
 ---
-- name: Reload systemd and Restart Runner
+- name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: true
-    name: runner.service
+
+- name: Restart Tailscale
+  ansible.builtin.systemd:
+    name: ts-forgejo-runner.service
+    state: restarted
+
+- name: Restart DinD
+  ansible.builtin.systemd:
+    name: dind.service
     state: restarted
 
 - name: Restart Forgejo Runner
   ansible.builtin.systemd:
-    daemon_reload: true
     name: runner.service
     state: restarted
