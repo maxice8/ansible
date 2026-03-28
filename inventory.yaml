@@ -24,7 +24,6 @@ servers:
         # to avoid eternal redirect loops
         - ghost
         - tsidp
-        - cupdate
         - asf
       user_shell: /usr/bin/fish
       # Ports used by the services
@@ -32,4 +31,3 @@ servers:
       forgejo_ssh_port: 22
       whoami_port: 30003
       ghost_port: 30004
-      cupdate_port: 30005
