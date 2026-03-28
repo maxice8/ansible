@@ -17,6 +17,7 @@ Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
 
 Volume=ts-forgejo-runner-data.volume:/var/lib/tailscale
+Volume=/etc/forgejo-runner/serve.json:/config/serve.json:ro
 
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN

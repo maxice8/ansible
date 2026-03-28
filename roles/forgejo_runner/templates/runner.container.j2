@@ -21,10 +21,12 @@ Environment=DOCKER_HOST=tcp://127.0.0.1:2375
 Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
 Environment=FORGEJO_RUNNER_TOKEN={{ forgejo_runner_token | default('') }}
 
-# Volume bind mount for config and entrypoint
-Volume=/srv/forgejo-runner/data:/data
-
+# Volume bind for data
+Volume=forgejo-runner-data.volume:/data
 # Custom Entrypoint Command
+Volume=/etc/forgejo-runner/config.yml:/data/config.yml:ro
+Volume=/etc/forgejo-runner/entrypoint.sh:/data/entrypoint.sh:ro
+
 Exec=/bin/sh /data/entrypoint.sh
 
 [Service]

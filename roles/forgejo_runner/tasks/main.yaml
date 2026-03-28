@@ -1,32 +1,40 @@
 ---
-- name: Create directories
+- name: Create unified configuration directories
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: directory
-    owner: "{{ item.owner | default('root') }}"
-    group: "{{ item.group | default('root') }}"
-    mode: "{{ item.mode | default('0755') }}"
+    owner: root
+    group: root
+    mode: "0755"
   loop:
-    - { path: /srv/forgejo-runner/data, owner: 1000, group: 1000 }
-    - { path: /etc/containers/systemd }
+    - /etc/forgejo-runner
+    - /etc/containers/systemd
 
-- name: Template /srv/forgejo-runner/data/config.yml
+- name: Template runner configuration to centralized location
   ansible.builtin.template:
     src: config.yaml.j2
-    dest: /srv/forgejo-runner/data/config.yml
-    owner: 1000
-    group: 1000
+    dest: /etc/forgejo-runner/config.yml
+    owner: "1000"
+    group: "1000"
     mode: "0644"
   notify: Restart Forgejo Runner
 
-- name: Template /srv/forgejo-runner/data/entrypoint.sh
+- name: Template entrypoint script to centralized location
   ansible.builtin.template:
     src: entrypoint.sh.j2
-    dest: /srv/forgejo-runner/data/entrypoint.sh
-    owner: 1000
-    group: 1000
+    dest: /etc/forgejo-runner/entrypoint.sh
+    owner: "1000"
+    group: "1000"
     mode: "0755"
   notify: Restart Forgejo Runner
+
+- name: Ensure Tailscale serve.json exists (even if empty)
+  ansible.builtin.copy:
+    dest: /etc/forgejo-runner/serve.json
+    content: "{}"
+    owner: root
+    group: root
+    mode: "0644"
 
 - name: Deploy Forgejo Runner Quadlets
   ansible.builtin.template:
@@ -37,6 +45,7 @@
     src: "{{ item }}"
   loop:
     - ts-forgejo-runner-data.volume
+    - forgejo-runner-data.volume
     - dind-data.volume
     - ts-forgejo-runner.container.j2
     - dind.container.j2
