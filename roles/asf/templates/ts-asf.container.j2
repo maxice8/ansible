@@ -26,7 +26,7 @@ AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 
 # Healthcheck
-HealthCmd=tailscale status
+HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'
 HealthInterval=1s
 HealthTimeout=5s
 HealthRetries=60
