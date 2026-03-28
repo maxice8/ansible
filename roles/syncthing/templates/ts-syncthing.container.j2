@@ -21,7 +21,7 @@ Environment=TS_USERSPACE=false
 
 # Volumes
 Volume=ts-syncthing-data.volume:/var/lib/tailscale
-Volume=/srv/syncthing/tailscale_serve.json:/config/serve.json:ro
+Volume=/etc/syncthing/serve.json:/config/serve.json:ro
 
 # Permissions
 AddDevice=/dev/net/tun

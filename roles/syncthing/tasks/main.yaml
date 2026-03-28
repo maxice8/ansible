@@ -19,13 +19,13 @@
     state: directory
     path: "{{ item }}"
   loop:
-    - /srv/syncthing
+    - /etc/syncthing
     - /etc/containers/systemd
 
 - name: Copy Tailscale serve.json
   ansible.builtin.copy:
     src: tailscale_serve.json
-    dest: /srv/syncthing/tailscale_serve.json
+    dest: /etc/syncthing/serve.json
     owner: root
     group: root
     mode: "0644"
