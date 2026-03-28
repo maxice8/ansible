@@ -1,30 +1,27 @@
 ---
-- name: Create docker-compose directory for tsidp
+- name: Ensure Quadlet directory exists
   ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
     owner: root
     group: root
     mode: "0755"
-    state: directory
-    path: /srv/tsidp
 
-- name: Create tsidp data folder with 1001 user expected by the container
-  ansible.builtin.file:
-    path: /srv/tsidp/data
-    state: directory
-    owner: "1001"
-    group: "1001"
-    mode: "0755"
-
-- name: Copy docker-compose files to /srv/tsidp
+- name: Deploy tsidp Quadlets
   ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
-    dest: /srv/tsidp/docker-compose.yml
-    src: docker-compose.yml.j2
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - tsidp-data.volume
+    - tsidp.container.j2
   notify: Restart tsidp
 
-- name: Enable tsidp docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/tsidp
-    build: never
+- name: Ensure tsidp service is enabled and started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: tsidp.service
+    state: started
+    enabled: true

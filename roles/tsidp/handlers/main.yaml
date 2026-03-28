@@ -1,5 +1,6 @@
 ---
 - name: Restart tsidp
-  community.docker.docker_compose_v2:
-    project_src: /srv/tsidp
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: tsidp.service
     state: restarted

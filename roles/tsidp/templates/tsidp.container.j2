@@ -1,0 +1,25 @@
+[Unit]
+Description=Tailscale Identity Provider (tsidp)
+After=network-online.target
+
+[Container]
+Image=ghcr.io/tailscale/tsidp:latest
+ContainerName=tsidp
+
+# Environment Variables
+Environment=TAILSCALE_USE_WIP_CODE=1
+Environment=TS_STATE_DIR=/data
+Environment=TS_HOSTNAME=idp
+Environment=TSIDP_ENABLE_STS=1
+Environment=TS_AUTHKEY={{ tsidp_tskey }}
+Environment=TSNET_FORCE_LOGIN=1
+
+# Volumes (Using the Podman named volume)
+Volume=tsidp-data.volume:/data
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
