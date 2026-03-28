@@ -1,0 +1,40 @@
+[Unit]
+Description=Tailscale Sidecar for Syncthing
+After=network-online.target
+
+[Container]
+Image=docker.io/tailscale/tailscale:stable
+ContainerName=ts-syncthing
+
+# Explicitly set hostname
+Environment=TS_HOSTNAME=syncthing
+HostName=syncthing
+
+# Environment Variables
+Environment=TS_AUTHKEY={{ syncthing_tskey }}?ephemeral=false
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:syncthing
+Environment=TS_SERVE_CONFIG=/config/serve.json
+Environment=TS_STATE_DIR=/var/lib/tailscale
+Environment=TS_USERSPACE=false
+
+# Volumes
+Volume=ts-syncthing-data.volume:/var/lib/tailscale
+Volume=/srv/syncthing/tailscale_serve.json:/config/serve.json:ro
+
+# Permissions
+AddDevice=/dev/net/tun
+AddCapability=NET_ADMIN
+
+# Healthcheck
+HealthCmd=tailscale status
+HealthInterval=1s
+HealthTimeout=5s
+HealthRetries=60
+Notify=healthy
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

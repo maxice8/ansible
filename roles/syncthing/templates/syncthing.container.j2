@@ -1,0 +1,33 @@
+[Unit]
+Description=Syncthing Server
+Requires=ts-syncthing.service
+After=ts-syncthing.service
+BindsTo=ts-syncthing.service
+PartOf=ts-syncthing.service
+
+[Container]
+Image=docker.io/syncthing/syncthing:latest
+ContainerName=syncthing
+
+# Attach to Tailscale's network namespace
+Network=container:ts-syncthing
+
+# Environment Variables
+Environment=PUID={{ syncthing_user_id }}
+Environment=PGID={{ syncthing_user_group_id }}
+
+# Volumes
+Volume=syncthing-data.volume:/var/syncthing
+
+# Healthcheck using shell to properly execute the pipe command
+HealthCmd=/bin/sh -c "curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1"
+HealthInterval=15s
+HealthTimeout=10s
+HealthRetries=3
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

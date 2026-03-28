@@ -11,39 +11,55 @@
   check_mode: false
   changed_when: false
 
-- name: Create docker-compose directory for syncthing
+- name: Create working directories for syncthing
   ansible.builtin.file:
     owner: root
     group: root
     mode: "0755"
     state: directory
-    path: /srv/syncthing
+    path: "{{ item }}"
+  loop:
+    - /srv/syncthing
+    - /etc/containers/systemd
 
-- name: Copy docker-compose files to /srv/syncthing
+- name: Copy Tailscale serve.json
+  ansible.builtin.copy:
+    src: tailscale_serve.json
+    dest: /srv/syncthing/tailscale_serve.json
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Tailscale
+
+- name: Deploy Syncthing Quadlets
   ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
-    dest: /srv/syncthing/docker-compose.yml
-    src: docker-compose.yml.j2
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
   vars:
     syncthing_user_id: "{{ syncthing_puid.stdout }}"
     syncthing_user_group_id: "{{ syncthing_pgid.stdout }}"
-  notify: Restart Syncthing
+  loop:
+    - ts-syncthing-data.volume
+    - syncthing-data.volume
+    - ts-syncthing.container.j2
+    - syncthing.container.j2
+  notify: Reload systemd and Restart Syncthing
 
-- name: Enable syncthing docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/syncthing
-    wait: true
-    wait_timeout: 90
-    build: never
+- name: Ensure Syncthing service is started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: syncthing.service
+    state: started
 
 - name: Setup Heartbeat Cron for Syncthing
   ansible.builtin.cron:
     name: "Syncthing Heartbeat"
-    # Uses the existing Docker Healthcheck
+    # Replaced docker with podman
     job: >
-      docker inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' syncthing
+      podman inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' syncthing
       | grep -q healthy && curl -fsS -m 5 --retry 3 {{ heartbeat_syncthing }} > /dev/null
     minute: "*/5"
   when: (heartbeat_syncthing | default('')) != ""
