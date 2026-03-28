@@ -1,0 +1,17 @@
+[Unit]
+Description=Traefik Whoami
+After=network-online.target
+
+[Container]
+Image=docker.io/traefik/whoami:latest
+ContainerName=whoami
+
+# Maps the port to localhost just like the compose file
+PublishPort=127.0.0.1:{{ whoami_port }}:80
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

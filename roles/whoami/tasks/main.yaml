@@ -1,22 +1,24 @@
 ---
-- name: Create docker-compose directory for whoami
+- name: Ensure Quadlet directory exists
   ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
     owner: root
     group: root
     mode: "0755"
-    state: directory
-    path: /srv/whoami
 
-- name: Copy docker-compose files to /srv/whoami
+- name: Deploy whoami Quadlet
   ansible.builtin.template:
+    src: whoami.container.j2
+    dest: /etc/containers/systemd/whoami.container
     owner: root
     group: root
     mode: "0644"
-    dest: /srv/whoami/docker-compose.yml
-    src: docker-compose.yml.j2
   notify: Restart whoami
 
-- name: Enable whoami docker
-  community.docker.docker_compose_v2:
-    project_src: /srv/whoami
-    build: never
+- name: Ensure whoami service is enabled and started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: whoami.service
+    state: started
+    enabled: true

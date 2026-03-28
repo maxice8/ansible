@@ -1,5 +1,6 @@
 ---
 - name: Restart whoami
-  community.docker.docker_compose_v2:
-    project_src: /srv/whoami
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: whoami.service
     state: restarted
