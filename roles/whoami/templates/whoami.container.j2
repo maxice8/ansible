@@ -4,6 +4,8 @@ After=network-online.target
 
 [Container]
 Image=docker.io/traefik/whoami:latest
+AutoUpdate=registry
+
 ContainerName=whoami
 
 # Maps the port to localhost just like the compose file
