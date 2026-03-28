@@ -63,6 +63,11 @@
         docker_username: "{{ username }}"
       when: svcs is not defined
 
+    - name: Setup podman (Base)
+      ansible.builtin.include_role:
+        name: podman
+      when: svcs is not defined
+
     # -----------------------------------------------------------
     # Service Loop
     # -----------------------------------------------------------

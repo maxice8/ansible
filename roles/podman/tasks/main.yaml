@@ -1,0 +1,49 @@
+---
+# podman/tasks/main.yaml
+
+- name: Install Podman
+  ansible.builtin.apt:
+    name: podman
+    state: present
+    update_cache: true
+
+- name: Create podman-system-prune service
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: /etc/systemd/system/podman-system-prune.service
+    content: |
+      [Unit]
+      Description=Run Podman system prune
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/podman system prune -af
+
+- name: Create podman-system-prune timer
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: /etc/systemd/system/podman-system-prune.timer
+    content: |
+      [Unit]
+      Description=Run Podman system prune daily
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable podman-system-prune timer
+  ansible.builtin.systemd:
+    name: podman-system-prune.timer
+    enabled: true
+    state: started
