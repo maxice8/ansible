@@ -56,13 +56,6 @@
       # Only run this explicitly if we are NOT overriding the service list
       when: svcs is not defined
 
-    - name: Setup docker (Base)
-      ansible.builtin.include_role:
-        name: docker
-      vars:
-        docker_username: "{{ username }}"
-      when: svcs is not defined
-
     - name: Setup podman (Base)
       ansible.builtin.include_role:
         name: podman
@@ -80,4 +73,3 @@
       loop: "{{ services }}"
       vars:
         syncthing_username: "{{ username }}"
-        docker_username: "{{ username }}"
