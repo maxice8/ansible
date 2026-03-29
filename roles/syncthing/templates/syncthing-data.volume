@@ -1,1 +1,3 @@
 [Volume]
+User={{ syncthing_user_id }}
+Group={{ syncthing_user_group_id }}

@@ -1,15 +1,29 @@
 ---
-- name: Get the PUID for the user
-  ansible.builtin.command: id -u {{ syncthing_username }}
-  register: syncthing_puid
-  check_mode: false
-  changed_when: false
+- name: Ensure sysusers.d directory exists
+  ansible.builtin.file:
+    path: /etc/sysusers.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
-- name: Get the PGID for the user
-  ansible.builtin.command: id -g {{ syncthing_username }}
-  register: syncthing_pgid
-  check_mode: false
-  changed_when: false
+- name: Declaratively create Syncthing system user
+  ansible.builtin.copy:
+    dest: /etc/sysusers.d/syncthing.conf
+    mode: "0644"
+    content: |
+      # Type Name       ID             GECOS                 Home directory Shell
+      u      syncthing  -              "Syncthing Daemon"    /var/syncthing -
+  notify: Apply sysusers
+
+# Force Ansible to run the notified handler IMMEDIATELY
+- name: Flush handlers to create user before fetching
+  ansible.builtin.meta: flush_handlers
+
+- name: Fetch newly created Syncthing user info
+  ansible.builtin.getent:
+    database: passwd
+    key: syncthing
 
 - name: Create working directories for syncthing
   ansible.builtin.file:
@@ -60,8 +74,9 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   vars:
-    syncthing_user_id: "{{ syncthing_puid.stdout }}"
-    syncthing_user_group_id: "{{ syncthing_pgid.stdout }}"
+    # Inject the dynamically assigned system IDs into the template
+    syncthing_user_id: "{{ ansible_facts.getent_passwd['syncthing'][1] }}"
+    syncthing_user_group_id: "{{ ansible_facts.getent_passwd['syncthing'][2] }}"
   loop:
     - syncthing-data.volume
     - syncthing.container.j2
