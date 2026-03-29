@@ -1,11 +1,14 @@
 ---
 - name: Ensure sysusers.d directory exists
   ansible.builtin.file:
-    path: /etc/sysusers.d
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
+  loop:
+    - /etc/sysusers.d
+    - /etc/tmpfiles.d
 
 - name: Declaratively create Syncthing system user
   ansible.builtin.copy:
@@ -14,7 +17,17 @@
     content: |
       # Type Name       ID             GECOS                 Home directory Shell
       u      syncthing  -              "Syncthing Daemon"    /var/syncthing -
-  notify: Apply sysusers
+  notify: Apply syncthing sysusers
+
+- name: Configure Syncthing tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/syncthing.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      d /etc/syncthing 0755 root root -
+  notify: Apply syncthing tmpfiles
 
 # Force Ansible to run the notified handler IMMEDIATELY
 - name: Flush handlers to create user before fetching
@@ -25,17 +38,6 @@
     database: passwd
     key: syncthing
 
-- name: Create working directories for syncthing
-  ansible.builtin.file:
-    owner: root
-    group: root
-    mode: "0755"
-    state: directory
-    path: "{{ item }}"
-  loop:
-    - /etc/syncthing
-    - /etc/containers/systemd
-
 - name: Copy Tailscale serve.json
   ansible.builtin.copy:
     src: tailscale_serve.json
@@ -44,6 +46,14 @@
     group: root
     mode: "0644"
   notify: Restart Tailscale
+
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
 - name: Deploy Tailscale Sidecar Quadlets
   ansible.builtin.template:
