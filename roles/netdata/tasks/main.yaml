@@ -5,13 +5,18 @@
     state: started
     enabled: true
 
-- name: Create local config directory for overrides
-  ansible.builtin.file:
-    path: /etc/netdata
-    state: directory
+- name: Configure Netdata tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/netdata.conf
     owner: root
     group: root
-    mode: "0755"
+    mode: "0644"
+    content: |
+      d /etc/netdata 0755 root root -
+  notify: Apply netdata tmpfiles
+
+- name: Flush handlers to create Netdata directories
+  ansible.builtin.meta: flush_handlers
 
 - name: Create health_alarm_notify.conf on host
   ansible.builtin.template:
