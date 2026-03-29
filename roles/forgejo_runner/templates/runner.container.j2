@@ -17,9 +17,9 @@ Network=container:ts-forgejo-runner
 User=1000:1000
 
 # Environment Variables
+Secret=forgejo_runner_token,type=env,target=FORGEJO_RUNNER_TOKEN
 Environment=DOCKER_HOST=tcp://127.0.0.1:2375
 Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
-Environment=FORGEJO_RUNNER_TOKEN={{ forgejo_runner_token | default('') }}
 
 # Volume bind for data
 Volume=forgejo-runner-data.volume:/data

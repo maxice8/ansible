@@ -36,6 +36,20 @@
     group: root
     mode: "0644"
 
+- name: Store runner token as a podman secret
+  containers.podman.podman_secret:
+    name: forgejo_runner_token
+    state: present
+    data: "{{ forgejo_runner_token }}"
+    force: true
+
+- name: Store tailscale auth-key as a podman secret
+  containers.podman.podman_secret:
+    name: ts_runner_key
+    state: present
+    data: "{{ container_tsclient_key }}?ephemeral=false"
+    force: true
+
 - name: Deploy Tailscale Sidecar Quadlets
   ansible.builtin.template:
     owner: root
