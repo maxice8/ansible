@@ -13,7 +13,7 @@ Environment=TS_HOSTNAME=syncthing
 HostName=syncthing
 
 # Environment Variables
-Environment=TS_AUTHKEY={{ syncthing_tskey }}?ephemeral=false
+Secret=ts_syncthing_key,type=env,target=TS_AUTHKEY
 Environment=TS_EXTRA_ARGS=--advertise-tags=tag:syncthing
 Environment=TS_SERVE_CONFIG=/config/serve.json
 Environment=TS_STATE_DIR=/var/lib/tailscale

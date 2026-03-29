@@ -45,6 +45,13 @@
     - Reload systemd
     - Restart Tailscale
 
+- name: Store Syncthing Tailscale Auth-Key as a Podman Secret
+  containers.podman.podman_secret:
+    name: ts_syncthing_key
+    state: present
+    data: "{{ syncthing_tskey }}?ephemeral=false"
+    force: true
+
 - name: Deploy Syncthing Quadlets
   ansible.builtin.template:
     owner: root
@@ -61,7 +68,6 @@
   notify:
     - Reload systemd
     - Restart Syncthing
-
 
 - name: Ensure Syncthing service is started
   ansible.builtin.systemd:
