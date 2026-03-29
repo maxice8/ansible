@@ -31,7 +31,7 @@
   ansible.builtin.shell:
     executable: /bin/bash
     cmd: |
-      set -eou pipefail
+      set -euo pipefail
       podman run --rm \
         --network host \
         -v /root/.ssh:/mnt/ssh:ro \
