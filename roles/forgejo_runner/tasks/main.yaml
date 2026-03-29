@@ -1,11 +1,14 @@
 ---
 - name: Ensure sysusers.d directory exists
   ansible.builtin.file:
-    path: /etc/sysusers.d
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
+  loop:
+    - /etc/sysusers.d
+    - /etc/tmpfiles.d
 
 - name: Declaratively create Forgejo Runner system user
   ansible.builtin.copy:
@@ -14,7 +17,17 @@
     content: |
       # Type Name            ID   GECOS                   Home directory Shell
       u      forgejo-runner  -    "Forgejo Runner Daemon" /data          -
-  notify: Apply sysusers
+  notify: Apply forgejo-runner sysusers
+
+- name: Configure Forgejo Runner tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/forgejo-runner.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      d /etc/forgejo-runner 0755 root root -
+  notify: Apply forgejo-runner tmpfiles
 
 - name: Flush handlers to create Forgejo Runner user
   ansible.builtin.meta: flush_handlers
@@ -23,17 +36,6 @@
   ansible.builtin.getent:
     database: passwd
     key: forgejo-runner
-
-- name: Create unified configuration directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-  loop:
-    - /etc/forgejo-runner
-    - /etc/containers/systemd
 
 - name: Template runner configuration to centralized location
   ansible.builtin.template:
@@ -76,6 +78,14 @@
     state: present
     data: "{{ container_tsclient_key }}?ephemeral=false"
     force: true
+
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
 - name: Deploy Tailscale Sidecar Quadlets
   ansible.builtin.template:
