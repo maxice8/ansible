@@ -8,8 +8,17 @@ AutoUpdate=registry
 
 ContainerName=whoami
 
+# Bind to unprivileged port
+Exec=--port {{ whoami_port }}
+
 # Maps the port to localhost just like the compose file
-PublishPort=127.0.0.1:{{ whoami_port }}:80
+PublishPort=127.0.0.1:{{ whoami_port }}:{{ whoami_port }}
+
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+ReadOnly=true
+Tmpfs=/tmp
 
 [Service]
 Restart=always
