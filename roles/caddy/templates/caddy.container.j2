@@ -7,6 +7,8 @@ Requires=caddy-build.service
 Image=localhost/caddy-custom:latest
 ContainerName=caddy
 
+AutoUpdate=local
+
 {% if caddy_crowdsec_api_key != "" -%}
 Secret=caddy_crowdsec_api_key,type=env,target=CADDY_CROWDSEC_API_KEY
 {% endif -%}
