@@ -7,6 +7,8 @@ Requires=borgmatic-build.service
 Image=localhost/borgmatic:latest
 ContainerName=borgmatic
 
+Secret=borg_repository_passphrase,type=env,target=BORG_PASSPHRASE
+
 Network=host
 
 # Flags passed to the ENTRYPOINT
@@ -18,6 +20,16 @@ Volume=/:/host:ro
 Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro
 Volume=/root/.ssh:/root/.ssh:ro
 Volume=borgmatic-cache.volume:/root/.cache/borg
+Volume=borgmatic-config.volume:/root/.config/borg
+
+NoNewPrivileges=true
+DropCapability=all
+# Allows reading files regardless of UID/GID on the host mount
+AddCapability=DAC_READ_SEARCH
+# Required for SSH connection handling
+AddCapability=NET_RAW
+ReadOnly=true
+Tmpfs=/tmp
 
 [Service]
 Type=oneshot

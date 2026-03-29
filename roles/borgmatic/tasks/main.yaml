@@ -78,6 +78,13 @@
     group: root
     mode: "0755"
 
+- name: Store Borgmatic Repository Passphrase as a Podman Secret
+  containers.podman.podman_secret:
+    name: borg_repository_passphrase
+    state: present
+    data: "{{ borgmatic_repository_passphrase }}"
+    force: true
+
 - name: Deploy Borgmatic Quadlets
   ansible.builtin.template:
     owner: root
@@ -87,6 +94,7 @@
     src: "{{ item }}"
   loop:
     - borgmatic-cache.volume
+    - borgmatic-config.volume
     - borgmatic.build
     - borgmatic.container.j2
   notify: Reload systemd
