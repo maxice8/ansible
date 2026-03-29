@@ -3,7 +3,7 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Restart keep-vm-alive-image
+- name: Rebuild keep-vm-alive container
   ansible.builtin.systemd:
     name: keep-vm-alive-build.service
     state: restarted

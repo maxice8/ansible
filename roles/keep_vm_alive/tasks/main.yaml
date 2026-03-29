@@ -14,7 +14,7 @@
     owner: root
     group: root
     mode: "0755"
-  notify: Restart keep-vm-alive-image
+  notify: Rebuild keep-vm-alive container
 
 - name: Copy Containerfile to build folder
   ansible.builtin.copy:
@@ -23,7 +23,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart keep-vm-alive-image
+  notify: Rebuild keep-vm-alive container
 
 - name: Ensure Quadlet directory exists
   ansible.builtin.file:
