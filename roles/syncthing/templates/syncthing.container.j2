@@ -21,6 +21,21 @@ Environment=PGID={{ syncthing_user_group_id }}
 # Volumes
 Volume=syncthing-data.volume:/var/syncthing
 
+# --- Security Lockdown (Aligned with Upstream systemd unit) ---
+NoNewPrivileges=true
+DropCapability=all
+# Required to fix volume permissions on startup (AmbientCapabilities=CAP_CHOWN CAP_FOWNER in systemd)
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+# Required for su-exec to drop privileges to the PUID/PGID
+AddCapability=SETUID
+AddCapability=SETGID
+
+# Equivalent to ProtectSystem=strict and PrivateTmp=true
+ReadOnly=true
+Tmpfs=/tmp
+
 # Healthcheck using shell to properly execute the pipe command
 HealthCmd=/bin/sh -c "curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1"
 HealthInterval=15s
