@@ -36,6 +36,14 @@
     group: root
     mode: "0755"
 
+- name: Store Caddy CrowdSec API Key in a Podman Secret
+  containers.podman.podman_secret:
+    name: caddy_crowdsec_api_key
+    state: present
+    data: "{{ caddy_crowdsec_api_key }}"
+    force: true
+  when: caddy_crowdsec_api_key != ""
+
 - name: Deploy Caddy Quadlets
   ansible.builtin.template:
     owner: root

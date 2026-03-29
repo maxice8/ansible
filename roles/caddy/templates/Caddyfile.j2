@@ -1,7 +1,8 @@
 {
     {% if caddy_crowdsec_api_key != "" -%}
     crowdsec {
-        api_key {{ caddy_crowdsec_api_key }}
+        # Use the environment variable injected via Podman Secret
+        api_key {$CADDY_CROWDSEC_API_KEY}
     }
     order crowdsec first
     {% endif -%}

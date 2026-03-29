@@ -7,6 +7,10 @@ Requires=caddy-build.service
 Image=localhost/caddy-custom:latest
 ContainerName=caddy
 
+{% if caddy_crowdsec_api_key != "" -%}
+Secret=caddy_crowdsec_api_key,type=env,target=CADDY_CROWDSEC_API_KEY
+{% endif -%}
+
 # Essential for binding to 80/443 and proxying to localhost services
 Network=host
 
