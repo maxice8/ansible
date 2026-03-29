@@ -1,32 +1,19 @@
 ---
-- name: Download the installation script
-  ansible.builtin.get_url:
-    url: https://my-netdata.io/kickstart.sh
-    dest: ~/kickstart.sh
-    mode: +x
-    checksum: sha256:201a378dbeb012e96fb4299e2acfb8d5dffaceb48d7953e6a4054624a9954bed
-  register: netdata_script
+- name: Ensure Podman socket is enabled (for container metrics)
+  ansible.builtin.systemd:
+    name: podman.socket
+    state: started
+    enabled: true
 
-- name: Install Netdata
-  ansible.builtin.shell: |
-    # Get current version or set to 'none' if not found
-    OLD_VER=$(netdata -v 2>/dev/null || echo "none")
+- name: Create local config directory for overrides
+  ansible.builtin.file:
+    path: /etc/netdata
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
-    # Run the installer
-    ~/kickstart.sh --dont-wait
-
-    # Get new version
-    NEW_VER=$(netdata -v 2>/dev/null || echo "fail")
-
-    # Compare versions to detect change
-    if [ "$OLD_VER" != "$NEW_VER" ]; then
-      echo "NETDATA_UPDATED_STATUS: CHANGED"
-    fi
-  register: netdata_install
-  # Mark as changed only if our custom marker is present
-  changed_when: "'NETDATA_UPDATED_STATUS: CHANGED' in netdata_install.stdout"
-
-- name: Create health_alarm_notify.conf on parent node
+- name: Create health_alarm_notify.conf on host
   ansible.builtin.template:
     owner: root
     group: root
@@ -34,6 +21,33 @@
     src: health_alarm_notify.conf.j2
     dest: /etc/netdata/health_alarm_notify.conf
   notify: Restart Netdata
+
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Netdata Quadlets
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    # Config volume successfully removed!
+    - netdata-lib.volume
+    - netdata-cache.volume
+    - netdata.container.j2
+  notify:
+    - Reload systemd
+    - Restart Netdata
+
+- name: Flush handlers to start Netdata container
+  ansible.builtin.meta: flush_handlers
 
 - name: Expose Netdata through Tailscale
   ansible.builtin.command: tailscale serve --service=svc:netdata --https=443 localhost:19999

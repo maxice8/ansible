@@ -1,10 +1,9 @@
 ---
-- name: Reload systemd daemon
+- name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: true
 
 - name: Restart Netdata
   ansible.builtin.systemd:
-    service: netdata
-    enabled: true
+    name: netdata.service
     state: restarted

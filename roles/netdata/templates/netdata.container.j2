@@ -1,0 +1,40 @@
+[Unit]
+Description=Netdata Host Monitoring
+After=network-online.target
+
+[Container]
+Image=docker.io/netdata/netdata:latest
+ContainerName=netdata
+
+# Use the host's network and PID namespace so it can see host processes and ports
+Network=host
+PodmanArgs=--pid=host --userns=host
+
+# Capabilities required to read deep system metrics
+AddCapability=SYS_PTRACE
+AddCapability=SYS_ADMIN
+
+# Storage Volumes
+Volume=netdata-lib.volume:/var/lib/netdata
+Volume=netdata-cache.volume:/var/cache/netdata
+
+# Host Hardware & OS Mounts (Strictly Read-Only!)
+Volume=/etc/passwd:/host/etc/passwd:ro
+Volume=/etc/group:/host/etc/group:ro
+Volume=/proc:/host/proc:ro
+Volume=/sys:/host/sys:ro
+Volume=/etc/os-release:/host/etc/os-release:ro
+Volume=/var/log:/host/var/log:ro
+
+# Allow Netdata to monitor other Podman containers
+Volume=/run/podman/podman.sock:/var/run/docker.sock:ro
+
+# Inject our Ansible-managed Discord alarm config directly into the container
+Volume=/etc/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
