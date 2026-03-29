@@ -1,7 +1,7 @@
 # List of source directories and files to back up. Globs and tildes
 # are expanded. Do not backslash spaces in path names.
 source_directories:
-    - /
+    - /host
 
 # A required list of local or remote repositories with paths and
 # optional labels (which can be used with the --repository flag to
@@ -21,13 +21,13 @@ repositories:
 # with a glob or be an absolute path. Do not backslash spaces in path
 # names. See the output of "borg help patterns" for more details.
 exclude_patterns:
-    - /dev
-    - /proc
-    - /sys
-    - /var/run
-    - /run
-    - /mnt
-    - /tmp
+    - /host/dev
+    - /host/proc
+    - /host/sys
+    - /host/var/run
+    - /host/run
+    - /host/mnt
+    - /host/tmp
 
 # Passphrase to unlock the encryption key with. Only use on
 # repositories that were initialized with passphrase/repokey/keyfile
@@ -40,7 +40,7 @@ encryption_passphrase: "{{ borgmatic_repository_passphrase }}"
 # Command to use instead of "ssh". This can be used to specify ssh
 # options. Defaults to not set.
 # ssh_command: ssh -i /path/to/private/key
-ssh_command: ssh -p 23 -i /root/.ssh/borgbackup
+ssh_command: ssh -p 23 -i /root/.ssh/borgbackup -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
 # List of checks to run to validate your backups.
 checks:

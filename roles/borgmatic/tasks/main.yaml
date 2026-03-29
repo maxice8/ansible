@@ -21,7 +21,6 @@
   ansible.builtin.apt:
     name:
       - sshpass
-      - apprise # Just to be sure
     state: present
     update_cache: true
 
@@ -49,21 +48,14 @@
   register: borgmatic_install_key_output
   changed_when: "not 'is already configured' in borgmatic_install_key_output.stdout"
 
-# Ubuntu has 1.4.3 which is an old version (very bad!), and only 1.7.x has
-# proper (bugless) support for --global which install to /usr/local/bin
-# but no problem (so far) as the systemd service uses /root/.local/bin
-# TODO: fix this when we upgrade Ubuntu
-- name: Install borgmatic pipx via pipx
-  community.general.pipx:
-    name: borgmatic
-    # Use source as this value is passed as-is
-    source: borgmatic[Apprise]
-    # Install+Upgrade
-    state: latest
-    # Use the proper version
-    executable: /usr/local/bin/pipx
-    # Install globally
-    global: true
+- name: Remove legacy host-based binary and service
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/local/bin/borgmatic
+    - /etc/systemd/system/borgmatic.service
+  notify: Reload systemd
 
 - name: Create configuration directory
   ansible.builtin.file:
@@ -73,6 +65,15 @@
     state: directory
     dest: /etc/borgmatic
 
+- name: Copy Dockerfile to config folder
+  ansible.builtin.copy:
+    src: Dockerfile
+    dest: /etc/borgmatic/Dockerfile
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart borgmatic-build
+
 - name: Install configuration from template
   ansible.builtin.template:
     owner: root
@@ -81,25 +82,38 @@
     dest: /etc/borgmatic/config.yaml
     src: config.yaml.j2
 
-- name: Create borgmatic systemd service
-  ansible.builtin.copy:
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
     owner: root
     group: root
-    mode: "0644"
-    dest: /etc/systemd/system/borgmatic.service
-    src: borgmatic.service
+    mode: "0755"
 
-- name: Create borgmatic systemd timer
-  ansible.builtin.copy:
+- name: Deploy Borgmatic Quadlets
+  ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
-    dest: /etc/systemd/system/borgmatic.timer
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - borgmatic-cache.volume
+    - borgmatic.build
+    - borgmatic.container.j2
+  notify: Reload systemd
+
+- name: Ensure timer is deployed
+  ansible.builtin.copy:
     src: borgmatic.timer
+    dest: /etc/systemd/system/borgmatic.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart borgmatic timer
 
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
+- name: Flush handlers to process removals and builds
+  ansible.builtin.meta: flush_handlers
 
 - name: Enable borgmatic timer
   ansible.builtin.systemd:
