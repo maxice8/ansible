@@ -1,11 +1,24 @@
 ---
 - name: Ensure sysusers.d directory exists
   ansible.builtin.file:
-    path: /etc/sysusers.d
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
+  loop:
+    - /etc/sysusers.d
+    - /etc/tmpfiles.d
+
+- name: Configure ASF tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/asf.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      d /etc/asf 0755 root root -
+  notify: Apply asf tmpfiles
 
 - name: Declaratively create ASF system user
   ansible.builtin.copy:
@@ -14,7 +27,7 @@
     content: |
       # Type Name  ID   GECOS                   Home directory Shell
       u      asf   -    "ArchiSteamFarm Daemon" /app/config    -
-  notify: Apply sysusers
+  notify: Apply asf sysusers
 
 - name: Flush handlers to create ASF user
   ansible.builtin.meta: flush_handlers
@@ -24,16 +37,13 @@
     database: passwd
     key: asf
 
-- name: Create unified configuration directory
+- name: Ensure Quadlet directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /etc/containers/systemd
     state: directory
     owner: root
     group: root
     mode: "0755"
-  loop:
-    - /etc/asf
-    - /etc/containers/systemd
 
 - name: Template ASF.json to centralized location
   ansible.builtin.template:
