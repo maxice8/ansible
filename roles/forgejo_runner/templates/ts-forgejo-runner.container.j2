@@ -15,13 +15,19 @@ Environment=TS_ACCEPT_DNS=true
 Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
 Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
+Environment=TS_ACCEPT_DNS=true
 
 Volume=ts-forgejo-runner-data.volume:/var/lib/tailscale
 Volume=/etc/forgejo-runner/serve.json:/config/serve.json:ro
 
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
+ReadOnly=true
+Tmpfs=/tmp
 
 # Healthcheck
 HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'

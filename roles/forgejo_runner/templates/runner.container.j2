@@ -29,6 +29,20 @@ Volume=/etc/forgejo-runner/entrypoint.sh:/data/entrypoint.sh:ro
 
 Exec=/bin/sh /data/entrypoint.sh
 
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+# Required for the entrypoint and privilege dropping
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+AddCapability=SETUID
+AddCapability=SETGID
+# Required if the runner needs to create nested namespaces for jobs
+AddCapability=SYS_CHROOT
+ReadOnly=true
+Tmpfs=/tmp
+
 [Service]
 Restart=always
 TimeoutStartSec=900
