@@ -28,6 +28,18 @@ Environment=mail__options__port=587
 Environment=mail__options__auth__user={{ ghost_email_user }}
 Environment=mail__options__auth__pass={{ ghost_email_pass }}
 
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+# Required for the entrypoint to fix volume permissions
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+# Required for the entrypoint to drop to the 'node' user
+AddCapability=SETUID
+AddCapability=SETGID
+Tmpfs=/tmp
+
 [Service]
 Restart=always
 TimeoutStartSec=900
