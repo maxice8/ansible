@@ -11,7 +11,7 @@
   containers.podman.podman_secret:
     name: tsidp_ts_key
     state: present
-    data: "{{ tsidp_tskey }}?ephemeral=false"
+    data: "{{ tsidp_tskey }}"
     force: true
 
 - name: Deploy tsidp Quadlets
