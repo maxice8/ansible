@@ -17,6 +17,30 @@
     msg: The variable 'ghost_email_pass' needs to be a non-empty value
   when: ghost_email_pass == ""
 
+- name: Ensure Ghost config directory exists
+  ansible.builtin.file:
+    path: /etc/ghost
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create Ghost EnvironmentFile
+  ansible.builtin.template:
+    src: ghost.env.j2
+    dest: /etc/ghost/ghost.env
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart Ghost
+
+- name: Create Ghost SMTP Podman Secret
+  containers.podman.podman_secret:
+    name: ghost_smtp_password
+    state: present
+    data: "{{ ghost_email_pass }}"
+    force: true
+
 - name: Ensure Quadlet directory exists
   ansible.builtin.file:
     path: /etc/containers/systemd

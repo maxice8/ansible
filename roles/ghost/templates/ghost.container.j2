@@ -14,19 +14,19 @@ PublishPort=127.0.0.1:{{ ghost_port }}:2368
 # Volumes
 Volume=ghost-data.volume:/var/lib/ghost/content
 
-# Environment Variables
+# --- Secrets and Environment ---
+# Injects the secret as the specific environment variable Ghost expects
+Secret=ghost_smtp_password,type=env,target=mail__options__auth__pass
+
+# Loads the rest of the mail config from the protected file
+EnvironmentFile=/etc/ghost/ghost.env
+
+# Non-sensitive Environment Variables
 Environment=DOMAIN={{ ghost_domain_name }}
+Environment=url=https://{{ ghost_domain_name }}
 Environment=database__client=sqlite3
 Environment=database__connection__filename=content/data/ghost.db
 Environment=database__useNullAsDefault=true
-Environment=database__debug=false
-Environment=url=https://{{ ghost_domain_name }}
-Environment=mail__transport=SMTP
-Environment=mail__options__service=Google
-Environment=mail__options__host=smtp.gmail.com
-Environment=mail__options__port=587
-Environment=mail__options__auth__user={{ ghost_email_user }}
-Environment=mail__options__auth__pass={{ ghost_email_pass }}
 
 # Permissions
 NoNewPrivileges=true
