@@ -1,11 +1,14 @@
 ---
 - name: Ensure sysusers.d directory exists
   ansible.builtin.file:
-    path: /etc/sysusers.d
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
+  loop:
+    - /etc/sysusers.d
+    - /etc/tmpfiles.d
 
 - name: Declaratively create Forgejo system user
   ansible.builtin.copy:
@@ -14,7 +17,17 @@
     content: |
       # Type Name     ID   GECOS             Home directory Shell
       u      forgejo  -    "Forgejo Daemon"  /data          -
-  notify: Apply sysusers
+  notify: Apply forgejo sysusers
+
+- name: Configure Forgejo tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/forgejo.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      d /etc/forgejo 0755 root root -
+  notify: Apply forgejo tmpfiles
 
 - name: Flush handlers to create Forgejo user
   ansible.builtin.meta: flush_handlers
@@ -24,16 +37,13 @@
     database: passwd
     key: forgejo
 
-- name: Create unified configuration directories
+- name: Ensure Quadlet directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /etc/containers/systemd
     state: directory
     owner: root
     group: root
     mode: "0755"
-  loop:
-    - /etc/forgejo
-    - /etc/containers/systemd
 
 - name: Store tailscale auth-key as a podman secret
   containers.podman.podman_secret:
