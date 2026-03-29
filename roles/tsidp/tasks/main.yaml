@@ -7,6 +7,13 @@
     group: root
     mode: "0755"
 
+- name: Store tsidp Tailscale Auth-Key as a Podman Secret
+  containers.podman.podman_secret:
+    name: tsidp_ts_key
+    state: present
+    data: "{{ tsidp_tskey }}?ephemeral=false"
+    force: true
+
 - name: Deploy tsidp Quadlets
   ansible.builtin.template:
     owner: root
