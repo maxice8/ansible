@@ -1,4 +1,29 @@
 ---
+- name: Ensure sysusers.d directory exists
+  ansible.builtin.file:
+    path: /etc/sysusers.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Declaratively create ASF system user
+  ansible.builtin.copy:
+    dest: /etc/sysusers.d/asf.conf
+    mode: "0644"
+    content: |
+      # Type Name  ID   GECOS                   Home directory Shell
+      u      asf   -    "ArchiSteamFarm Daemon" /app/config    -
+  notify: Apply sysusers
+
+- name: Flush handlers to create ASF user
+  ansible.builtin.meta: flush_handlers
+
+- name: Fetch newly created ASF user info
+  ansible.builtin.getent:
+    database: passwd
+    key: asf
+
 - name: Create unified configuration directory
   ansible.builtin.file:
     path: "{{ item }}"
@@ -14,8 +39,8 @@
   ansible.builtin.template:
     src: ASF.json.j2
     dest: /etc/asf/ASF.json
-    owner: "1000"
-    group: "1000"
+    owner: "{{ ansible_facts.getent_passwd['asf'][1] }}"
+    group: "{{ ansible_facts.getent_passwd['asf'][2] }}"
     mode: "0600"
     # Ensure changes via ASF Web UI aren't reverted
     force: false
@@ -44,6 +69,10 @@
     owner: root
     group: root
     mode: "0644"
+  vars:
+    # Inject the dynamically assigned system UID/GID into the container template
+    asf_user_id: "{{ ansible_facts.getent_passwd['asf'][1] }}"
+    asf_group_id: "{{ ansible_facts.getent_passwd['asf'][2] }}"
   loop:
     - ts-asf-data.volume
     - asf-data.volume

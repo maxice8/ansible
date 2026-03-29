@@ -13,25 +13,18 @@ ContainerName=asf
 
 # Attaches ASF to the Tailscale container's network namespace
 Network=container:ts-asf
-Environment=ASF_UID=1000
+
+# Tell Podman to natively run the process as our system user
+User={{ asf_user_id }}:{{ asf_group_id }}
 
 Volume=asf-data.volume:/app/config
 Volume=/etc/asf/ASF.json:/app/config/ASF.json
 
-# Permissions
-NoNewPrivileges=true
 DropCapability=all
-# Required to fix volume permissions and drop to ASF_UID
-AddCapability=CHOWN
-AddCapability=FOWNER
-AddCapability=DAC_OVERRIDE
-# Required for privilege dropping sequence
-AddCapability=SETUID
-AddCapability=SETGID
 ReadOnly=true
+
 Tmpfs=/tmp
-# ASF writes logs locally inside the app directory
-Tmpfs=/app/logs
+Mount=type=tmpfs,destination=/app/logs,tmpfs-mode=0755,chown=true
 
 [Service]
 Restart=always

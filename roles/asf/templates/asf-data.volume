@@ -1,2 +1,4 @@
 [Volume]
 # Persists all bot configs, logs, and database files created by ASF
+User={{ asf_user_id }}
+Group={{ asf_group_id }}
