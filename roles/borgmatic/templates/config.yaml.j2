@@ -28,6 +28,8 @@ exclude_patterns:
     - /host/run
     - /host/mnt
     - /host/tmp
+    # Ignore ephemeral filesystem
+    - /host/var/lib/containers/storage/overlay
 
 # Passphrase to unlock the encryption key with. Only use on
 # repositories that were initialized with passphrase/repokey/keyfile
