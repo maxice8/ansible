@@ -16,10 +16,10 @@
     mode: "0755"
   notify: Restart keep-vm-alive-image
 
-- name: Copy Dockerfile to build folder
+- name: Copy Containerfile to build folder
   ansible.builtin.copy:
-    src: Dockerfile
-    dest: /etc/keep-vm-alive/Dockerfile
+    src: Containerfile
+    dest: /etc/keep-vm-alive/Containerfile
     owner: root
     group: root
     mode: "0644"

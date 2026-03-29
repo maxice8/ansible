@@ -53,10 +53,10 @@
     state: directory
     dest: /etc/borgmatic
 
-- name: Copy Dockerfile to config folder
+- name: Copy Containerfile to config folder
   ansible.builtin.copy:
-    src: Dockerfile
-    dest: /etc/borgmatic/Dockerfile
+    src: Containerfile
+    dest: /etc/borgmatic/Containerfile
     owner: root
     group: root
     mode: "0644"

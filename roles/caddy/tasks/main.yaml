@@ -10,10 +10,10 @@
     - /etc/caddy
     - /var/log/caddy
 
-- name: Copy Dockerfile for custom build
+- name: Copy Containerfile for custom build
   ansible.builtin.copy:
-    src: Dockerfile
-    dest: /etc/caddy/Dockerfile
+    src: Containerfile
+    dest: /etc/caddy/Containerfile
     owner: root
     group: root
     mode: "0644"
