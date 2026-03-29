@@ -4,7 +4,13 @@
   when: ansible_facts.os_family == "Debian"
 - name: Import user creation tasks
   ansible.builtin.import_tasks: user.yaml
+  # On Fedora CoreOS we use Buthane
+  when: ansible_facts['distribution'] == 'Ubuntu'
 - name: Import ufw tasks
   ansible.builtin.import_tasks: ufw.yaml
+  # On Fedora CoreOS we use Buthane
+  when: ansible_facts['distribution'] == 'Ubuntu'
 - name: Import SSH tasks
   ansible.builtin.import_tasks: ssh.yaml
+  # On Fedora CoreOS these rules are already set by default
+  when: ansible_facts['distribution'] == 'Ubuntu'
