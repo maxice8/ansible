@@ -19,6 +19,12 @@ Environment=TSNET_FORCE_LOGIN=1
 # Volumes (Using the Podman named volume)
 Volume=tsidp-data.volume:/data
 
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+ReadOnly=true
+Tmpfs=/tmp
+
 [Service]
 Restart=always
 TimeoutStartSec=900
