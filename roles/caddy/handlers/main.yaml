@@ -3,7 +3,11 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Restart Caddy Build
+- name: Apply caddy tmpfiles
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/caddy.conf
+  changed_when: true
+
+- name: Rebuild caddy container
   ansible.builtin.systemd:
     name: caddy-build.service
     state: restarted

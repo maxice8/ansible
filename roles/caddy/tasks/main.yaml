@@ -1,14 +1,25 @@
 ---
-- name: Create Caddy directories
+- name: Ensure /etc/tmpfiles.d exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /etc/tmpfiles.d
     state: directory
     owner: root
     group: root
     mode: "0755"
-  loop:
-    - /etc/caddy
-    - /var/log/caddy
+
+- name: Configure Caddy tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/caddy.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      d /etc/caddy 0755 root root -
+      d /var/log/caddy 0755 root root -
+  notify: Apply caddy tmpfiles
+
+- name: Flush handlers to create Caddy directories
+  ansible.builtin.meta: flush_handlers
 
 - name: Copy Containerfile for custom build
   ansible.builtin.copy:
@@ -17,7 +28,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart Caddy Build
+  notify: Rebuild caddy container
 
 - name: Template Caddyfile
   ansible.builtin.template:
