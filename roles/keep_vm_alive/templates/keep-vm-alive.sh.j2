@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Ansible Injected Variable via host_vars
+HEARTBEAT_URL="{{ heartbeat_keep_vm_alive | default('') }}"
+
+# CONFIGURATION
+CPU_LOAD=25    # Target CPU load %
+RUN_TIME=45    # 45 Seconds
+SLEEP_TIME=255 # 4 Minutes 15 Seconds
+
+send_heartbeat() {
+    if [ -n "$HEARTBEAT_URL" ]; then
+        echo "Sending heartbeat..."
+        curl -fsS -m 5 --retry 3 "$HEARTBEAT_URL" > /dev/null 2>&1
+    fi
+}
+
+echo "Initializing containerized keep-vm-alive..."
+echo "Method: stress-ng (All Cores)"
+echo "Configuration: Cycle 5m | Load $CPU_LOAD% | Active ${RUN_TIME}s | Sleep ${SLEEP_TIME}s"
+
+while true; do
+    # 1. Send Heartbeat
+    send_heartbeat
+
+    # 2. Stress CPU
+    echo "Starting stress cycle..."
+    stress-ng --cpu 0 --cpu-load $CPU_LOAD --timeout $RUN_TIME --metrics-brief
+
+    # 3. Sleep
+    echo "Cycle finished. Sleeping for ${SLEEP_TIME}s..."
+    sleep $SLEEP_TIME
+done

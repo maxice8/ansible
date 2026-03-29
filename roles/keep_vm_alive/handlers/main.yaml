@@ -1,5 +1,14 @@
 ﻿---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart keep-vm-alive-image
+  ansible.builtin.systemd:
+    name: keep-vm-alive-build.service
+    state: restarted
+
 - name: Restart keep-vm-alive
-  ansible.builtin.service:
-    name: keep-vm-alive
+  ansible.builtin.systemd:
+    name: keep-vm-alive.service
     state: restarted

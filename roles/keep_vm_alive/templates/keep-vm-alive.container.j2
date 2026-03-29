@@ -1,0 +1,15 @@
+[Unit]
+Description=Oracle Cloud Reclamation Prevention (stress-ng)
+After=network-online.target keep-vm-alive-build.service
+Requires=keep-vm-alive-build.service
+
+[Container]
+Image=localhost/keep-vm-alive:latest
+ContainerName=keep-vm-alive
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

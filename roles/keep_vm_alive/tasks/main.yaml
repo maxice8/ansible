@@ -1,85 +1,57 @@
 ---
-- name: Install dependencies for keep-vm-alive
-  ansible.builtin.apt:
-    name:
-      - stress-ng # Required for multi-core load generation
-      - curl # Required for heartbeat
-    state: present
-
-- name: Install keep-vm-alive script
-  notify: Restart keep-vm-alive
-  ansible.builtin.copy:
+- name: Create build directory
+  ansible.builtin.file:
+    path: /etc/keep-vm-alive
+    state: directory
     owner: root
     group: root
     mode: "0755"
-    dest: /usr/local/bin/keep-vm-alive
-    content: |
-      #!/usr/bin/env bash
 
-      # Ansible Injected Variable via host_vars
-      HEARTBEAT_URL="{{ heartbeat_keep_vm_alive | default('') }}"
+- name: Template keep-vm-alive script to build folder
+  ansible.builtin.template:
+    src: keep-vm-alive.sh.j2
+    dest: /etc/keep-vm-alive/keep-vm-alive.sh
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart keep-vm-alive-image
 
-      # CONFIGURATION
-      # ----------------------------------------------------------------
-      # Total Cycle: 5 Minutes (Matches Pulsetic config)
-      # Active: 45 Seconds
-      # Sleep:  255 Seconds
-      # Duty Cycle: 15% (Safe: >5% ensures 95th percentile is captured)
-      # ----------------------------------------------------------------
-      CPU_LOAD=25    # Target CPU load %
-      RUN_TIME=45    # 45 Seconds
-      SLEEP_TIME=255 # 4 Minutes 15 Seconds
-
-      send_heartbeat() {
-          if [ -n "$HEARTBEAT_URL" ]; then
-              echo "Sending heartbeat..."
-              curl -fsS -m 5 --retry 3 "$HEARTBEAT_URL" > /dev/null 2>&1
-          fi
-      }
-
-      echo "Initializing keep-vm-alive..."
-      echo "Method: stress-ng (All Cores)"
-      echo "Configuration: Cycle 5m | Load $CPU_LOAD% | Active ${RUN_TIME}s | Sleep ${SLEEP_TIME}s"
-
-      while true; do
-          # 1. Send Heartbeat (Every 5 mins)
-          send_heartbeat
-
-          # 2. Stress CPU (Active Phase)
-          echo "Starting stress cycle..."
-          stress-ng --cpu 0 --cpu-load $CPU_LOAD --timeout $RUN_TIME --metrics-brief
-
-          # 3. Sleep (Idle Phase)
-          echo "Cycle finished. Sleeping for ${SLEEP_TIME}s..."
-          sleep $SLEEP_TIME
-      done
-
-- name: Create keep-vm-alive systemd service
+- name: Copy Dockerfile to build folder
   ansible.builtin.copy:
+    src: Dockerfile
+    dest: /etc/keep-vm-alive/Dockerfile
     owner: root
     group: root
     mode: "0644"
-    dest: /etc/systemd/system/keep-vm-alive.service
-    content: |
-      [Unit]
-      Description=Oracle Cloud Reclamation Prevention (stress-ng)
-      After=network.target
+  notify: Restart keep-vm-alive-image
 
-      [Service]
-      ExecStart=/usr/local/bin/keep-vm-alive
-      Type=simple
-      Restart=always
-      RestartSec=10
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
-      [Install]
-      WantedBy=multi-user.target
+- name: Deploy keep-vm-alive Quadlets
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - keep-vm-alive.build
+    - keep-vm-alive.container.j2
+  notify:
+    - Reload systemd
+    - Restart keep-vm-alive
 
-- name: Reload systemd daemon
+- name: Flush handlers to process removals and builds
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure keep-vm-alive service is enabled and started
   ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Enable keep-vm-alive service
-  ansible.builtin.service:
-    service: keep-vm-alive
+    name: keep-vm-alive.service
     state: started
     enabled: true
