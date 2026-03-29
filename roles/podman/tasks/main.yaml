@@ -6,6 +6,7 @@
     name: podman
     state: present
     update_cache: true
+  when: ansible_facts['distribution'] == 'Ubuntu'
 
 - name: Create podman-system-prune service
   ansible.builtin.copy:
