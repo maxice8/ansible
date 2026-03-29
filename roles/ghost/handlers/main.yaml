@@ -1,6 +1,0 @@
----
-- name: Restart Ghost
-  ansible.builtin.systemd:
-    daemon_reload: true
-    name: ghost.service
-    state: restarted

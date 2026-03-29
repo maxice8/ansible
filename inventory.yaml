@@ -19,9 +19,6 @@ servers:
         - whoami
         - syncthing
         - netdata
-        # Don't forget to set your domain to Full (strict) instead of the default Flexible
-        # to avoid eternal redirect loops
-        - ghost
         - tsidp
         - asf
       user_shell: /usr/bin/fish
@@ -29,4 +26,3 @@ servers:
       forgejo_port: 30002
       forgejo_ssh_port: 30022
       whoami_port: 30003
-      ghost_port: 30004

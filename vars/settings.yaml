@@ -33,13 +33,6 @@ caddy_crowdsec_api_key: ""
 # List of IPs which are to be trusted by Crowdsec
 crowdsec_trusted_ips: []
 
-# Domain name used by ghost, we do not use {{ domain_name }} that is
-# tied to inventory because we use a different domain
-ghost_domain_name: ""
-# Email and password used to shoot magic login links
-ghost_email_user: ""
-ghost_email_pass: ""
-
 # Webhook URL to send notifications on Discord
 netdata_discord_alarm_webhook_url: ""
 
