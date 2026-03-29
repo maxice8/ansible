@@ -7,6 +7,15 @@ Requires=keep-vm-alive-build.service
 Image=localhost/keep-vm-alive:latest
 ContainerName=keep-vm-alive
 
+# Change the execution context to our writable tmpfs
+WorkingDir=/tmp
+
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+ReadOnly=true
+Tmpfs=/tmp
+
 [Service]
 Restart=always
 TimeoutStartSec=900
