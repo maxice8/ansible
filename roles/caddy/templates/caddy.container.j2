@@ -15,6 +15,17 @@ Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
 Volume=caddy-data.volume:/data
 # Map host log directory so CrowdSec can still read logs
 Volume=/var/log/caddy:/var/log/caddy:rw
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+AddCapability=NET_BIND_SERVICE
+# Allow log rotation
+AddCapability=DAC_OVERRIDE
+AddCapability=FOWNER
+AddCapability=CHOWN
+ReadOnly=true
+Tmpfs=/tmp
+Tmpfs=/config
 
 [Service]
 Restart=always
