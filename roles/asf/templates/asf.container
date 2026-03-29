@@ -21,6 +21,13 @@ Volume=/etc/asf/ASF.json:/app/config/ASF.json
 # Permissions
 NoNewPrivileges=true
 DropCapability=all
+# Required to fix volume permissions and drop to ASF_UID
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+# Required for privilege dropping sequence
+AddCapability=SETUID
+AddCapability=SETGID
 ReadOnly=true
 Tmpfs=/tmp
 # ASF writes logs locally inside the app directory
