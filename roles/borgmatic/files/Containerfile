@@ -1,9 +1,17 @@
 FROM docker.io/library/alpine:latest
 
-# ADDED ca-certificates here
-RUN apk add --no-cache borgbackup openssh-client python3 pipx tzdata ca-certificates
+# Combine apk and pip steps to reduce image layers
+RUN apk add --no-cache \
+    borgbackup \
+    openssh-client \
+    python3 \
+    py3-pip \
+    tzdata \
+    ca-certificates && \
+    python3 -m venv /opt/borgmatic-venv && \
+    /opt/borgmatic-venv/bin/pip install --no-cache-dir "borgmatic[apprise]"
 
-# Install borgmatic with the Apprise Discord integration
-RUN pipx install --global borgmatic[apprise]
+# Add the venv to the path so 'borgmatic' is found automatically
+ENV PATH="/opt/borgmatic-venv/bin:$PATH"
 
 ENTRYPOINT ["borgmatic"]
