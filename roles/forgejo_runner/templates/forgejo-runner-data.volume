@@ -1,2 +1,4 @@
 [Volume]
 # Persists the runner registration (.runner file) and other state data
+User={{ forgejo_runner_user_id }}
+Group={{ forgejo_runner_group_id }}

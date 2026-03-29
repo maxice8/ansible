@@ -13,8 +13,8 @@ ContainerName=forgejo-runner
 # Attach to the Tailscale network namespace
 Network=container:ts-forgejo-runner
 
-# Run as the specific UID/GID
-User=1000:1000
+# Run securely natively as the dynamic UID/GID
+User={{ forgejo_runner_user_id }}:{{ forgejo_runner_group_id }}
 
 # Environment Variables
 Secret=forgejo_runner_token,type=env,target=FORGEJO_RUNNER_TOKEN
@@ -23,23 +23,20 @@ Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
 
 # Volume bind for data
 Volume=forgejo-runner-data.volume:/data
+
 # Custom Entrypoint Command
 Volume=/etc/forgejo-runner/config.yml:/data/config.yml:ro
 Volume=/etc/forgejo-runner/entrypoint.sh:/data/entrypoint.sh:ro
+
+# Map host users so the container resolves the dynamic UID correctly
+Volume=/etc/passwd:/etc/passwd:ro
+Volume=/etc/group:/etc/group:ro
 
 Exec=/bin/sh /data/entrypoint.sh
 
 # Permissions
 NoNewPrivileges=true
 DropCapability=all
-# Required for the entrypoint and privilege dropping
-AddCapability=CHOWN
-AddCapability=FOWNER
-AddCapability=DAC_OVERRIDE
-AddCapability=SETUID
-AddCapability=SETGID
-# Required if the runner needs to create nested namespaces for jobs
-AddCapability=SYS_CHROOT
 ReadOnly=true
 Tmpfs=/tmp
 

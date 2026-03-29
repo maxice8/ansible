@@ -1,4 +1,29 @@
 ---
+- name: Ensure sysusers.d directory exists
+  ansible.builtin.file:
+    path: /etc/sysusers.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Declaratively create Forgejo Runner system user
+  ansible.builtin.copy:
+    dest: /etc/sysusers.d/forgejo-runner.conf
+    mode: "0644"
+    content: |
+      # Type Name            ID   GECOS                   Home directory Shell
+      u      forgejo-runner  -    "Forgejo Runner Daemon" /data          -
+  notify: Apply sysusers
+
+- name: Flush handlers to create Forgejo Runner user
+  ansible.builtin.meta: flush_handlers
+
+- name: Fetch newly created Forgejo Runner user info
+  ansible.builtin.getent:
+    database: passwd
+    key: forgejo-runner
+
 - name: Create unified configuration directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -14,8 +39,9 @@
   ansible.builtin.template:
     src: config.yaml.j2
     dest: /etc/forgejo-runner/config.yml
-    owner: "1000"
-    group: "1000"
+    # Use dynamic IDs
+    owner: "{{ ansible_facts.getent_passwd['forgejo-runner'][1] }}"
+    group: "{{ ansible_facts.getent_passwd['forgejo-runner'][2] }}"
     mode: "0644"
   notify: Restart Forgejo Runner
 
@@ -23,8 +49,9 @@
   ansible.builtin.template:
     src: entrypoint.sh.j2
     dest: /etc/forgejo-runner/entrypoint.sh
-    owner: "1000"
-    group: "1000"
+    # Use dynamic IDs
+    owner: "{{ ansible_facts.getent_passwd['forgejo-runner'][1] }}"
+    group: "{{ ansible_facts.getent_passwd['forgejo-runner'][2] }}"
     mode: "0755"
   notify: Restart Forgejo Runner
 
@@ -85,6 +112,10 @@
     mode: "0644"
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
+  vars:
+    # Pass dynamic user IDs to the container and volume templates
+    forgejo_runner_user_id: "{{ ansible_facts.getent_passwd['forgejo-runner'][1] }}"
+    forgejo_runner_group_id: "{{ ansible_facts.getent_passwd['forgejo-runner'][2] }}"
   loop:
     - forgejo-runner-data.volume
     - runner.container.j2
