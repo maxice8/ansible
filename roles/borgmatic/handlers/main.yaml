@@ -3,7 +3,11 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Restart borgmatic-build
+- name: Apply borgmatic tmpfiles
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/borgmatic.conf
+  changed_when: true
+
+- name: Rebuild borgmatic container
   ansible.builtin.systemd:
     name: borgmatic-build.service
     state: restarted

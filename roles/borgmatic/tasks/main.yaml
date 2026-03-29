@@ -45,13 +45,18 @@
   register: borgmatic_install_key_output
   changed_when: "not 'is already configured' in borgmatic_install_key_output.stdout"
 
-- name: Create configuration directory
-  ansible.builtin.file:
+- name: Configure Borgmatic tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/borgmatic.conf
     owner: root
     group: root
-    mode: "0755"
-    state: directory
-    dest: /etc/borgmatic
+    mode: "0644"
+    content: |
+      d /etc/borgmatic 0755 root root -
+  notify: Apply borgmatic tmpfiles
+
+- name: Flush handlers to create Borgmatic directories
+  ansible.builtin.meta: flush_handlers
 
 - name: Copy Containerfile to config folder
   ansible.builtin.copy:
@@ -60,7 +65,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart borgmatic-build
+  notify: Rebuild borgmatic container
 
 - name: Install configuration from template
   ansible.builtin.template:
