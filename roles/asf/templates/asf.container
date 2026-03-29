@@ -18,6 +18,14 @@ Environment=ASF_UID=1000
 Volume=asf-data.volume:/app/config
 Volume=/etc/asf/ASF.json:/app/config/ASF.json
 
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+ReadOnly=true
+Tmpfs=/tmp
+# ASF writes logs locally inside the app directory
+Tmpfs=/app/logs
+
 [Service]
 Restart=always
 TimeoutStartSec=900

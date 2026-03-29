@@ -42,7 +42,9 @@
     - asf-data.volume
     - ts-asf.container.j2
     - asf.container
-  notify: Reload systemd and Restart ASF
+  notify:
+    - Reload systemd
+    - Restart ASF
 
 - name: Ensure ASF service is started
   ansible.builtin.systemd:

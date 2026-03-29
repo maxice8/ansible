@@ -16,6 +16,7 @@ Environment=TS_SERVE_CONFIG=/config/serve.json
 Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
 Environment=TS_HOSTNAME=asf
+Environment=TS_ACCEPT_DNS=true
 
 # Volumes
 Volume=ts-asf-data.volume:/var/lib/tailscale
@@ -23,9 +24,14 @@ Volume=ts-asf-data.volume:/var/lib/tailscale
 Volume=/etc/asf/serve.json:/config/serve.json:ro
 
 # Permissions
+NoNewPrivileges=true
+DropCapability=all
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
+ReadOnly=true
+Tmpfs=/tmp
+Tmpfs=/run
 
 # Healthcheck
 HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'
