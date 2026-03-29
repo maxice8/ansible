@@ -28,10 +28,27 @@ Environment=FORGEJO__service__REQUIRE_SIGNIN_VIEW=false
 Environment=FORGEJO__server__DOMAIN=git.{{ domain_name }}
 Environment=FORGEJO__server__ROOT_URL=https://git.{{ domain_name }}
 Environment=FORGEJO__server__SSH_DOMAIN=git.{{ domain_name }}
+# Listen on ports other than 22
+Environment=SSH_LISTEN_PORT={{ forgejo_ssh_port }}
+Environment=FORGEJO__server__SSH_PORT=22
 
 # Volumes
 Volume=forgejo-data.volume:/data
 Volume=/etc/localtime:/etc/localtime:ro
+
+# Permissions
+NoNewPrivileges=true
+DropCapability=all
+# Required to fix volume permissions on startup
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+# Required to drop privileges to the specified USER_UID/USER_GID
+AddCapability=SETUID
+AddCapability=SETGID
+# Required for OpenSSH privilege separation (chroot)
+AddCapability=SYS_CHROOT
+Tmpfs=/tmp
 
 [Service]
 Restart=always

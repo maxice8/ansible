@@ -14,7 +14,7 @@ HostName=git
 
 # Published Ports (Handling the mapping originally defined in Compose)
 PublishPort=127.0.0.1:{{ forgejo_port }}:3000
-PublishPort={{ forgejo_ssh_port }}:22
+PublishPort=22:{{ forgejo_ssh_port }}
 
 # Environment Variables
 Environment=TS_AUTHKEY={{ container_tsclient_key }}?ephemeral=false
@@ -29,9 +29,14 @@ Volume=ts-forgejo-data.volume:/var/lib/tailscale
 Volume=/etc/forgejo/serve.json:/config/serve.json:ro
 
 # Permissions
+NoNewPrivileges=true
+DropCapability=all
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
+ReadOnly=true
+Tmpfs=/tmp
+Tmpfs=/run
 
 # Healthcheck
 HealthCmd=tailscale status --peers=false --json | grep -q 'Online.*true'

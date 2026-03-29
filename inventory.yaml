@@ -27,6 +27,6 @@ servers:
       user_shell: /usr/bin/fish
       # Ports used by the services
       forgejo_port: 30002
-      forgejo_ssh_port: 22
+      forgejo_ssh_port: 30022
       whoami_port: 30003
       ghost_port: 30004
