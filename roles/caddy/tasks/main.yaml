@@ -1,44 +1,65 @@
 ---
-- name: Download Caddy GPG key
-  ansible.builtin.get_url:
-    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
-    dest: /root/caddy-stable.gpg
+- name: Create Caddy directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/caddy
+    - /var/log/caddy
+
+- name: Copy Dockerfile for custom build
+  ansible.builtin.copy:
+    src: Dockerfile
+    dest: /etc/caddy/Dockerfile
+    owner: root
+    group: root
     mode: "0644"
-    checksum: sha256:5791c2fb6b6e82feb5a69834dd2131f4bcc30af0faec37783b2dc1c5c224a82a
+  notify: Restart Caddy Build
 
-- name: Dearmor GPG key
-  ansible.builtin.command:
-    cmd: gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /root/caddy-stable.gpg
-    creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-
-- name: Add Caddy repository
-  ansible.builtin.get_url:
-    url: https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt
-    dest: /etc/apt/sources.list.d/caddy-stable.list
+- name: Template Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: root
+    group: root
     mode: "0644"
-    checksum: sha256:b27d8e3f353b8e77214793ab7dfa5111cd502978461c43b4e54e0833ba49e199
+  notify: Restart Caddy
 
-- name: Copy Caddyfile template to /etc/caddy
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Caddy Quadlets
   ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
-    dest: /etc/caddy/Caddyfile
-    src: Caddyfile.j2
-  notify: Restart Caddy
-
-- name: Install Caddy
-  ansible.builtin.apt:
-    name: caddy
-    state: present
-    update_cache: true
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - caddy-data.volume
+    - caddy.build
+    - caddy.container.j2
+  notify:
+    - Reload systemd
+    - Restart Caddy
 
 - name: Import crowdsec support
   ansible.builtin.include_tasks: crowdsec.yaml
   when: caddy_crowdsec_api_key != ""
 
-- name: Enable caddy service
-  ansible.builtin.service:
-    name: caddy
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Caddy service is started
+  ansible.builtin.systemd:
+    name: caddy.service
     state: started
     enabled: true

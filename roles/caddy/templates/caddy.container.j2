@@ -1,0 +1,24 @@
+[Unit]
+Description=Caddy Web Server
+After=network-online.target caddy-build.service
+Requires=caddy-build.service
+
+[Container]
+Image=localhost/caddy-custom:latest
+ContainerName=caddy
+
+# Essential for binding to 80/443 and proxying to localhost services
+Network=host
+
+# Configuration and Persistence
+Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+Volume=caddy-data.volume:/data
+# Map host log directory so CrowdSec can still read logs
+Volume=/var/log/caddy:/var/log/caddy:rw
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

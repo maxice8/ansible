@@ -1,7 +1,16 @@
 ---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart Caddy Build
+  ansible.builtin.systemd:
+    name: caddy-build.service
+    state: restarted
+
 - name: Restart Caddy
-  ansible.builtin.service:
-    name: caddy
+  ansible.builtin.systemd:
+    name: caddy.service
     state: restarted
 
 - name: Reload Crowdsec
