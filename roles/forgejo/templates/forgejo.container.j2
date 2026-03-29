@@ -6,7 +6,7 @@ BindsTo=ts-forgejo.service
 PartOf=ts-forgejo.service
 
 [Container]
-Image=codeberg.org/forgejo/forgejo:14
+Image=codeberg.org/forgejo/forgejo:14-rootless
 AutoUpdate=registry
 
 ContainerName=forgejo
@@ -14,9 +14,13 @@ ContainerName=forgejo
 # Attaches to Tailscale's network namespace
 Network=container:ts-forgejo
 
+# Run as an unprivileged 'forgejo' user
+User={{ forgejo_user_id }}:{{ forgejo_group_id }}
+Environment=USER_UID={{ forgejo_user_id }}
+Environment=USER_GID={{ forgejo_group_id }}
+Environment=USER=forgejo
+
 # Environment Variables
-Environment=USER_UID=1000
-Environment=USER_GID=1000
 Environment=FORGEJO__service__ENABLE_BASIC_AUTHENTICATION=false
 Environment=FORGEJO__service__SHOW_REGISTRATION_BUTTON=false
 Environment=FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
@@ -31,23 +35,18 @@ Environment=FORGEJO__server__SSH_DOMAIN=git.{{ domain_name }}
 # Listen on ports other than 22
 Environment=SSH_LISTEN_PORT={{ forgejo_ssh_port }}
 Environment=FORGEJO__server__SSH_PORT=22
+# Use Forgejo's built-in SSH server so we don't need root/sshd
+Environment=FORGEJO__server__START_SSH_SERVER=true
+Environment=FORGEJO__server__BUILTIN_SSH_SERVER_USER=git
 
 # Volumes
-Volume=forgejo-data.volume:/data
+Volume=forgejo-data.volume:/var/lib/gitea
 Volume=/etc/localtime:/etc/localtime:ro
 
 # Permissions
 NoNewPrivileges=true
 DropCapability=all
-# Required to fix volume permissions on startup
-AddCapability=CHOWN
-AddCapability=FOWNER
-AddCapability=DAC_OVERRIDE
-# Required to drop privileges to the specified USER_UID/USER_GID
-AddCapability=SETUID
-AddCapability=SETGID
-# Required for OpenSSH privilege separation (chroot)
-AddCapability=SYS_CHROOT
+ReadOnly=true
 Tmpfs=/tmp
 
 [Service]

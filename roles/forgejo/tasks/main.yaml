@@ -1,4 +1,29 @@
 ---
+- name: Ensure sysusers.d directory exists
+  ansible.builtin.file:
+    path: /etc/sysusers.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Declaratively create Forgejo system user
+  ansible.builtin.copy:
+    dest: /etc/sysusers.d/forgejo.conf
+    mode: "0644"
+    content: |
+      # Type Name     ID   GECOS             Home directory Shell
+      u      forgejo  -    "Forgejo Daemon"  /data          -
+  notify: Apply sysusers
+
+- name: Flush handlers to create Forgejo user
+  ansible.builtin.meta: flush_handlers
+
+- name: Fetch newly created Forgejo user info
+  ansible.builtin.getent:
+    database: passwd
+    key: forgejo
+
 - name: Create unified configuration directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -38,6 +63,10 @@
     mode: "0644"
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
+  vars:
+    # Inject the dynamically assigned system UID/GID into the container template
+    forgejo_user_id: "{{ ansible_facts.getent_passwd['forgejo'][1] }}"
+    forgejo_group_id: "{{ ansible_facts.getent_passwd['forgejo'][2] }}"
   loop:
     - forgejo-data.volume
     - forgejo.container.j2

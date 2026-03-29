@@ -1,2 +1,4 @@
 [Volume]
 # Persists Forgejo repositories, database, and SSH keys
+User={{ forgejo_user_id }}
+Group={{ forgejo_group_id }}
