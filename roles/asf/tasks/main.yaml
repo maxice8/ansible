@@ -18,6 +18,7 @@
     mode: "0644"
     content: |
       d /etc/asf 0755 root root -
+      Z /etc/asf - - - -
   notify: Apply asf tmpfiles
 
 - name: Declaratively create ASF system user

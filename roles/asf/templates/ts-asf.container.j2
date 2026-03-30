@@ -1,6 +1,5 @@
 [Unit]
 Description=Tailscale Sidecar for ASF
-After=network-online.target
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable
@@ -21,7 +20,7 @@ Environment=TS_ACCEPT_DNS=true
 # Volumes
 Volume=ts-asf-data.volume:/var/lib/tailscale
 # Centralized Tailscale Serve config
-Volume=/etc/asf/serve.json:/config/serve.json:ro
+Volume=/etc/asf/serve.json:/config/serve.json:ro,z
 
 # Permissions
 NoNewPrivileges=true
@@ -29,7 +28,6 @@ DropCapability=all
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
-ReadOnly=true
 Tmpfs=/tmp
 Tmpfs=/run
 

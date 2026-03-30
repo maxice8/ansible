@@ -1,6 +1,5 @@
 [Unit]
 Description=Netdata Host Monitoring
-After=network-online.target
 
 [Container]
 Image=docker.io/netdata/netdata:latest
@@ -30,7 +29,7 @@ Volume=/var/log:/host/var/log:ro
 Volume=/run/podman/podman.sock:/var/run/docker.sock:ro
 
 # Inject our Ansible-managed Discord alarm config directly into the container
-Volume=/etc/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
+Volume=/etc/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro,z
 
 [Service]
 Restart=always

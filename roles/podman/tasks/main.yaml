@@ -48,3 +48,9 @@
     name: podman-system-prune.timer
     enabled: true
     state: started
+
+- name: Enable Podman Auto-Update Timer
+  ansible.builtin.systemd:
+    name: podman-auto-update.timer
+    enabled: true
+    state: started

@@ -25,8 +25,8 @@ Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
 Volume=forgejo-runner-data.volume:/data
 
 # Custom Entrypoint Command
-Volume=/etc/forgejo-runner/config.yml:/data/config.yml:ro
-Volume=/etc/forgejo-runner/entrypoint.sh:/data/entrypoint.sh:ro
+Volume=/etc/forgejo-runner/config.yml:/data/config.yml:ro,z
+Volume=/etc/forgejo-runner/entrypoint.sh:/data/entrypoint.sh:ro,z
 
 # Map host users so the container resolves the dynamic UID correctly
 Volume=/etc/passwd:/etc/passwd:ro

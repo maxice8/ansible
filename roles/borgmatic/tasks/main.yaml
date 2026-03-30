@@ -53,6 +53,7 @@
     mode: "0644"
     content: |
       d /etc/borgmatic 0755 root root -
+      Z /etc/borgmatic - - - -
   notify: Apply borgmatic tmpfiles
 
 - name: Flush handlers to create Borgmatic directories

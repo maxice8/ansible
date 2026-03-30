@@ -13,6 +13,7 @@
     mode: "0644"
     content: |
       d /etc/netdata 0755 root root -
+      Z /etc/netdata - - - -
   notify: Apply netdata tmpfiles
 
 - name: Flush handlers to create Netdata directories

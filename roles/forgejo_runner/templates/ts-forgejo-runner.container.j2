@@ -1,6 +1,5 @@
 [Unit]
 Description=Tailscale Sidecar for Forgejo Runner
-After=network-online.target
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable
@@ -17,7 +16,7 @@ Environment=TS_USERSPACE=false
 Environment=TS_ACCEPT_DNS=true
 
 Volume=ts-forgejo-runner-data.volume:/var/lib/tailscale
-Volume=/etc/forgejo-runner/serve.json:/config/serve.json:ro
+Volume=/etc/forgejo-runner/serve.json:/config/serve.json:ro,z
 
 # Permissions
 NoNewPrivileges=true
@@ -25,7 +24,6 @@ DropCapability=all
 AddDevice=/dev/net/tun
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
-ReadOnly=true
 Tmpfs=/tmp
 
 # Healthcheck

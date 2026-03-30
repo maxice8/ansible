@@ -1,6 +1,5 @@
 [Unit]
 Description=Tailscale Sidecar for Syncthing
-After=network-online.target
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable
@@ -22,7 +21,7 @@ Environment=TS_ACCEPT_DNS=true
 
 # Volumes
 Volume=ts-syncthing-data.volume:/var/lib/tailscale
-Volume=/etc/syncthing/serve.json:/config/serve.json:ro
+Volume=/etc/syncthing/serve.json:/config/serve.json:ro,z
 
 # Permissions
 NoNewPrivileges=true

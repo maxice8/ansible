@@ -1,6 +1,6 @@
 [Unit]
 Description=Borgmatic Backup Container
-After=network-online.target borgmatic-build.service
+After=borgmatic-build.service
 Requires=borgmatic-build.service
 
 [Container]
@@ -17,7 +17,7 @@ Exec=--verbosity 1 --syslog-verbosity 1
 # Mount the entire host filesystem safely as read-only!
 Volume=/:/host:ro
 # Config files and cache
-Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro
+Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
 Volume=/root/.ssh:/root/.ssh:ro
 Volume=borgmatic-cache.volume:/root/.cache/borg
 Volume=borgmatic-config.volume:/root/.config/borg

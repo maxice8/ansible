@@ -18,7 +18,7 @@ Network=container:ts-asf
 User={{ asf_user_id }}:{{ asf_group_id }}
 
 Volume=asf-data.volume:/app/config
-Volume=/etc/asf/ASF.json:/app/config/ASF.json
+Volume=/etc/asf/ASF.json:/app/config/ASF.json:z
 
 DropCapability=all
 ReadOnly=true

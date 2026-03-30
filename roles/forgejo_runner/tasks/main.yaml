@@ -27,6 +27,7 @@
     mode: "0644"
     content: |
       d /etc/forgejo-runner 0755 root root -
+      Z /etc/forgejo-runner - - - -
   notify: Apply forgejo-runner tmpfiles
 
 - name: Flush handlers to create Forgejo Runner user

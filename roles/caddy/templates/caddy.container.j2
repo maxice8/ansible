@@ -1,6 +1,6 @@
 [Unit]
 Description=Caddy Web Server
-After=network-online.target caddy-build.service
+After=caddy-build.service
 Requires=caddy-build.service
 
 [Container]
@@ -17,10 +17,10 @@ Secret=caddy_crowdsec_api_key,type=env,target=CADDY_CROWDSEC_API_KEY
 Network=host
 
 # Configuration and Persistence
-Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
 Volume=caddy-data.volume:/data
 # Map host log directory so CrowdSec can still read logs
-Volume=/var/log/caddy:/var/log/caddy:rw
+Volume=/var/log/caddy:/var/log/caddy:rw,z
 # Permissions
 NoNewPrivileges=true
 DropCapability=all
