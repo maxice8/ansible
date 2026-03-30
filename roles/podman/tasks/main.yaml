@@ -8,6 +8,35 @@
     update_cache: true
   when: ansible_facts['distribution'] == 'Ubuntu'
 
+- name: Install uidmap for UserNS support
+  ansible.builtin.apt:
+    name: uidmap
+    state: present
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
+- name: Create 'containers' user for UserNS auto mapping
+  ansible.builtin.user:
+    name: containers
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Allocate massive subuid range for containers user
+  ansible.builtin.lineinfile:
+    path: /etc/subuid
+    regexp: '^containers:'
+    line: 'containers:1000000:1073741824'
+    create: true
+    mode: "0644"
+
+- name: Allocate massive subgid range for containers user
+  ansible.builtin.lineinfile:
+    path: /etc/subgid
+    regexp: '^containers:'
+    line: 'containers:1000000:1073741824'
+    create: true
+    mode: "0644"
+
 - name: Create podman-system-prune service
   ansible.builtin.copy:
     owner: root
