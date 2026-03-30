@@ -7,6 +7,9 @@ AutoUpdate=registry
 
 ContainerName=whoami
 
+# Enable isolated User Namespaces
+UserNS=auto
+
 # Bind to unprivileged port
 Exec=--port {{ whoami_port }}
 
