@@ -31,6 +31,8 @@ servers:
       ansible_user: core
       host_services:
         - caddy
+        - forgejo
+        - forgejo_runner
         - whoami
         - syncthing
         - netdata
