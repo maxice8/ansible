@@ -74,7 +74,7 @@
   containers.podman.podman_secret:
     name: ts_syncthing_key
     state: present
-    data: "{{ syncthing_tskey }}?ephemeral=false"
+    data: "{{ syncthing_tskey }}"
     force: true
 
 - name: Deploy Syncthing Quadlets
@@ -101,12 +101,42 @@
     name: syncthing.service
     state: started
 
-- name: Setup Heartbeat Cron for Syncthing
-  ansible.builtin.cron:
-    name: "Syncthing Heartbeat"
-    # Replaced docker with podman
-    job: >
-      podman inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' syncthing
-      | grep -q healthy && curl -fsS -m 5 --retry 3 {{ heartbeat_syncthing }} > /dev/null
-    minute: "*/5"
+- name: Deploy Syncthing Heartbeat Service and Timer
   when: (heartbeat_syncthing | default('')) != ""
+  block:
+    - name: Create Syncthing Heartbeat Service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/syncthing-heartbeat.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Syncthing Heartbeat
+
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/sh -c \
+            'podman inspect --format "{% raw %}{{ .State.Health.Status }}{% endraw %}" syncthing | \
+            grep -q healthy && \
+            curl -fsS -m 5 --retry 3 {{ heartbeat_syncthing }} > /dev/null'
+
+    - name: Create Syncthing Heartbeat Timer
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/syncthing-heartbeat.timer
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Syncthing Heartbeat Timer
+
+          [Timer]
+          OnCalendar=*:0/5
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Enable and start Syncthing Heartbeat Timer
+      ansible.builtin.systemd:
+        name: syncthing-heartbeat.timer
+        enabled: true
+        state: started
+        daemon_reload: true
