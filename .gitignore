@@ -1,5 +1,6 @@
 *.local.yaml
 .vscode
 
-# Do not commit into git the final config.ign file
-config.ign
+# Do not commit into git any of the generated ignition files
+*.bu
+*.ign
