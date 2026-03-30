@@ -17,7 +17,7 @@ Network=container:ts-asf
 # Tell Podman to natively run the process as our system user
 User={{ asf_user_id }}:{{ asf_group_id }}
 
-Volume=asf-data.volume:/app/config
+Volume=asf-data.volume:/app/config:U
 Volume=/etc/asf/ASF.json:/app/config/ASF.json:z
 
 DropCapability=all
