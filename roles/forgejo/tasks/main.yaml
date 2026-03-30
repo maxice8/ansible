@@ -53,6 +53,15 @@
     data: "{{ container_tsclient_key }}?ephemeral=false"
     force: true
 
+- name: Copy Tailscale serve.json
+  ansible.builtin.copy:
+    src: tailscale_serve.json
+    dest: /etc/forgejo/serve.json
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Tailscale
+
 - name: Deploy Tailscale Sidecar Quadlets
   ansible.builtin.template:
     owner: root
