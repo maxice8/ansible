@@ -1,0 +1,54 @@
+variant: fcos
+version: 1.5.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "${SSH_PUB_KEY}"
+storage:
+  files:
+    # --- DYNAMIC HOSTNAME ---
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: ${HOSTNAME}
+        
+    - path: /etc/NetworkManager/system-connections/public-network.nmconnection
+      mode: 0600
+      contents:
+        inline: |
+          [connection]
+          id=public-network
+          type=ethernet
+          
+          [ethernet]
+          mac-address=${MAC_ADDRESS}
+          
+          [ipv4]
+          address1=${IPV4_ADDRESS},${IPV4_GATEWAY}
+          dns=8.8.8.8;1.1.1.1;
+          method=manual
+          
+          [ipv6]
+          method=auto
+
+systemd:
+  units:
+    - name: install-python-and-tailscale.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer Python3 and Tailscale live via rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        ConditionPathExists=!/var/lib/pkgs-layered
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install -y --apply-live --idempotent --allow-inactive python3 tailscale
+        ExecStart=/usr/bin/systemctl enable --now tailscaled.service
+        ExecStart=/usr/bin/touch /var/lib/pkgs-layered
+
+        [Install]
+        WantedBy=multi-user.target
