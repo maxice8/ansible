@@ -1,17 +1,22 @@
 # Makefile
-.PHONY: all compile rebuild clean
+.PHONY: all clean
+.PRECIOUS: %.bu %.ign
 
-all: rebuild
+export SOPS_AGE_KEY_FILE ?= $(PWD)/.age-key.txt
 
-# 1. Inject variables and compile Butane to Ignition
-config.ign: config.bu
-	@echo "compiling ignition..."
-	@podman run --interactive --rm quay.io/coreos/butane:release --strict < config.bu > config.ign
+all:
+	@echo "Usage: make <hostname>"
 
-# 2. Run the existing rebuild script
-rebuild: config.ign
-	@./rebuild-fcos.sh
+%: %.ign
+	@echo "Done! $@.ign is ready for deployment."
 
-# 3. Clean up temporary files
+# 1. Changed .env.% to %.env
+%.ign: %.env config.bu.tmpl
+	@echo "=> Decrypting $*.env in memory..."
+	@# 2. Removed the --input-type flag, it's no longer needed!
+	@bash -c 'set -a; eval "$$(sops -d $*.env)"; set +a; envsubst < config.bu.tmpl > $*.bu'
+	@echo "=> Compiling $*.bu to $@..."
+	@podman run --interactive --rm quay.io/coreos/butane:release --strict < $*.bu > $@
+
 clean:
-	rm -f config.ign
+	rm -f *.bu *.ign
