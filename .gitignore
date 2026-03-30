@@ -1,6 +1,10 @@
+# .gitignore
 *.local.yaml
 .vscode
 
 # Do not commit into git any of the generated ignition files
 *.bu
 *.ign
+
+# This file should be present to decrypt stuff
+.age-key.txt
