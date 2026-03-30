@@ -43,7 +43,7 @@
       ansible.builtin.include_role:
         name: podman
       # Do not run on Fedora CoreOS, which has podman by default
-      when: svcs is not defined and ansible_facts['distribution'] == 'Ubuntu'
+      when: svcs is not defined
 
     # -----------------------------------------------------------
     # Service Loop
