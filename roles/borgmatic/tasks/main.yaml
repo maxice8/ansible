@@ -101,6 +101,7 @@
   loop:
     - borgmatic-cache.volume
     - borgmatic-config.volume
+    - borgmatic-state.volume
     - borgmatic.build
     - borgmatic.container.j2
   notify: Reload systemd

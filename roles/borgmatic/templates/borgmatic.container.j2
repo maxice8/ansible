@@ -21,6 +21,7 @@ Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
 Volume=/root/.ssh:/root/.ssh:ro
 Volume=borgmatic-cache.volume:/root/.cache/borg
 Volume=borgmatic-config.volume:/root/.config/borg
+Volume=borgmatic-state.volume:/root/.local/state/borgmatic
 
 NoNewPrivileges=true
 DropCapability=all
