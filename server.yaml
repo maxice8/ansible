@@ -2,6 +2,7 @@
 # Playbook for the server shu
 - name: Setup VPS
   hosts: all
+  become: true
 
   tasks:
     - name: Set configured services list

@@ -1,2 +1,5 @@
 *.local.yaml
 .vscode
+
+# Do not commit into git the final config.ign file
+config.ign
