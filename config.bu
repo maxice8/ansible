@@ -32,7 +32,9 @@ systemd:
         # --idempotent: Skips the operation if the request is already applied.
         # --allow-inactive: Permits packages that are already in the base layer in case Fedora adds Python3 to the core image later.
         ExecStart=/usr/bin/rpm-ostree install -y --apply-live --idempotent --allow-inactive python3 tailscale
-        
+        # Enable and start the tailscaled service immediately after installation to ensure I can 'tailscale up' when I SSH.
+        ExecStart=/usr/bin/systemctl enable --now tailscaled.service
+        # Create a lockfile to prevent this service from running again on future reboots, which would cause unnecessary delays.
         ExecStart=/usr/bin/touch /var/lib/pkgs-layered
 
         [Install]
