@@ -14,3 +14,5 @@
   ansible.builtin.import_tasks: ssh.yaml
   # On Fedora CoreOS these rules are already set by default
   when: ansible_facts['distribution'] == 'Ubuntu'
+- name: Import Tailscale tasks
+  ansible.builtin.import_tasks: tailscale.yaml

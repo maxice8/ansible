@@ -1,0 +1,45 @@
+- name: Apply Tailscale Subnet Router & Exit Node Optimizations
+  block:
+    - name: Enable IPv4 forwarding
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_file: /etc/sysctl.d/99-tailscale.conf
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Enable IPv6 forwarding
+      ansible.posix.sysctl:
+        name: net.ipv6.conf.all.forwarding
+        value: '1'
+        sysctl_file: /etc/sysctl.d/99-tailscale.conf
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Deploy Tailscale UDP GRO optimization service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/tailscale-gro.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Optimize Tailscale UDP GRO forwarding
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          # Dynamically grab the default route interface and apply ethtool optimizations
+          ExecStart=/bin/sh -c 'NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " "); /usr/sbin/ethtool -K $NETDEV rx-udp-gro-forwarding on rx-gro-list off'
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start Tailscale GRO optimization service
+      ansible.builtin.systemd:
+        name: tailscale-gro.service
+        enabled: true
+        state: started
+        daemon_reload: true
