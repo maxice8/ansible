@@ -37,7 +37,7 @@ ReadOnly=true
 Tmpfs=/tmp
 
 # Healthcheck using shell to properly execute the pipe command
-HealthCmd=/bin/sh -c "curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1"
+HealthCmd=CMD-SHELL curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1
 HealthInterval=15s
 HealthTimeout=10s
 HealthRetries=3
