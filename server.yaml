@@ -15,14 +15,6 @@
         # Otherwise, default to configured_services.
         services: "{{ svcs.split(',') | map('trim') | list if svcs is defined else configured_services }}"
 
-    - name: Get DEB architecture
-      ansible.builtin.command: dpkg --print-architecture
-      register: deb_architecture
-      check_mode: false
-      changed_when: false
-      # On Fedora CoreOS we use Buthane
-      when: ansible_facts['distribution'] == 'Ubuntu'
-
     - name: Load vars/settings.local.yaml
       delegate_to: localhost
       ansible.builtin.include_vars:

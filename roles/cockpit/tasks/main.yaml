@@ -1,15 +1,4 @@
 ---
-- name: Install Cockpit and dependencies
-  ansible.builtin.apt:
-    name:
-      - cockpit
-      - cockpit-podman
-    state: present
-    update_cache: true
-  # On Fedora CoreOS we will install using rpm-ostree, or make our own
-  # bootable container image, whichever I find better when I get to it
-  when: ansible_facts['distribution'] == 'Ubuntu'
-
 - name: Configure Cockpit Origins and Proxy Headers
   ansible.builtin.copy:
     dest: /etc/cockpit/cockpit.conf

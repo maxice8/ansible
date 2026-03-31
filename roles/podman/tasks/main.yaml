@@ -1,19 +1,6 @@
 ---
 # podman/tasks/main.yaml
 
-- name: Install Podman
-  ansible.builtin.apt:
-    name: podman
-    state: present
-    update_cache: true
-  when: ansible_facts['distribution'] == 'Ubuntu'
-
-- name: Install uidmap for UserNS support
-  ansible.builtin.apt:
-    name: uidmap
-    state: present
-  when: ansible_facts['distribution'] == 'Ubuntu'
-
 - name: Create 'containers' user for UserNS auto mapping
   ansible.builtin.user:
     name: containers
