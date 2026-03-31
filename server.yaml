@@ -33,10 +33,9 @@
     # Base Setup (skipped if svcs is provided)
     # -----------------------------------------------------------
 
-    - name: Setup User, SSH, and UFW (Base)
+    - name: Setup Tailscale optimizations (Base)
       ansible.builtin.include_role:
-        name: common
-      # Only run this explicitly if we are NOT overriding the service list
+        name: tailscale
       when: svcs is not defined
 
     - name: Setup podman (Base)
