@@ -1,8 +1,5 @@
 servers:
   vars:
-    ansible_user: root
-    username: max
-    user_shell: /bin/bash
     group_services:
       - borgmatic
     # Change this to the name of the tailscale network
@@ -12,20 +9,9 @@ servers:
   hosts:
     mika:
       host_services:
-        - caddy
         - keep_vm_alive
-        - forgejo
-        - forgejo_runner
-        - whoami
-        - syncthing
-        - netdata
-        - tsidp
-        - asf
-      user_shell: /usr/bin/fish
-      # Ports used by the services
-      forgejo_port: 30002
-      forgejo_ssh_port: 30022
-      whoami_port: 30003
+      # Let's remove group_services for now while we rework what borgmatic backups
+      group_services: []
     ryuu:
       # Unlike mika, ryuu is running Fedora CoreOS, so we need to use the core user instead of root
       ansible_user: core
@@ -42,5 +28,3 @@ servers:
       whoami_port: 30001
       forgejo_port: 30002
       forgejo_ssh_port: 30022
-      # Let's remove group_services for now while we rework what borgmatic backups
-      group_services: []
