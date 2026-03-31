@@ -46,3 +46,9 @@ forgejo_runner_token: ""
 # ansible/vars/settings.yaml (Append to the bottom)
 # Password for the ArchiSteamFarm Web UI (IPC)
 asf_ipc_password: ""
+
+# These are URLs for heartbeats to be sent to HetrixTools, they are used to monitor the uptime of the services
+# that are not exposed to the public internet and thus cannot be monitored by external services.
+heartbeat_keep_vm_alive: ""
+heartbeat_syncthing: ""
+heartbeat_netdata: ""

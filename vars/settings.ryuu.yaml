@@ -18,6 +18,8 @@ asf_ipc_password: ENC[AES256_GCM,data:8aNvNz+bqRvuescrcJwaZX5r3V7LVvnX6kyBu0Rkn4
 max_ssh_public_key: ENC[AES256_GCM,data:l/3S8BulW9Kn8qirwU7BbVH8lZtAB0AbG5hj3pUvOW4702S5O6eg/iGGtNQsDZr4y/kI0GH9uQgGDQIRfZOHx4RgBqwawd16Jw6yaVYWm9mm/vPY0J+t4OE=,iv:2FqLDxR1zIUjEGKzK8kMPeeHVxTrV1zYhGbRDjYRT6U=,tag:B+z81NYFKzKHeJP0pIQ8hA==,type:str]
 #ENC[AES256_GCM,data:429nu1ym+lLgvHeq9VjQhIqlPpg=,iv:YjniHRGvuEIN8JYZYwsfrID3b6CeCjriN8BdpUEICJ8=,tag:TOeyNgAjooezNExBCSPlHA==,type:comment]
 whoami_port: ENC[AES256_GCM,data:8uTkZTQ=,iv:Vi9urfE0Vv+m1Y05IZ8Fjq/umogn1PEEl+CDlO7crHA=,tag:gQQ2l5WgFEdJszVfc0K0UQ==,type:int]
+heartbeat_syncthing: ENC[AES256_GCM,data:RwjLB0d0X/J2gZijSiMufP60jeDrxD/6rNmmh4DKzXhRinxTnvTx/jlFyMxOug/OSKnq601eVAfAFuz7cOaWXrQ=,iv:3uMjcnOuQe+Fk/MF05b+fQqzb+lGxvwB9ERFA3tgzL0=,tag:7/uduYStLqUXceEzo9lNzQ==,type:str]
+heartbeat_netdata: ENC[AES256_GCM,data:Tl5NeFhZLJR4YhS9E0ga97lyWoAs1qO09XOtNRn0tW+Ekd0cmNX5Dx9pIcutyfVBhvLxh2f3wJfJe4am+GKgreI=,iv:nAEol9+BO2uFIoXqU/d8PVLEwAAdXpfDq57o5tDPRzY=,tag:HJhaKPiuPxNb4Wif49f0AQ==,type:str]
 sops:
     age:
         - recipient: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
@@ -29,7 +31,7 @@ sops:
             SXhmdGE5TmI1VmFBTTBmZzVkSlFqQzgKelHnR+Mi29zU4Rfaaued59XIJxJho99i
             0yPYHBTRfYh/BCRXM8t+kf0IKQ+2dbhWqPZnyULkD6WmNkdk40KfpQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-03-31T09:29:54Z"
-    mac: ENC[AES256_GCM,data:TRzRB6FcJvE67Xb304FDn/PXaCcTdzEnw02iByQjedi6TCNisbEw2+YbPHLmajhM7H2PpxOcxKYyCkQW6tmzB5jgdxyHFKMf362PN47+YZLQ5jLpDLMHjDzT3lBpNLkRalTm0ugzHfiJ3ojTjyDYHfu8xDDy2QtQ7YbPqNx65gI=,iv:F2rEAJK3VrNNv1tn3NUa0mFWUWOOb+n5XLjiQErsmgw=,tag:akd6//ydP2W0emXBbNTEsg==,type:str]
+    lastmodified: "2026-03-31T19:20:10Z"
+    mac: ENC[AES256_GCM,data:7iPGyhSXGf5cTFYAyEMCFnGyULhs+wrP7b3wJr9YxgfbXKQo7fQg2CncPVqM2e2TQLbAw3s04dhHfVtsWuxU54KapW4DmK7+Zlmzyi9G1cWkfdo3a8aiYLi/OgG9cIIQFhARh2X8vnSptK05Y+vr1J2VaMK+tuThDDWPNVZtCm0=,iv:xjNTijOCmwNs3Gm+W7/1b7VzXL/aRAVxsgyF5A64hGI=,tag:RETZ8omGRs3zgduhdByiUA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.12.2

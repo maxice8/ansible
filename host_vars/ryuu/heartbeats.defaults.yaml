@@ -1,5 +1,0 @@
-# Public Skeleton for Heartbeat URLs
-# Real values are in heartbeats.local.yaml (which are gitignored)
-
-heartbeat_syncthing: ""
-heartbeat_netdata: ""
