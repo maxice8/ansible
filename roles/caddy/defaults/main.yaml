@@ -1,2 +1,3 @@
 ---
 caddy_crowdsec_api_key: ""
+caddy_cs_firewall_bouncer_key: ""

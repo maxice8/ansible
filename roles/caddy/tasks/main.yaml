@@ -87,4 +87,4 @@
   ansible.builtin.include_tasks: crowdsec-firewall-bouncer.yaml
   when:
     - caddy_crowdsec_api_key != ""
-    - cs_firewall_bouncer_key != ""
+    - caddy_cs_firewall_bouncer_key != ""
