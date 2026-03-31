@@ -53,7 +53,7 @@ systemd:
         ExecStart=/usr/bin/rpm-ostree install -y --idempotent --allow-inactive \
           python3 tailscale \
           cockpit-ws cockpit-system cockpit-podman \
-          cockpit-ostree cockpit-selinux cockpit-networkmanager cockpit-storaged
+          cockpit-ostree cockpit-selinux cockpit-networkmanager cockpit-storaged cockpit-files
 
         ExecStart=/usr/bin/touch /var/lib/pkgs-layered
         ExecStart=/usr/bin/systemctl reboot
