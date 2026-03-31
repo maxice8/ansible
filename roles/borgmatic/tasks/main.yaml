@@ -34,6 +34,7 @@
       set -euo pipefail
       podman run --rm \
         --network host \
+        --security-opt label=disable \
         -v /root/.ssh:/mnt/ssh:ro \
         -e SSHPASS="{{ borgmatic_ssh_password }}" \
         docker.io/library/alpine:latest sh -c \
@@ -117,6 +118,37 @@
 
 - name: Flush handlers to process removals and builds
   ansible.builtin.meta: flush_handlers
+
+- name: Check if Borg repository is already initialized
+  ansible.builtin.command:
+    cmd: >
+      podman run --rm
+      --network host
+      --security-opt label=disable
+      --secret borg_repository_passphrase,type=env,target=BORG_PASSPHRASE
+      -v /etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
+      -v /root/.ssh:/root/.ssh:ro
+      -v borgmatic-config.volume:/root/.config/borg
+      localhost/borgmatic:latest info
+  register: borgmatic_repo_check
+  changed_when: false
+  # We expect this to fail (return non-zero) if the repo doesn't exist yet
+  failed_when: false
+
+- name: Initialize Borg repository
+  ansible.builtin.command:
+    cmd: >
+      podman run --rm
+      --network host
+      --security-opt label=disable
+      --secret borg_repository_passphrase,type=env,target=BORG_PASSPHRASE
+      -v /etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
+      -v /root/.ssh:/root/.ssh:ro
+      -v borgmatic-config.volume:/root/.config/borg
+      localhost/borgmatic:latest init --encryption repokey
+  # Only run the initialization if the 'info' command failed
+  when: borgmatic_repo_check.rc != 0
+  changed_when: true
 
 - name: Enable borgmatic timer
   ansible.builtin.systemd:

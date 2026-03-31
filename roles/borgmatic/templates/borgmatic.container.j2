@@ -14,8 +14,13 @@ Network=host
 # Flags passed to the ENTRYPOINT
 Exec=--verbosity 1 --syslog-verbosity 1
 
-# Mount the entire host filesystem safely as read-only!
-Volume=/:/host:ro
+# Disable SELinux labeling so Borgmatic can read Podman's internal volume directory
+SecurityLabelDisable=true
+
+# Mount ONLY the permanent pieces of the server
+Volume=/var/lib/containers/storage/volumes:/source/volumes:ro
+Volume=/etc:/source/etc:ro
+
 # Config files and cache
 Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
 Volume=/root/.ssh:/root/.ssh:ro
@@ -25,9 +30,7 @@ Volume=borgmatic-state.volume:/root/.local/state/borgmatic
 
 NoNewPrivileges=true
 DropCapability=all
-# Allows reading files regardless of UID/GID on the host mount
 AddCapability=DAC_READ_SEARCH
-# Required for SSH connection handling
 AddCapability=NET_RAW
 ReadOnly=true
 Tmpfs=/tmp
