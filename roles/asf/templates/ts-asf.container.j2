@@ -1,5 +1,7 @@
 [Unit]
 Description=Tailscale Sidecar for ASF
+Wants=asf.service
+Before=asf.service
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable

@@ -1,5 +1,7 @@
 [Unit]
 Description=Tailscale Sidecar for Forgejo
+Wants=forgejo.service
+Before=forgejo.service
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable

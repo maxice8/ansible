@@ -1,5 +1,7 @@
 [Unit]
 Description=Tailscale Sidecar for Syncthing
+Wants=syncthing.service
+Before=syncthing.service
 
 [Container]
 Image=docker.io/tailscale/tailscale:stable
