@@ -1,23 +1,16 @@
 ---
-- name: Install caddy-crowdsec-bouncer
-  ansible.builtin.command:
-    cmd: caddy add-package github.com/hslatman/caddy-crowdsec-bouncer
-  register: caddy_result
-  changed_when: "'Error: package is already added' not in caddy_result.stderr"
-  notify: Restart Caddy
-  failed_when:
-    - caddy_result.rc != 0
-    - "'Error: package is already added' not in caddy_result.stderr"
-
-- name: Create /etc/crowdsec/acquis.d
+- name: Create custom CrowdSec config directories
   ansible.builtin.file:
+    path: "{{ item }}"
     owner: root
     group: root
     mode: "0755"
     state: directory
-    dest: /etc/crowdsec/acquis.d
+  loop:
+    - /opt/crowdsec-custom/acquis.d
+    - /opt/crowdsec-custom/parsers
 
-- name: Create /etc/crowdsec/acquis.d/caddy.yaml
+- name: Create /opt/crowdsec-custom/acquis.d/caddy.yaml
   ansible.builtin.copy:
     owner: root
     group: root
@@ -27,12 +20,12 @@
         - /var/log/caddy/*.log
       labels:
         type: caddy
-    dest: /etc/crowdsec/acquis.d/caddy.yaml
+    dest: /opt/crowdsec-custom/acquis.d/caddy.yaml
   notify: Reload Crowdsec
 
 - name: Whitelist static trusted IPs in CrowdSec
   ansible.builtin.copy:
-    dest: /etc/crowdsec/parsers/s02-enrich/ansible-whitelist-static.yaml
+    dest: /opt/crowdsec-custom/parsers/ansible-whitelist-static.yaml
     owner: root
     group: root
     mode: "0644"
@@ -43,9 +36,11 @@
       whitelist:
         reason: "Trusted via Ansible (Static)"
         ip:
-          {{ crowdsec_trusted_ips | to_nice_yaml(indent=2) | indent(10) }}
-  notify: Reload Crowdsec
+      {% for ip in crowdsec_trusted_ips %}
+          - "{{ ip }}"
+      {% endfor %}
   when: crowdsec_trusted_ips | default([]) | length > 0
+  notify: Reload Crowdsec
 
 - name: Get current controller public IP
   ansible.builtin.uri:
@@ -65,7 +60,7 @@
 
 - name: Whitelist controller IP in CrowdSec (Hostname Versioned)
   ansible.builtin.copy:
-    dest: "/etc/crowdsec/parsers/s02-enrich/ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}.yaml"
+    dest: "/opt/crowdsec-custom/parsers/ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}.yaml"
     owner: root
     group: root
     mode: "0644"
@@ -77,6 +72,5 @@
         reason: "Trusted via Ansible ({{ caddy_controller_hostname_result.stdout }})"
         ip:
           - "{{ caddy_controller_ip_result.content }}"
-  notify: Reload Crowdsec
   when:
     - caddy_controller_ip_result.content is defined
