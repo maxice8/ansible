@@ -27,7 +27,6 @@
     mode: "0644"
     content: |
       d /etc/syncthing 0755 root root -
-      Z /etc/syncthing - - - -
   notify: Apply syncthing tmpfiles
 
 # Force Ansible to run the notified handler IMMEDIATELY

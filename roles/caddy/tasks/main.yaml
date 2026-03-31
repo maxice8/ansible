@@ -16,8 +16,6 @@
     content: |
       d /etc/caddy 0755 root root -
       d /var/log/caddy 0755 root root -
-      Z /etc/caddy - - - -
-      Z /var/log/caddy - - - -
   notify: Apply caddy tmpfiles
 
 - name: Flush handlers to create Caddy directories
