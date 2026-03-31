@@ -7,10 +7,10 @@
     mode: "0755"
     state: directory
   loop:
-    - /opt/crowdsec-custom/acquis.d
-    - /opt/crowdsec-custom/parsers
+    - /etc/crowdsec-custom/acquis.d
+    - /etc/crowdsec-custom/parsers
 
-- name: Create /opt/crowdsec-custom/acquis.d/caddy.yaml
+- name: Create /etc/crowdsec-custom/acquis.d/caddy.yaml
   ansible.builtin.copy:
     owner: root
     group: root
@@ -20,12 +20,12 @@
         - /var/log/caddy/*.log
       labels:
         type: caddy
-    dest: /opt/crowdsec-custom/acquis.d/caddy.yaml
+    dest: /etc/crowdsec-custom/acquis.d/caddy.yaml
   notify: Reload Crowdsec
 
 - name: Whitelist static trusted IPs in CrowdSec
   ansible.builtin.copy:
-    dest: /opt/crowdsec-custom/parsers/ansible-whitelist-static.yaml
+    dest: /etc/crowdsec-custom/parsers/ansible-whitelist-static.yaml
     owner: root
     group: root
     mode: "0644"
@@ -60,7 +60,7 @@
 
 - name: Whitelist controller IP in CrowdSec (Hostname Versioned)
   ansible.builtin.copy:
-    dest: "/opt/crowdsec-custom/parsers/ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}.yaml"
+    dest: "/etc/crowdsec-custom/parsers/ansible-whitelist-{{ caddy_controller_hostname_result.stdout }}.yaml"
     owner: root
     group: root
     mode: "0644"
@@ -74,3 +74,28 @@
           - "{{ caddy_controller_ip_result.content }}"
   when:
     - caddy_controller_ip_result.content is defined
+  notify: Reload Crowdsec
+
+- name: Deploy CrowdSec Quadlets
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - crowdsec-data.volume
+    - crowdsec-config.volume
+    - crowdsec.container.j2
+  notify:
+    - Reload systemd
+    - Reload Crowdsec
+
+- name: Flush handlers for CrowdSec
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure CrowdSec service is started
+  ansible.builtin.systemd:
+    name: crowdsec.service
+    state: started
+    enabled: true

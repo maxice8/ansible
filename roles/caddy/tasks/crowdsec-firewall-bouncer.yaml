@@ -1,0 +1,49 @@
+---
+- name: Ensure /etc/crowdsec exists
+  ansible.builtin.file:
+    path: /etc/crowdsec
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create Firewall Bouncer base config
+  ansible.builtin.copy:
+    dest: /etc/crowdsec/crowdsec-firewall-bouncer.yaml
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      mode: ${BACKEND}
+      pid_dir: /var/run/
+      update_frequency: 10s
+      daemonize: false
+      log_mode: stdout
+      log_level: info
+      api_url: ${API_URL}
+      api_key: ${API_KEY}
+      disable_ipv6: ${DISABLE_IPV6}
+      iptables_chains:
+        - INPUT
+        - FORWARD
+  notify: Restart Firewall Bouncer
+
+- name: Deploy CrowdSec Firewall Bouncer Quadlet
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: "/etc/containers/systemd/cs-firewall.container"
+    src: cs-firewall.container.j2
+  notify:
+    - Reload systemd
+    - Restart Firewall Bouncer
+
+- name: Flush handlers for Firewall Bouncer
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure CrowdSec Firewall Bouncer service is started
+  ansible.builtin.systemd:
+    name: cs-firewall.service
+    state: started
+    enabled: true

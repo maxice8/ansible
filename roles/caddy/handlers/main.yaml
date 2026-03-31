@@ -21,3 +21,8 @@
   ansible.builtin.systemd:
     name: crowdsec.service
     state: restarted
+
+- name: Restart Firewall Bouncer
+  ansible.builtin.systemd:
+    name: cs-firewall.service
+    state: restarted

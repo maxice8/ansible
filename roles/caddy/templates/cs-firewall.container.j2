@@ -1,0 +1,32 @@
+[Unit]
+Description=CrowdSec Firewall Bouncer
+After=crowdsec.service network-online.target
+Requires=crowdsec.service
+
+[Container]
+Image=ghcr.io/shgew/cs-firewall-bouncer-docker:latest
+ContainerName=cs-firewall-bouncer
+AutoUpdate=registry
+
+Network=host
+
+AddCapability=NET_ADMIN
+AddCapability=NET_RAW
+
+# Connect to the local CrowdSec Engine
+Environment=API_URL=http://127.0.0.1:8080
+Environment=API_KEY={{ cs_firewall_bouncer_key }}
+
+# Force the bouncer to use raw iptables since firewalld is missing
+Environment=BACKEND=iptables
+Environment=DISABLE_IPV6=true
+
+# Mount the base config file required by the container
+Volume=/etc/crowdsec/crowdsec-firewall-bouncer.yaml:/config/crowdsec-firewall-bouncer.yaml:ro,z
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

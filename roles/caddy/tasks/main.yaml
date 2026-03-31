@@ -72,27 +72,7 @@
     - Reload systemd
     - Restart Caddy
 
-- name: Deploy CrowdSec Quadlets
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: "0644"
-    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
-    src: "{{ item }}"
-  loop:
-    - crowdsec-data.volume
-    - crowdsec-config.volume
-    - crowdsec.container.j2
-  notify:
-    - Reload systemd
-    - Reload Crowdsec
-  when: caddy_crowdsec_api_key != ""
-
-- name: Import crowdsec support
-  ansible.builtin.include_tasks: crowdsec.yaml
-  when: caddy_crowdsec_api_key != ""
-
-- name: Flush handlers
+- name: Flush handlers for Caddy
   ansible.builtin.meta: flush_handlers
 
 - name: Ensure Caddy service is started
@@ -101,9 +81,12 @@
     state: started
     enabled: true
 
-- name: Ensure CrowdSec service is started
-  ansible.builtin.systemd:
-    name: crowdsec.service
-    state: started
-    enabled: true
+- name: Import CrowdSec Support
+  ansible.builtin.include_tasks: crowdsec.yaml
   when: caddy_crowdsec_api_key != ""
+
+- name: Import CrowdSec Firewall Bouncer Support
+  ansible.builtin.include_tasks: crowdsec-firewall-bouncer.yaml
+  when:
+    - caddy_crowdsec_api_key != ""
+    - cs_firewall_bouncer_key != ""

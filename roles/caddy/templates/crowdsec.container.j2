@@ -22,12 +22,12 @@ Environment=COLLECTIONS=crowdsecurity/caddy
 Volume=crowdsec-data.volume:/var/lib/crowdsec/data
 Volume=crowdsec-config.volume:/etc/crowdsec
 
-# Share Caddy logs (lowercase 'z' sets a shared SELinux context so both Caddy and CrowdSec can read/write)
+# Share Caddy logs
 Volume=/var/log/caddy:/var/log/caddy:ro,z
 
-# Inject Ansible custom configurations
-Volume=/opt/crowdsec-custom/acquis.d/caddy.yaml:/etc/crowdsec/acquis.d/caddy.yaml:ro,z
-Volume=/opt/crowdsec-custom/parsers:/etc/crowdsec/parsers/s02-enrich/ansible:ro,z
+# Inject Ansible custom configurations from /etc
+Volume=/etc/crowdsec-custom/acquis.d/caddy.yaml:/etc/crowdsec/acquis.d/caddy.yaml:ro,z
+Volume=/etc/crowdsec-custom/parsers:/etc/crowdsec/parsers/s02-enrich/ansible:ro,z
 
 [Service]
 Restart=always

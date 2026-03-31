@@ -32,6 +32,8 @@ borgmatic_discord_hook: ""
 caddy_crowdsec_api_key: ""
 # List of IPs which are to be trusted by Crowdsec
 crowdsec_trusted_ips: []
+# API Key to crowdsec firewall bouncer
+cs_firewall_bouncer_key: ""
 
 # Webhook URL to send notifications on Discord
 netdata_discord_alarm_webhook_url: ""
