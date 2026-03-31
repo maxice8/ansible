@@ -23,6 +23,22 @@
     dest: /etc/crowdsec-custom/acquis.d/caddy.yaml
   notify: Reload Crowdsec
 
+- name: Whitelist Tailscale network in CrowdSec
+  ansible.builtin.copy:
+    dest: /etc/crowdsec-custom/parsers/ansible-whitelist-tailscale.yaml
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # This file is auto-generated and will be overwritten by ansible.
+      name: ansible-whitelist-tailscale
+      description: "Whitelist for Tailscale CGNAT network"
+      whitelist:
+        reason: "Trusted via Ansible (Tailscale)"
+        cidr:
+          - "100.64.0.0/10"
+  notify: Reload Crowdsec
+
 - name: Whitelist static trusted IPs in CrowdSec
   ansible.builtin.copy:
     dest: /etc/crowdsec-custom/parsers/ansible-whitelist-static.yaml
