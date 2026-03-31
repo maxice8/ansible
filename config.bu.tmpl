@@ -34,11 +34,11 @@ storage:
 
 systemd:
   units:
-    - name: install-python-and-tailscale.service
+    - name: layer-system-packages.service
       enabled: true
       contents: |
         [Unit]
-        Description=Layer Python3 and Tailscale live via rpm-ostree
+        Description=Layer system packages live via rpm-ostree
         Wants=network-online.target
         After=network-online.target
         ConditionPathExists=!/var/lib/pkgs-layered
@@ -46,9 +46,11 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/bin/rpm-ostree install -y --apply-live --idempotent --allow-inactive python3 tailscale
-        ExecStart=/usr/bin/systemctl enable --now tailscaled.service
+        ExecStart=/bin/sh -c 'echo "enable tailscaled.service" > /etc/systemd/system-preset/99-tailscale.preset'
+        ExecStart=/bin/sh -c 'echo "enable cockpit.socket" > /etc/systemd/system-preset/99-cockpit.preset'
+        ExecStart=/usr/bin/rpm-ostree install -y --idempotent --allow-inactive python3 tailscale cockpit-ws cockpit-system cockpit-podman
         ExecStart=/usr/bin/touch /var/lib/pkgs-layered
+        ExecStart=/usr/bin/systemctl reboot
 
         [Install]
         WantedBy=multi-user.target
