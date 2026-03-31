@@ -52,5 +52,3 @@
       loop_control:
         loop_var: service_item
       loop: "{{ services }}"
-      vars:
-        syncthing_username: "{{ username }}"
