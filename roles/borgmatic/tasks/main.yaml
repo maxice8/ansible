@@ -17,9 +17,17 @@
     msg: The variable 'borgmatic_ssh_password' needs to be a non-empty value
   when: borgmatic_ssh_password == ""
 
+- name: Ensure Borgmatic SSH directory exists
+  ansible.builtin.file:
+    path: /etc/borgmatic/ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
 - name: Generate backup-rsync SSH key
   community.crypto.openssh_keypair:
-    path: /root/.ssh/borgbackup
+    path: /etc/borgmatic/ssh/borgbackup
     type: ed25519
     size: 4096
     passphrase: ""
@@ -35,7 +43,7 @@
       podman run --rm \
         --network host \
         --security-opt label=disable \
-        -v /root/.ssh:/mnt/ssh:ro \
+        -v /etc/borgmatic/ssh:/mnt/ssh:ro \
         -e SSHPASS="{{ borgmatic_ssh_password }}" \
         docker.io/library/alpine:latest sh -c \
         "apk add --no-cache sshpass openssh-client && \
@@ -127,7 +135,7 @@
       --security-opt label=disable
       --secret borg_repository_passphrase,type=env,target=BORG_PASSPHRASE
       -v /etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
-      -v /root/.ssh:/root/.ssh:ro
+      -v /etc/borgmatic/ssh:/root/.ssh:ro,Z
       -v borgmatic-config.volume:/root/.config/borg
       localhost/borgmatic:latest info
   register: borgmatic_repo_check
@@ -143,7 +151,7 @@
       --security-opt label=disable
       --secret borg_repository_passphrase,type=env,target=BORG_PASSPHRASE
       -v /etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
-      -v /root/.ssh:/root/.ssh:ro
+      -v /etc/borgmatic/ssh:/root/.ssh:ro,Z
       -v borgmatic-config.volume:/root/.config/borg
       localhost/borgmatic:latest init --encryption repokey
   # Only run the initialization if the 'info' command failed

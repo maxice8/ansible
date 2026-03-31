@@ -23,7 +23,7 @@ Volume=/etc:/source/etc:ro
 
 # Config files and cache
 Volume=/etc/borgmatic/config.yaml:/etc/borgmatic/config.yaml:ro,z
-Volume=/root/.ssh:/root/.ssh:ro
+Volume=/etc/borgmatic/ssh:/root/.ssh:ro,Z
 Volume=borgmatic-cache.volume:/root/.cache/borg
 Volume=borgmatic-config.volume:/root/.config/borg
 Volume=borgmatic-state.volume:/root/.local/state/borgmatic
