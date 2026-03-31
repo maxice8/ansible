@@ -18,7 +18,8 @@ if [ ! -f .runner ]; then
   # --no-interactive: prevents prompts
   forgejo-runner register --no-interactive \
     --instance "$FORGEJO_INSTANCE_URL" \
-    --token "$FORGEJO_RUNNER_TOKEN"
+    --token "$FORGEJO_RUNNER_TOKEN" \
+    --name "forgejo-runner-{{ inventory_hostname }}"
     
   echo "Registration successful."
 else

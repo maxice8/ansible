@@ -12,6 +12,7 @@ ContainerName=forgejo-runner
 
 # Attach to the Tailscale network namespace
 Network=container:ts-forgejo-runner
+HostName=forgejo-runner-{{ inventory_hostname }}
 
 # Run securely natively as the dynamic UID/GID
 User={{ forgejo_runner_user_id }}:{{ forgejo_runner_group_id }}
@@ -22,7 +23,7 @@ Environment=DOCKER_HOST=tcp://127.0.0.1:2375
 Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
 
 # Volume bind for data
-Volume=forgejo-runner-data.volume:/data
+Volume=forgejo-runner-data.volume:/data:U
 
 # Custom Entrypoint Command
 Volume=/etc/forgejo-runner/config.yml:/data/config.yml:ro,z
