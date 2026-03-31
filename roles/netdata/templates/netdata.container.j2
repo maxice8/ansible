@@ -9,6 +9,9 @@ ContainerName=netdata
 Network=host
 PodmanArgs=--pid=host --userns=host
 
+# Disable SELinux labeling to allow access to /var/log and the podman socket
+SecurityLabelDisable=true
+
 # Capabilities required to read deep system metrics
 AddCapability=SYS_PTRACE
 AddCapability=SYS_ADMIN
