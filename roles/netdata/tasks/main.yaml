@@ -60,10 +60,42 @@
   # Tailscale serve is idempotent in configuration but doesn't report status changes simply, so we silence the change status.
   changed_when: false
 
-- name: Setup Heartbeat Cron for Netdata
-  ansible.builtin.cron:
-    name: "Netdata Heartbeat"
-    # Check local API (Host) -> Ping Pulsetic
-    job: "curl -f -s http://127.0.0.1:19999/api/v1/info > /dev/null && curl -fsS -m 5 --retry 3 {{ heartbeat_netdata }} > /dev/null"
-    minute: "*/5"
+- name: Deploy Netdata Heartbeat Service and Timer
   when: (heartbeat_netdata | default('')) != ""
+  block:
+    - name: Create Netdata Heartbeat Service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/netdata-heartbeat.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Netdata Heartbeat
+
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/sh -c \
+            'podman inspect --format "{% raw %}{{ .State.Health.Status }}{% endraw %}" netdata | \
+            grep -q healthy && \
+            curl -fsS -m 5 --retry 3 {{ heartbeat_netdata }} > /dev/null'
+
+    - name: Create Netdata Heartbeat Timer
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/netdata-heartbeat.timer
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Netdata Heartbeat Timer
+
+          [Timer]
+          OnCalendar=*:0/5
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Enable and start Netdata Heartbeat Timer
+      ansible.builtin.systemd:
+        name: netdata-heartbeat.timer
+        enabled: true
+        state: started
+        daemon_reload: true

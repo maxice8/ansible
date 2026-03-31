@@ -31,6 +31,11 @@ Volume=/run/podman/podman.sock:/var/run/docker.sock:ro
 # Inject our Ansible-managed Discord alarm config directly into the container
 Volume=/etc/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro,z
 
+HealthCmd=CMD-SHELL curl -fkLsS -m 2 127.0.0.1:19999/api/v1/info > /dev/null || exit 1
+HealthInterval=15s
+HealthTimeout=10s
+HealthRetries=3
+
 [Service]
 Restart=always
 TimeoutStartSec=900
