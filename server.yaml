@@ -15,11 +15,14 @@
         # Otherwise, default to configured_services.
         services: "{{ svcs.split(',') | map('trim') | list if svcs is defined else configured_services }}"
 
-    - name: Load vars/settings.local.yaml
+    - name: Load host-specific settings for {{ inventory_hostname }}
       delegate_to: localhost
-      ansible.builtin.include_vars:
-        file: vars/settings.local.yaml
-      when: "'vars/settings.local.yaml' is file"
+      community.sops.load_vars:
+        file: "vars/settings.{{ inventory_hostname }}.yaml"
+        age_keyfile: .age-key.txt
+      # Build the string using Jinja concatenation, then check if it's a file
+      when: >
+        ('vars/settings.' ~ inventory_hostname ~ '.yaml') is file
 
     # -----------------------------------------------------------
     # Base Setup (skipped if svcs is provided)

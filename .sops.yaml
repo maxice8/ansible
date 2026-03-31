@@ -3,5 +3,6 @@ creation_rules:
   - path_regex: \.env$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
 
-  - path_regex: \.local\.yaml$
+  # Matches settings.ryuu.yaml, settings.example.yaml, etc.
+  - path_regex: settings\..*\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
