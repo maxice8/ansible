@@ -42,7 +42,11 @@
     - name: Setup podman (Base)
       ansible.builtin.include_role:
         name: podman
-      # Do not run on Fedora CoreOS, which has podman by default
+      when: svcs is not defined
+
+    - name: Setup cockpit (Base)
+      ansible.builtin.include_role:
+        name: cockpit
       when: svcs is not defined
 
     # -----------------------------------------------------------
