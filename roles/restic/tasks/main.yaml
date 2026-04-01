@@ -127,8 +127,9 @@
   register: restic_init_check
   failed_when:
     - restic_init_check.rc != 0
-    - "'already initialized' not in restic_init_check.stderr"
-  changed_when: "'created restic repository' in restic_init_check.stderr"
+    - "'config file already exists' not in restic_init_check.stderr"
+  changed_when:
+    - restic_init_check.rc == 0
 
 - name: Enable restic timer
   ansible.builtin.systemd:
