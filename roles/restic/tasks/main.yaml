@@ -1,0 +1,137 @@
+---
+- name: Ensure Restic directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/restic
+    - /etc/restic/ssh
+
+- name: Ensure Restic configuration directory exists
+  ansible.builtin.file:
+    path: /etc/restic
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Restic SSH directory exists securely
+  ansible.builtin.file:
+    path: /etc/restic/ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Create native SSH Config for Hetzner
+  ansible.builtin.copy:
+    dest: /etc/restic/ssh/config
+    owner: root
+    group: root
+    mode: "0600"
+    content: |
+      Host {{ restic_ssh_hostname }}
+        Port 23
+        IdentityFile /root/.ssh/restic_key
+        IdentitiesOnly yes
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+
+- name: Generate backup-rsync SSH key
+  community.crypto.openssh_keypair:
+    path: /etc/restic/ssh/restic_key
+    type: ed25519
+    size: 4096
+    passphrase: ""
+    owner: root
+    mode: "0600"
+    comment: "root@{{ inventory_hostname }}"
+
+- name: Install SSH key via temporary container
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: |
+      set -euo pipefail
+      podman run --rm \
+        --network host \
+        --security-opt label=disable \
+        -v /etc/restic/ssh:/mnt/ssh:ro \
+        -e SSHPASS="{{ restic_ssh_password }}" \
+        docker.io/library/alpine:latest sh -c \
+        "apk add --no-cache sshpass openssh-client && \
+         cat /mnt/ssh/restic_key.pub | \
+         sshpass -e ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 23 \
+         '{{ restic_ssh_username }}@{{ restic_ssh_hostname }}' \
+         install-ssh-key"
+  register: restic_install_key_output
+  changed_when: "not 'is already configured' in restic_install_key_output.stdout"
+
+- name: Template Resticprofile configuration
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0600"
+    dest: /etc/restic/profiles.yaml
+    src: profiles.yaml.j2
+
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Store Restic Repository Passphrase as a Podman Secret
+  containers.podman.podman_secret:
+    name: restic_repository_passphrase
+    state: present
+    data: "{{ restic_repository_passphrase }}"
+    force: true
+
+- name: Deploy Restic Quadlet and Volume
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - restic-cache.volume
+    - restic.container.j2
+  notify: Reload systemd
+
+- name: Deploy Restic Systemd Timer
+  ansible.builtin.copy:
+    src: restic.timer
+    dest: /etc/systemd/system/restic.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart restic timer
+
+- name: Initialize Restic repository
+  ansible.builtin.command:
+    cmd: >
+      podman run --rm
+      --network host
+      --security-opt label=disable
+      --secret restic_repository_passphrase,type=env,target=RESTIC_PASSWORD
+      -v /etc/restic/profiles.yaml:/etc/resticprofile/profiles.yaml:ro,z
+      -v /etc/restic/ssh:/root/.ssh:ro,Z
+      docker.io/creativeprojects/resticprofile:latest
+      init
+  register: restic_init_check
+  failed_when:
+    - restic_init_check.rc != 0
+    - "'already initialized' not in restic_init_check.stderr"
+  changed_when: "'created restic repository' in restic_init_check.stderr"
+
+- name: Enable restic timer
+  ansible.builtin.systemd:
+    name: restic.timer
+    state: started
+    enabled: true

@@ -1,0 +1,32 @@
+version: "1"
+
+global:
+  # Instruct restic to use our specific SSH key for the SFTP connection
+  env:
+    RESTIC_PASSWORD: "{{ restic_repository_passphrase }}"
+
+default:
+  repository: "sftp:{{ restic_ssh_username }}@{{ restic_ssh_hostname }}:{{ inventory_hostname }}-restic"
+
+  backup:
+    source:
+      - /source/volumes
+      - /source/etc
+    check-after: true
+    
+    # Discord Webhook integration via curl
+    run-before:
+      - >-
+        curl -H "Content-Type: application/json" -d '{"content":"🔄 Backup started on `{{ inventory_hostname }}`..."}' https://discord.com/api/webhooks/{{ restic_discord_alerts_webhook }}
+    run-after:
+      - >-
+        curl -H "Content-Type: application/json" -d '{"content":"✅ Backup finished successfully on `{{ inventory_hostname }}`!"}' https://discord.com/api/webhooks/{{ restic_discord_alerts_webhook }}
+    run-after-fail:
+      - >-
+        curl -H "Content-Type: application/json" -d '{"content":"❌ **Backup FAILED** on `{{ inventory_hostname }}`! Check logs."}' https://discord.com/api/webhooks/{{ restic_discord_alerts_webhook }}
+
+  retention:
+    before-backup: false
+    after-backup: true
+    keep-daily: 7
+    prune: true

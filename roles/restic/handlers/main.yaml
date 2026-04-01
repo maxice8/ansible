@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart restic timer
+  ansible.builtin.systemd:
+    name: restic.timer
+    state: restarted

@@ -1,0 +1,8 @@
+---
+restic_ssh_hostname: ""
+restic_ssh_username: ""
+restic_ssh_password: ""
+restic_repository_passphrase: ""
+
+# Your consolidated Discord webhook
+restic_discord_alerts_webhook: ""

@@ -1,7 +1,7 @@
 servers:
   vars:
     group_services:
-      - borgmatic
+      - restic
     # Change this to the name of the tailscale network
     tailnet_name: neko-great
     # Change this to the name of the domain
@@ -10,7 +10,7 @@ servers:
     mika:
       host_services:
         - keep_vm_alive
-      # Let's remove group_services for now while we rework what borgmatic backups
+      # Let's remove group_services for now
       group_services: []
     ryuu:
       # Unlike mika, ryuu is running Fedora CoreOS, so we need to use the core user instead of root

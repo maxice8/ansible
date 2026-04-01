@@ -43,3 +43,10 @@ asf_ipc_password: ""
 heartbeat_keep_vm_alive: ""
 heartbeat_syncthing: ""
 heartbeat_netdata: ""
+
+# Restic configuration
+restic_ssh_hostname: ""
+restic_ssh_username: ""
+restic_ssh_password: ""
+restic_repository_passphrase: ""
+restic_discord_alerts_webhook: ""

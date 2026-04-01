@@ -1,0 +1,2 @@
+[Volume]
+# Caches restic chunks to significantly speed up differential backups
