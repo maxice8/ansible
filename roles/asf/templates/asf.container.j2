@@ -17,8 +17,10 @@ Network=container:ts-asf
 # Tell Podman to natively run the process as our system user
 User={{ asf_user_id }}:{{ asf_group_id }}
 
-Volume=asf-data.volume:/app/config:U
-Volume=/etc/asf/ASF.json:/app/config/ASF.json:z
+# We'd like to use a volume but we need to mount a file into it
+# and that file needs to be editable, if we mount the file directly
+# trying to modify it from the container will cause a DEVICE BUSY error
+Volume=/etc/asf/config:/app/config:U,Z
 
 DropCapability=all
 ReadOnly=true

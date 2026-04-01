@@ -18,6 +18,8 @@
     mode: "0644"
     content: |
       d /etc/asf 0755 root root -
+      # Ensure nobody can access these configs
+      d /etc/asf/config 0700 root root -
   notify: Apply asf tmpfiles
 
 - name: Declaratively create ASF system user
@@ -48,7 +50,7 @@
 - name: Template ASF.json to centralized location
   ansible.builtin.template:
     src: ASF.json.j2
-    dest: /etc/asf/ASF.json
+    dest: /etc/asf/config/ASF.json
     owner: "{{ ansible_facts.getent_passwd['asf'][1] }}"
     group: "{{ ansible_facts.getent_passwd['asf'][2] }}"
     mode: "0600"
@@ -85,9 +87,8 @@
     asf_group_id: "{{ ansible_facts.getent_passwd['asf'][2] }}"
   loop:
     - ts-asf-data.volume
-    - asf-data.volume
     - ts-asf.container.j2
-    - asf.container
+    - asf.container.j2
   notify:
     - Reload systemd
     - Restart ASF
