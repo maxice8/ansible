@@ -1,15 +1,4 @@
 ---
-- name: Ensure Restic directories exist
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-  loop:
-    - /etc/restic
-    - /etc/restic/ssh
-
 - name: Ensure Restic configuration directory exists
   ansible.builtin.file:
     path: /etc/restic
@@ -69,14 +58,6 @@
   register: restic_install_key_output
   changed_when: "not 'is already configured' in restic_install_key_output.stdout"
 
-- name: Template Resticprofile configuration
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: "0600"
-    dest: /etc/restic/profiles.yaml
-    src: profiles.yaml.j2
-
 - name: Ensure Quadlet directory exists
   ansible.builtin.file:
     path: /etc/containers/systemd
@@ -92,7 +73,23 @@
     data: "{{ restic_repository_passphrase }}"
     force: true
 
-- name: Deploy Restic Quadlet and Volume
+- name: Copy Backrest Tailscale serve.json
+  ansible.builtin.copy:
+    src: tailscale_serve.json
+    dest: /etc/restic/serve.json
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart ts-backrest
+
+- name: Store Backrest Tailscale Auth-Key as a Podman Secret
+  containers.podman.podman_secret:
+    name: ts_backrest_key
+    state: present
+    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
+    force: true
+
+- name: Deploy Backrest Tailscale Quadlets
   ansible.builtin.template:
     owner: root
     group: root
@@ -100,39 +97,30 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   loop:
-    - restic-cache.volume
-    - restic.container.j2
-  notify: Reload systemd
+    - ts-backrest-data.volume
+    - ts-backrest.container.j2
+  notify:
+    - Reload systemd
+    - Restart ts-backrest
 
-- name: Deploy Restic Systemd Timer
-  ansible.builtin.copy:
-    src: restic.timer
-    dest: /etc/systemd/system/restic.timer
+- name: Deploy Backrest Main Quadlets
+  ansible.builtin.template:
     owner: root
     group: root
     mode: "0644"
-  notify: Restart restic timer
+    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
+    src: "{{ item }}"
+  loop:
+    - backrest-data.volume
+    - backrest-cache.volume
+    - backrest.container.j2
+  notify:
+    - Reload systemd
+    - Restart backrest
 
-- name: Initialize Restic repository
-  ansible.builtin.command:
-    cmd: >
-      podman run --rm
-      --network host
-      --security-opt label=disable
-      --secret restic_repository_passphrase,type=env,target=RESTIC_PASSWORD
-      -v /etc/restic/profiles.yaml:/etc/resticprofile/profiles.yaml:ro,z
-      -v /etc/restic/ssh:/root/.ssh:ro,Z
-      docker.io/creativeprojects/resticprofile:latest
-      init
-  register: restic_init_check
-  failed_when:
-    - restic_init_check.rc != 0
-    - "'config file already exists' not in restic_init_check.stderr"
-  changed_when:
-    - restic_init_check.rc == 0
-
-- name: Enable restic timer
+- name: Ensure Backrest service is started and enabled
   ansible.builtin.systemd:
-    name: restic.timer
+    name: backrest.service
     state: started
     enabled: true
+    daemon_reload: true

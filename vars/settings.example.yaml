@@ -39,7 +39,3 @@ restic_ssh_hostname: ""
 restic_ssh_username: ""
 # Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
 restic_ssh_password: ""
-# Passphrase for Restic repository
-restic_repository_passphrase: ""
-# Webhook URL to send notifications on Discord
-restic_discord_alerts_webhook: ""

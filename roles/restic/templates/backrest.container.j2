@@ -1,0 +1,45 @@
+[Unit]
+Description=Backrest (Restic Web UI)
+Requires=ts-backrest.service
+After=ts-backrest.service
+BindsTo=ts-backrest.service
+PartOf=ts-backrest.service
+
+[Container]
+Image=ghcr.io/garethgeorge/backrest:latest
+ContainerName=backrest
+
+# Route all traffic through the Tailscale Sidecar
+Network=container:ts-backrest
+SecurityLabelDisable=true
+
+# Persistent Data & Cache
+Volume=backrest-data.volume:/data:Z
+Volume=backrest-cache.volume:/cache:Z
+
+# Native SSH Keys mapping
+Volume=/etc/restic/ssh:/root/.ssh:ro,Z
+
+# Mount host volumes for Restic to backup (Read Only!)
+Volume=/var/lib/containers/storage/volumes:/source/volumes:ro
+Volume=/etc:/source/etc:ro
+
+# Define internal paths for Backrest
+Environment=BACKREST_DATA=/data
+Environment=BACKREST_CONFIG=/data/config.json
+Environment=XDG_CACHE_HOME=/cache
+
+# Security
+NoNewPrivileges=true
+DropCapability=all
+AddCapability=DAC_READ_SEARCH
+AddCapability=NET_RAW
+ReadOnly=true
+Tmpfs=/tmp
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
