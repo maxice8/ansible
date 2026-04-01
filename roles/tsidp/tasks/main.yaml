@@ -12,6 +12,9 @@
     name: tsidp_ts_key
     state: present
     data: "{{ tsidp_tskey }}"
+    # We will replace with this in the future but currently we are held back by
+    # a regression: https://github.com/tailscale/tsidp/issues/159
+    # data: "{{ tailscale_oauth_secret }}?ephemeral=false"
     force: true
 
 - name: Deploy tsidp Quadlets

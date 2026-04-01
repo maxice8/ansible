@@ -35,6 +35,29 @@ cp vars/settings.example.yaml vars/settings.ryuu.yaml
 cp example.env ryuu.env
 ```
 
+#### Tailscale OAuth
+
+We use a Tailscale OAuth Client to generate the auth keys to authenticate our devices instead of generating
+multiple auth keys.
+
+First define the following in your Tailscale ACL:
+
+```json
+"tagOwners": {
+    "tag:ansible-oauth": ["autogroup:admin"],
+    "tag:container": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:tsidp": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:syncthing": ["autogroup:admin", "tag:ansible-oauth"],
+}
+```
+
+We will create an OAuth Client that authenticates to the `tag:ansible-oauth` tag, and from that any device that
+authenticates with that secret can create authentication keys that map to any of the tags owned by `tag:ansible-oauth`.
+
+Go to your tailscale and click on **Settings** -> **Trust Credentials**, Click on the blue **+ Credential** and
+create a credential with Read+Write permissions on `devices:core`, and `auth_keys`, a tailscale OAuth key will
+be shown **once** so save it and use it on the configuration.
+
 ### Encrypting
 
 Ansible and Butane read from encrypted files instead of local configuration so we need to generate a key with `age` and then encrypt them with `sops`

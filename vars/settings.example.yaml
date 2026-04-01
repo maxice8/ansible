@@ -1,21 +1,12 @@
-# Auth key used to register tailscale devices that will have the
-# tag:container tag associated to it, this is a generic tag that
-# allows all communications between them and is suitable for most
-# devices.
-container_tsclient_key: ""
+# Tailscale OAuth secret to register tailscale devices with
+# different tags, see the 'Tailscale OAuth' section in the
+# README for more information.
+tailscale_oauth_secret: ""
 
 # Auth key used by tsidp to register itself, everything from
 # tag:container and user devices should have access to it to
 # allow for OAuth2 authentication.
 tsidp_tskey: ""
-
-# Auth key used to register tailscale devices that will have
-# the tag:syncthing associated to it, this tag allows tcp and
-# udp on port 22000 which is used by Syncthing's sync protocol
-# all devices with tag:syncthing can reach every other device
-# with the same tag on that port, plus any user device which
-# is assumedly running syncthing.
-syncthing_tskey: ""
 
 # Hostname of the Hetzner StorageBox
 borgmatic_ssh_hostname: ""

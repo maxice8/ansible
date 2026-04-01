@@ -49,7 +49,7 @@
   containers.podman.podman_secret:
     name: ts_forgejo_key
     state: present
-    data: "{{ container_tsclient_key }}?ephemeral=false"
+    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
     force: true
 
 - name: Copy Tailscale serve.json

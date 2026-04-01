@@ -69,7 +69,7 @@
   containers.podman.podman_secret:
     name: ts_asf_key
     state: present
-    data: "{{ container_tsclient_key }}?ephemeral=false"
+    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
     force: true
 
 - name: Deploy ASF Quadlets

@@ -73,7 +73,7 @@
   containers.podman.podman_secret:
     name: ts_syncthing_key
     state: present
-    data: "{{ syncthing_tskey }}"
+    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
     force: true
 
 - name: Deploy Syncthing Quadlets
