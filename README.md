@@ -45,9 +45,12 @@ First define the following in your Tailscale ACL:
 ```json
 "tagOwners": {
     "tag:ansible-oauth": ["autogroup:admin"],
-    "tag:container": ["autogroup:admin", "tag:ansible-oauth"],
     "tag:tsidp": ["autogroup:admin", "tag:ansible-oauth"],
     "tag:syncthing": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:forgejo": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:forgejo-runner": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:asf": ["autogroup:admin", "tag:ansible-oauth"],
+    "tag:backrest": ["autogroup:admin", "tag:ansible-oauth"]
 }
 ```
 

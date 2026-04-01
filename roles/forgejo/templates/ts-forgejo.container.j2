@@ -19,7 +19,7 @@ PublishPort=22:{{ forgejo_ssh_port }}
 
 # Environment Variables
 Secret=ts_forgejo_key,type=env,target=TS_AUTHKEY
-Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:forgejo
 Environment=TS_SERVE_CONFIG=/config/serve.json
 Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
@@ -50,8 +50,8 @@ TimeoutStartSec=900
 # I need to tailscale up it after it starts otherwise it won't reach the DNS server
 # for some reason
 ExecStartPost=/bin/sleep 5
-ExecStartPost=/usr/bin/podman exec ts-forgejo tailscale up --accept-dns=false --advertise-tags=tag:container --hostname=git
-ExecStartPost=/usr/bin/podman exec ts-forgejo tailscale up --accept-dns=true --advertise-tags=tag:container --hostname=git
+ExecStartPost=/usr/bin/podman exec ts-forgejo tailscale up --accept-dns=false --advertise-tags=tag:forgejo --hostname=git
+ExecStartPost=/usr/bin/podman exec ts-forgejo tailscale up --accept-dns=true --advertise-tags=tag:forgejo --hostname=git
 
 [Install]
 WantedBy=multi-user.target

@@ -12,7 +12,7 @@ ContainerName=ts-forgejo-runner
 HostName=forgejo-runner-{{ inventory_hostname }}
 
 Secret=ts_runner_key,type=env,target=TS_AUTHKEY
-Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:forgejo-runner
 Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
 Environment=TS_ACCEPT_DNS=true

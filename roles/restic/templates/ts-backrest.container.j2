@@ -11,7 +11,7 @@ ContainerName=ts-backrest
 HostName=backrest
 
 Secret=ts_backrest_key,type=env,target=TS_AUTHKEY
-Environment=TS_EXTRA_ARGS=--advertise-tags=tag:container
+Environment=TS_EXTRA_ARGS=--advertise-tags=tag:backrest
 Environment=TS_SERVE_CONFIG=/config/serve.json
 Environment=TS_STATE_DIR=/var/lib/tailscale
 Environment=TS_USERSPACE=false
