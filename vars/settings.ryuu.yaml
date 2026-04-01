@@ -1,11 +1,6 @@
 #ENC[AES256_GCM,data:7U5iMqD/yCfD7JEXJPeja4LlOedYqt9jxq+c4ICVoxftudU+oAg41pWer1x2P0UdY/m796w=,iv:UEfqX1SCZlY4DUdt/kPcndFQ/0hOu9SXducIDIw+bUY=,tag:g9ieR4JlDqdNJEhOOHNPhQ==,type:comment]
 tailscale_oauth_secret: ENC[AES256_GCM,data:ZgFxcfSYumuQDl8F3DyKPwxZ9jfnzQj97koPmA7ohfahTswwF8NJBbo6RInSudzNE7XmwSCbmcoZS4uj8uuI,iv:KJ7tI9EeUBuHyQ2JmDFRMsIzYHlvyYUP9iF6/uMPwzE=,tag:y1cBMkXH6Whf3IbumSfyiA==,type:str]
 tsidp_tskey: ENC[AES256_GCM,data:YMh2u8ZCfeymJO/hqXnoMiMgIkEyLUISpb9xBKrsDrr0Eg0Xz/turBLsTEo9x9OC2V+qu/40OI1mBIURIw==,iv:AymN1j9KlKZI5LinvQfDHVYQ2rdSUcMhaBckOrsOIAU=,tag:nR5y/1m/42hovX8Amdt5LA==,type:str]
-borgmatic_ssh_hostname: ENC[AES256_GCM,data:F4AOMF8WuEN+/laZcC8nDGCUibk1EJ6e8pM=,iv:FB7BCIbma27v0L/9oTF2OFVU+WRZBGe9DYrPuSjw80o=,tag:UUpyo75PwTCNGn9RqWCUWQ==,type:str]
-borgmatic_ssh_username: ENC[AES256_GCM,data:apC0xVez9A==,iv:72WDjwlESa8uDGzU+5/M0XkNSwzwg6yh2OZVOkEVCbE=,tag:c+lgAdoV2q5jFV+2d0zCSw==,type:str]
-borgmatic_ssh_password: ENC[AES256_GCM,data:pwQcVnSxOgkbnYjmsRDh,iv:S11EjX/xK4oFo8mbCV8L1FAne5zSKEnjqYEBRjOVQQI=,tag:7jOiJEMpO4ysazfSKbJW0A==,type:str]
-borgmatic_repository_passphrase: ENC[AES256_GCM,data:zv8TwDPN4hUnXoUJ6QjwRQI+oaLh0muVOcQDscsH7IgVeGKjpWpQLy2U2GsG3154lmg4EwTbrobVmRLUGLOLNw==,iv:BLTxpLJ43fQgE1Ib4JP38cq2uW4SLwBfrhh2RNpGlzs=,tag:aZ/ECi0Gv9fDxrCTbxvPAw==,type:str]
-borgmatic_discord_hook: ENC[AES256_GCM,data:8x87xEXeXjGIpVUmnhvanKYizV8JJ7prbe2Y5RRVmA4jVvULgctujYzNLlmMP+EayZ79Rp/Sy7n98t09svvhiIYl+ngRVMnq7vkXQ4Je12w6aDXUWrMZeg==,iv:Tf1kaHZwVeHA0NKIZUwHmHinWZZy0VoMaNbuNJuGgU4=,tag:DCoHJjLWBLY2CrjoRrPCdg==,type:str]
 caddy_crowdsec_api_key: ENC[AES256_GCM,data:BX2jKa8P8+rF75KZqywSyUXaEd4q6VkXFkcu/j9mpEF8WirXO4fc2MDkuw==,iv:EyMGeNsrffe723sxDWDjFL7EDb6/4v+RBL0SpfwO4zw=,tag:5O0puReSmgvXpVtip/L1BQ==,type:str]
 crowdsec_trusted_ips:
     - ENC[AES256_GCM,data:7628XA9Vi0c0pSpgD0R4,iv:an2oiJf6OuezjrlD3RdKhJOmKeN2nF6cnio25ZWnpJA=,tag:qlTEKsHoU02VVJ/uqJrfbA==,type:str]
@@ -36,7 +31,7 @@ sops:
             SXhmdGE5TmI1VmFBTTBmZzVkSlFqQzgKelHnR+Mi29zU4Rfaaued59XIJxJho99i
             0yPYHBTRfYh/BCRXM8t+kf0IKQ+2dbhWqPZnyULkD6WmNkdk40KfpQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-01T05:37:55Z"
-    mac: ENC[AES256_GCM,data:CYjzOeQ2CJeoRFcWpSNuP8TgNHj3jkdqhCCoe3D6qvtHz1whBPs+6cU5vyl3D7fX6vnlLz9maY7L+C9gr1rfw0emF1cVTfs+NAGQZcKBZpdAwE8Mayzp896aew2rYk+xt2OYrDc3b32Lu3fwa3sYP7kYZbYC+sDMlBfCo4IqnJY=,iv:zMsuwC/fUwRUn20HP7C8of9q3hr8tYisIfcxDInhQf4=,tag:IRlVBuBA3fD/dzC4jTxd5Q==,type:str]
+    lastmodified: "2026-04-01T07:36:55Z"
+    mac: ENC[AES256_GCM,data:ujVZFbD+J6SPJn3BAxWtOj16EuAIu4onSBvjI8ZYgzBhaE0dci1khMt3PcmyTJyINtagALdLDxfHLvqOLcDN00pYpYzB3BWujNh3tcJnUl0pqJbUqvEJQFspXV6iF8B8XDBSAgg1pGKXaeDgYbf8bIprMWQ2AeGxnme3ml4Ji80=,iv:fSJRlDJrtq8XrwOeLTjw/UbpOGSfAoEcBVOvTAht7LQ=,tag:wFE6RP57b/nnekIo/yoUlA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.12.2

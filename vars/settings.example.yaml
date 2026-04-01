@@ -8,17 +8,6 @@ tailscale_oauth_secret: ""
 # allow for OAuth2 authentication.
 tsidp_tskey: ""
 
-# Hostname of the Hetzner StorageBox
-borgmatic_ssh_hostname: ""
-# Username to access the Hetzner StorageBox
-borgmatic_ssh_username: ""
-# Password to access the Hetzner StorageBox
-borgmatic_ssh_password: ""
-# Passphrase for Borgmatic to backup
-borgmatic_repository_passphrase: ""
-# Webhook URL to send notifications on Discord
-borgmatic_discord_hook: ""
-
 # API Key to auth to Crowdsec with Caddy
 caddy_crowdsec_api_key: ""
 # List of IPs which are to be trusted by Crowdsec
@@ -44,9 +33,13 @@ heartbeat_keep_vm_alive: ""
 heartbeat_syncthing: ""
 heartbeat_netdata: ""
 
-# Restic configuration
+# Hostname of the Hetzner StorageBox
 restic_ssh_hostname: ""
+# Username to access the Hetzner StorageBox
 restic_ssh_username: ""
+# Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
 restic_ssh_password: ""
+# Passphrase for Restic repository
 restic_repository_passphrase: ""
+# Webhook URL to send notifications on Discord
 restic_discord_alerts_webhook: ""

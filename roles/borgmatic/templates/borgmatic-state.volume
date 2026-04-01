@@ -1,2 +1,0 @@
-[Volume]
-# Persists borgmatic-specific state, such as records of when checks last ran.

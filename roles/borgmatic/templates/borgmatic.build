@@ -1,8 +1,0 @@
-[Unit]
-Description=Build Borgmatic container image
-
-[Build]
-ImageTag=localhost/borgmatic:latest
-File=/etc/borgmatic/Containerfile
-SetWorkingDirectory=/etc/borgmatic
-PodmanArgs=--network=host
