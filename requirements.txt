@@ -2,14 +2,14 @@
 #    uv pip compile requirements.in --universal --output-file requirements.txt
 ansible==13.5.0
     # via -r requirements.in
-ansible-compat==25.12.1
+ansible-compat==26.3.0
     # via ansible-lint
 ansible-core==2.20.4
     # via
     #   ansible
     #   ansible-compat
     #   ansible-lint
-ansible-lint==26.3.0
+ansible-lint==26.4.0
     # via -r requirements.in
 attrs==26.1.0
     # via
