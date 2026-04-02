@@ -23,9 +23,18 @@
       api_url: ${API_URL}
       api_key: ${API_KEY}
       disable_ipv6: ${DISABLE_IPV6}
-      iptables_chains:
-        - INPUT
-        - FORWARD
+      # Upgraded to natively support nftables and ONLY protect the host
+      nftables:
+        ipv4:
+          enabled: true
+          set-only: false
+          table: crowdsec
+          chain: crowdsec-chain
+        ipv6:
+          enabled: true
+          set-only: false
+          table: crowdsec6
+          chain: crowdsec6-chain
   notify: Restart Firewall Bouncer
 
 - name: Deploy CrowdSec Firewall Bouncer Quadlet

@@ -18,7 +18,7 @@ Environment=API_URL=http://127.0.0.1:8080
 Environment=API_KEY={{ caddy_cs_firewall_bouncer_key }}
 
 # Force the bouncer to use raw iptables since firewalld is missing
-Environment=BACKEND=iptables
+Environment=BACKEND=nftables
 Environment=DISABLE_IPV6=false
 
 # Mount the base config file required by the container
