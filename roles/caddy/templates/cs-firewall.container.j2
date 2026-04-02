@@ -19,7 +19,7 @@ Environment=API_KEY={{ caddy_cs_firewall_bouncer_key }}
 
 # Force the bouncer to use raw iptables since firewalld is missing
 Environment=BACKEND=iptables
-Environment=DISABLE_IPV6=true
+Environment=DISABLE_IPV6=false
 
 # Mount the base config file required by the container
 Volume=/etc/crowdsec/crowdsec-firewall-bouncer.yaml:/config/crowdsec-firewall-bouncer.yaml:ro,z
