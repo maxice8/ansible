@@ -13,7 +13,11 @@ ContainerName=ts-forgejo
 Environment=TS_HOSTNAME=git
 HostName=git
 
-# Published Ports (Handling the mapping originally defined in Compose)
+# Attach to the dedicated Quadlet network
+Network=forgejo.network
+
+# We only bind on IPv4 port but forgejo.network due to being ipv6=true will
+# redirect both ipv6 and ipv4 traffic to the container
 PublishPort=127.0.0.1:{{ forgejo_port }}:3000
 PublishPort=22:{{ forgejo_ssh_port }}
 
