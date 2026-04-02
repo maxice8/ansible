@@ -63,6 +63,7 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   loop:
+    - syncthing.network.j2
     - ts-syncthing-data.volume
     - ts-syncthing.container.j2
   notify:

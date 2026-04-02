@@ -8,6 +8,7 @@ Image=docker.io/tailscale/tailscale:stable
 AutoUpdate=registry
 
 ContainerName=ts-backrest
+Network=backrest.network
 HostName=backrest
 
 Secret=ts_backrest_key,type=env,target=TS_AUTHKEY

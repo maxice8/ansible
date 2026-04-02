@@ -28,6 +28,7 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   loop:
+    - pocket-id.network.j2
     - pocket-id-data.volume
     - pocket-id.container.j2
   notify:

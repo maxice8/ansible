@@ -86,6 +86,7 @@
     asf_user_id: "{{ ansible_facts.getent_passwd['asf'][1] }}"
     asf_group_id: "{{ ansible_facts.getent_passwd['asf'][2] }}"
   loop:
+    - asf.network.j2
     - ts-asf-data.volume
     - ts-asf.container.j2
     - asf.container.j2
