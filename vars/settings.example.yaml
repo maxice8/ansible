@@ -39,3 +39,6 @@ restic_ssh_hostname: ""
 restic_ssh_username: ""
 # Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
 restic_ssh_password: ""
+
+# Encryption key for Pocket ID, it can be any string but should be kept secret and unique to your deployment
+pocket_id_encryption_key: ""

@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart Pocket ID
+  ansible.builtin.systemd:
+    name: pocket-id.service
+    state: restarted

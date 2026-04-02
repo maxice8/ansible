@@ -18,6 +18,7 @@ heartbeat_netdata: ENC[AES256_GCM,data:Tl5NeFhZLJR4YhS9E0ga97lyWoAs1qO09XOtNRn0t
 restic_ssh_hostname: ENC[AES256_GCM,data:62x6TSkI8/iu7EqxL/cOMRSWTDlYdJ7VNIE=,iv:rCae9F0w3SrVEPD2S3IyA3wlZoVdzg6LSLNtDMP1ZVA=,tag:SI+nkPFpWHnGNwOGXrKKdQ==,type:str]
 restic_ssh_username: ENC[AES256_GCM,data:QiY+BhQ6EA==,iv:6316ZAZls2zjf+FEZOExh1dwUb7O8V3gEdFR0UPNF3A=,tag:GyM8ZX9OO2GPeTm+X2/l8Q==,type:str]
 restic_ssh_password: ENC[AES256_GCM,data:PBfyZDxbWwW4S4qkvv/q,iv:dMSVynb/9/w9r71eUSpH5jKFdzWe9PSWfZWr8Rz5FcI=,tag:lX8QTiJiBWG/DImEUrPutg==,type:str]
+pocket_id_encryption_key: ENC[AES256_GCM,data:HGYXo5QnbHyxUu34zmHJxVcugQG0js2D5niJ8SZFaE2+cGo/VMY8oNKFVLg=,iv:LNjrZrfOwr4cEsbakeFt9UTmgJeBg5CG861xM3yA64w=,tag:ZdNC8CxGakGDcgKm1hp9jg==,type:str]
 sops:
     age:
         - recipient: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
@@ -29,7 +30,7 @@ sops:
             SXhmdGE5TmI1VmFBTTBmZzVkSlFqQzgKelHnR+Mi29zU4Rfaaued59XIJxJho99i
             0yPYHBTRfYh/BCRXM8t+kf0IKQ+2dbhWqPZnyULkD6WmNkdk40KfpQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-01T08:49:20Z"
-    mac: ENC[AES256_GCM,data:Ht1dFsI/EEHTCBiE+BMSZDg1MWkj4DCoyMHljsiJzsrT+enRZ2510C4vzBcfiB6lSE9alqwzVX/dPtp716L5+B/B/TadF6xGkCY0FeGq3EqJGQYWgismwZh+fA1NAYXBrllm8fCG4t3dLC5QHMqpOwoYtWZat8tNi6f8LPsCdEc=,iv:Ojby9bIC4LrdK38x5M8K36mKKcM6XAsgqMQbLUiAG1Q=,tag:i8M7/Er50yKLU4dzPQ6jKg==,type:str]
+    lastmodified: "2026-04-02T01:09:29Z"
+    mac: ENC[AES256_GCM,data:BaKh7ih/cZPs+pNIvwKblWAQjH81osQOookMQd5dIxB73ARkw0XSFN/Zb5//Ae0uyAcC5LTJ2jlwAfilAZsf0SJNxT5/aZ+9Fkr+IzyY3ADpDWJgfCdfSM8nX0hD4CgTDMMn7cpWuR3Hiag7sG3bAwzLF0VDh4DLvLvIFu+QxBQ=,iv:yh8TY8FqKJ+x+HgdWrAY72jpvIQsPxhRBcCF3bD9KWU=,tag:un7Tuh8iT8UAaazeJSvJkQ==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.12.2

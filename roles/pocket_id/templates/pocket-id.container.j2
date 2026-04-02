@@ -1,0 +1,51 @@
+[Unit]
+Description=Pocket ID (OIDC Provider)
+After=network-online.target
+
+[Container]
+Image=ghcr.io/pocket-id/pocket-id:v2
+AutoUpdate=registry
+ContainerName=pocket-id
+
+# Enable isolated User Namespaces for security
+UserNS=auto
+
+# Publish port to localhost for Caddy to intercept
+PublishPort=127.0.0.1:{{ pocket_id_port }}:1411
+
+# Environment Configuration
+Secret=pocket_id_encryption_key,type=env,target=ENCRYPTION_KEY
+Environment=APP_URL=https://id.{{ domain_name }}
+# CRITICAL: Required for Caddy reverse proxy to pass correct IPs
+Environment=TRUST_PROXY=true
+
+# Persistent SQLite Data
+Volume=pocket-id-data.volume:/app/data:U
+
+# Healthcheck natively provided by Pocket ID
+HealthCmd=/app/pocket-id healthcheck
+HealthInterval=1m30s
+HealthTimeout=5s
+HealthRetries=2
+
+# Security Lockdown
+NoNewPrivileges=true
+DropCapability=all
+
+# Capabilities required for the Pocket ID entrypoint script (su-exec and chown)
+AddCapability=CHOWN
+AddCapability=FOWNER
+AddCapability=DAC_OVERRIDE
+AddCapability=SETUID
+AddCapability=SETGID
+
+# Temporarily disabled because the entrypoint needs to write to /etc/group
+# ReadOnly=true
+Tmpfs=/tmp
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

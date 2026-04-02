@@ -68,3 +68,24 @@ whoami.{{ domain_name }} {
     }
 }
 {% endif -%}
+{% if 'pocket_id' in configured_services -%}
+id.{{ domain_name }} {
+    reverse_proxy localhost:{{ pocket_id_port }}
+    
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+    
+    log {
+        output file /var/log/caddy/id.{{ domain_name }}.log {
+            roll_size 100MiB
+            roll_keep 5
+            roll_keep_for 100d
+        }
+        format json
+        level INFO
+    }
+}
+{% endif -%}

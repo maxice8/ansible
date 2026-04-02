@@ -17,6 +17,7 @@ servers:
       ansible_user: core
       host_services:
         - caddy
+        - pocket_id
         - forgejo
         - forgejo_runner
         - whoami
@@ -28,3 +29,4 @@ servers:
       whoami_port: 30001
       forgejo_port: 30002
       forgejo_ssh_port: 30022
+      pocket_id_port: 30003
