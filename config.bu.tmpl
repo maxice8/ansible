@@ -7,7 +7,6 @@ passwd:
         - "${SSH_PUB_KEY}"
 storage:
   files:
-    # --- DYNAMIC HOSTNAME ---
     - path: /etc/hostname
       mode: 0644
       contents:
@@ -33,9 +32,10 @@ storage:
           address1=${IPV6_ADDRESS},${IPV6_GATEWAY}
           dns=2001:4860:4860::8888;2001:4860:4860::8844;
           method=manual
-
 systemd:
   units:
+    - name: serial-getty@ttyS0.service
+      enabled: true
     - name: layer-system-packages.service
       enabled: true
       contents: |
@@ -62,3 +62,7 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+kernel_arguments:
+  should_exist:
+    - console=tty0
+    - console=ttyS0,115200n8
