@@ -29,6 +29,12 @@ Volume=/var/log/caddy:/var/log/caddy:ro,z
 Volume=/etc/crowdsec-custom/acquis.d/caddy.yaml:/etc/crowdsec/acquis.d/caddy.yaml:ro,z
 Volume=/etc/crowdsec-custom/parsers:/etc/crowdsec/parsers/s02-enrich/ansible:ro,z
 
+HealthCmd=cscli lapi status
+HealthInterval=5s
+HealthTimeout=5s
+HealthRetries=5
+Notify=healthy
+
 [Service]
 Restart=always
 TimeoutStartSec=900
