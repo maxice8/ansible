@@ -27,11 +27,11 @@ pacman -S age sops
 
 We use hostname-namespaced configuration files in the following formats:
 
-- `vars/settings.$HOSTNAME.yaml` for Ansible configuration (see `vars/settings.example.yaml`)
+- `host_vars/$HOSTNAME.sops.yaml` for Ansible configuration (see `host_vars/example.sops.yaml`)
 - `$HOSTNAME.env` for Butane configuration (see `example.env`)
 
 ```
-cp vars/settings.example.yaml vars/settings.ryuu.yaml
+cp host_vars/example.sops.yaml host_vars/ryuu.sops.yaml
 cp example.env ryuu.env
 ```
 
@@ -82,12 +82,12 @@ Replace the `age` section in `.sops.yaml` so it encrypts with your public key, y
 With all setup you can encrypt both files
 
 ```
-sops -e -i vars/settings.ryuu.yaml
+sops -e -i host_vars/ryuu.sops.yaml
 sops -e -i ryuu.env
 ```
 
 *Note: If you need to edit these files in the future, do not use `cat` or `nano` directly. Instead, use SOPS to decrypt and open them in your default editor on the fly:*
-`sops vars/settings.ryuu.yaml`
+`sops host_vars/ryuu.sops.yaml`
 
 ### Deploying
 

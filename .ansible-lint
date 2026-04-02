@@ -4,4 +4,4 @@ profile: production
 exclude_paths:
   - .cache/
   - .forgejo/workflows/
-  - "vars/settings.*.yaml"
+  - "host_vars/*.sops.yaml"
