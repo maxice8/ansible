@@ -101,6 +101,34 @@ syncthing.{{ inventory_hostname }}.{{ domain_name }} {
 }
 {% endif -%}
 
+{% if 'asf' in configured_services -%}
+asf.{{ inventory_hostname }}.{{ domain_name }} {
+    import protect_with_oauth2
+    
+    # Proxy to the published ASF port on localhost
+    reverse_proxy localhost:{{ asf_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+    
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+
+    log {
+        output file /var/log/caddy/asf.{{ inventory_hostname }}.{{ domain_name }}.log {
+            roll_size 100MiB
+            roll_keep 5
+            roll_keep_for 100d
+        }
+        format json
+        level INFO
+    }
+}
+{% endif -%}
+
 {% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
     reverse_proxy localhost:{{ forgejo_port }}

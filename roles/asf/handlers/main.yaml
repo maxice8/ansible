@@ -11,11 +11,6 @@
   ansible.builtin.command: systemd-sysusers /etc/sysusers.d/asf.conf
   changed_when: true
 
-- name: Restart Tailscale
-  ansible.builtin.systemd:
-    name: ts-asf.service
-    state: restarted
-
 - name: Restart ASF
   ansible.builtin.systemd:
     name: asf.service

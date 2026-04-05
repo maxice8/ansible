@@ -58,21 +58,14 @@
     force: false
   notify: Restart ASF
 
-- name: Copy Tailscale serve.json to unified location
-  ansible.builtin.copy:
-    src: tailscale_serve.json
-    dest: /etc/asf/serve.json
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart Tailscale
-
-- name: Store ArchiSteamFarm Tailscale Auth-Key as a Podman Secret
-  containers.podman.podman_secret:
-    name: ts_asf_key
-    state: present
-    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
-    force: true
+- name: Template IPC.config to centralized location
+  ansible.builtin.template:
+    src: IPC.config.j2
+    dest: /etc/asf/config/IPC.config
+    owner: "{{ ansible_facts.getent_passwd['asf'][1] }}"
+    group: "{{ ansible_facts.getent_passwd['asf'][2] }}"
+    mode: "0600"
+  notify: Restart ASF
 
 - name: Deploy ASF Quadlets
   ansible.builtin.template:
@@ -87,8 +80,6 @@
     asf_group_id: "{{ ansible_facts.getent_passwd['asf'][2] }}"
   loop:
     - asf.network.j2
-    - ts-asf-data.volume
-    - ts-asf.container.j2
     - asf.container.j2
   notify:
     - Reload systemd

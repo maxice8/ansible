@@ -31,3 +31,4 @@ servers:
       forgejo_port: 30002
       forgejo_ssh_port: 30022
       pocket_id_port: 30003
+      asf_port: 30004
