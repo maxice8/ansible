@@ -1,0 +1,35 @@
+- name: Ensure Quadlet directory exists
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Store OAuth2 Proxy Secrets
+  containers.podman.podman_secret:
+    name: "{{ item.name }}"
+    state: present
+    data: "{{ item.data }}"
+    force: true
+  loop:
+    - { name: 'oauth2_proxy_client_secret', data: '{{ oauth2_proxy_client_secret }}' }
+    - { name: 'oauth2_proxy_cookie_secret', data: '{{ oauth2_proxy_cookie_secret }}' }
+
+- name: Deploy OAuth2 Proxy Quadlet
+  ansible.builtin.template:
+    owner: root
+    group: root
+    mode: "0644"
+    dest: /etc/containers/systemd/oauth2-proxy.container
+    src: oauth2-proxy.container.j2
+  notify:
+    - Reload systemd
+    - Restart OAuth2 Proxy
+
+- name: Ensure OAuth2 Proxy service is started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: oauth2-proxy.service
+    state: started
+    enabled: true

@@ -42,3 +42,8 @@ restic_ssh_password: ""
 
 # Encryption key for Pocket ID, it can be any string but should be kept secret and unique to your deployment
 pocket_id_encryption_key: ""
+
+# For authentication with OAuth2 Proxy through PocketID
+oauth2_proxy_client_id: ""
+oauth2_proxy_client_secret: ""
+oauth2_proxy_cookie_secret: ""

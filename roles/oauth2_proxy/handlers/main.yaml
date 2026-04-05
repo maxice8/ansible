@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart OAuth2 Proxy
+  ansible.builtin.systemd:
+    name: oauth2-proxy.service
+    state: restarted

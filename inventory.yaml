@@ -17,6 +17,7 @@ servers:
       ansible_user: core
       host_services:
         - caddy
+        - oauth2_proxy
         - pocket_id
         - forgejo
         - forgejo_runner
