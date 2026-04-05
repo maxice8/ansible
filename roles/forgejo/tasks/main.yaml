@@ -1,4 +1,3 @@
----
 - name: Ensure sysusers.d directory exists
   ansible.builtin.file:
     path: "{{ item }}"
@@ -45,37 +44,6 @@
     group: root
     mode: "0755"
 
-- name: Store tailscale auth-key as a podman secret
-  containers.podman.podman_secret:
-    name: ts_forgejo_key
-    state: present
-    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
-    force: true
-
-- name: Copy Tailscale serve.json
-  ansible.builtin.copy:
-    src: tailscale_serve.json
-    dest: /etc/forgejo/serve.json
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart Tailscale
-
-- name: Deploy Tailscale Sidecar Quadlets
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: "0644"
-    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
-    src: "{{ item }}"
-  loop:
-    - forgejo.network.j2
-    - ts-forgejo-data.volume
-    - ts-forgejo.container.j2
-  notify:
-    - Reload systemd
-    - Restart Tailscale
-
 - name: Deploy Forgejo Server Quadlets
   ansible.builtin.template:
     owner: root
@@ -84,10 +52,10 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   vars:
-    # Inject the dynamically assigned system UID/GID into the container template
     forgejo_user_id: "{{ ansible_facts.getent_passwd['forgejo'][1] }}"
     forgejo_group_id: "{{ ansible_facts.getent_passwd['forgejo'][2] }}"
   loop:
+    - forgejo.network.j2
     - forgejo-data.volume
     - forgejo.container.j2
   notify:

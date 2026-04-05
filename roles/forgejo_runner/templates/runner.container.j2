@@ -2,7 +2,6 @@
 Description=Forgejo Runner
 Requires=dind.service
 After=dind.service
-BindsTo=ts-forgejo-runner.service
 
 [Container]
 Image=code.forgejo.org/forgejo/runner:12
@@ -10,8 +9,8 @@ AutoUpdate=registry
 
 ContainerName=forgejo-runner
 
-# Attach to the Tailscale network namespace
-Network=container:ts-forgejo-runner
+# Attach to the standard network namespace
+Network=forgejo-runner.network
 HostName=forgejo-runner-{{ inventory_hostname }}
 
 # Run securely natively as the dynamic UID/GID
@@ -19,8 +18,15 @@ User={{ forgejo_runner_user_id }}:{{ forgejo_runner_group_id }}
 
 # Environment Variables
 Secret=forgejo_runner_token,type=env,target=FORGEJO_RUNNER_TOKEN
-Environment=DOCKER_HOST=tcp://127.0.0.1:2375
-Environment=FORGEJO_INSTANCE_URL=https://git.{{ tailnet_name }}.ts.net
+# Pointing to the internal DinD container
+Environment=DOCKER_HOST=tcp://docker_dind:2375
+# Pointing to the public instance URL via Caddy
+Environment=FORGEJO_INSTANCE_URL=https://git.{{ domain_name }}
+
+{% if 'forgejo' in configured_services -%}
+# Forgejo is on this same host. Force git.{{ domain_name }} to resolve internally.
+AddHost=git.{{ domain_name }}:host-gateway
+{% endif -%}
 
 # Volume bind for data
 Volume=forgejo-runner-data.volume:/data:U

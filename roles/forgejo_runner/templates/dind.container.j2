@@ -1,8 +1,5 @@
 [Unit]
 Description=Docker-in-Docker for Forgejo Runner
-Requires=ts-forgejo-runner.service
-After=ts-forgejo-runner.service
-BindsTo=ts-forgejo-runner.service
 
 [Container]
 Image=docker.io/library/docker:dind
@@ -10,8 +7,8 @@ AutoUpdate=registry
 
 ContainerName=docker_dind
 
-# Attach to the Tailscale network namespace
-Network=container:ts-forgejo-runner
+# Attach to the standard network namespace
+Network=forgejo-runner.network
 
 # Required to run dockerd inside a container
 PodmanArgs=--privileged

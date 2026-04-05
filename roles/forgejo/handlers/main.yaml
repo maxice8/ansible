@@ -11,11 +11,6 @@
   ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/forgejo.conf
   changed_when: true
 
-- name: Restart Tailscale
-  ansible.builtin.systemd:
-    name: ts-forgejo.service
-    state: restarted
-
 - name: Restart Forgejo
   ansible.builtin.systemd:
     name: forgejo.service

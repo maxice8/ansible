@@ -1,18 +1,18 @@
 [Unit]
 Description=Forgejo Server
-Requires=ts-forgejo.service
-After=ts-forgejo.service
-BindsTo=ts-forgejo.service
-PartOf=ts-forgejo.service
+After=network-online.target
 
 [Container]
 Image=codeberg.org/forgejo/forgejo:14-rootless
 AutoUpdate=registry
-
 ContainerName=forgejo
 
-# Attaches to Tailscale's network namespace
-Network=container:ts-forgejo
+# Attach to its own network instead of a sidecar
+Network=forgejo.network
+
+# Map Web UI locally for Caddy, and SSH publicly for git clones
+PublishPort=127.0.0.1:{{ forgejo_port }}:3000
+PublishPort=22:{{ forgejo_ssh_port }}
 
 # Run as an unprivileged 'forgejo' user
 User={{ forgejo_user_id }}:{{ forgejo_group_id }}
