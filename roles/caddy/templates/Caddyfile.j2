@@ -30,6 +30,77 @@
     respond /_health 200
 }
 
+(protect_with_oauth2) {
+    # 1. Skip authentication checks for the proxy's own login and callback routes
+    @requires_auth {
+        not path /oauth2/*
+    }
+    
+    # 2. Forward all other requests to the proxy for verification
+    forward_auth @requires_auth localhost:4180 {
+        uri /oauth2/auth
+        copy_headers X-Auth-Request-User X-Auth-Request-Email
+        
+        # Explicit headers required by oauth2-proxy
+        header_up X-Real-IP {remote_host}
+        
+        # Catch the 401 Unauthorized and redirect to the proxy sign-in page
+        @error status 401
+        handle_response @error {
+            redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+        }
+    }
+    
+    # 3. Serve the actual OAuth2 Proxy login and callback pages
+    reverse_proxy /oauth2/* localhost:4180 {
+        # Explicit headers required by oauth2-proxy
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Uri {uri}
+    }
+}
+
+cockpit.{{ inventory_hostname }}.{{ domain_name }} {
+    import protect_with_oauth2
+    reverse_proxy localhost:9090
+    
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+}
+
+{% if 'netdata' in configured_services -%}
+netdata.{{ inventory_hostname }}.{{ domain_name }} {
+    import protect_with_oauth2
+    reverse_proxy localhost:19999
+    
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+}
+{% endif -%}
+
+{% if 'syncthing' in configured_services -%}
+syncthing.{{ inventory_hostname }}.{{ domain_name }} {
+    import protect_with_oauth2
+    
+    # Proxy to the local port we will publish from the sidecar
+    reverse_proxy localhost:8384 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+    
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
+    }
+    {% endif -%}
+}
+{% endif -%}
+
 {% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
     reverse_proxy localhost:{{ forgejo_port }}

@@ -7,8 +7,11 @@
     mode: "0644"
     content: |
       [WebService]
-      # Allows your Tailscale domain and WebSocket connections
-      Origins = https://cockpit.{{ tailnet_name }}.ts.net wss://cockpit.{{ tailnet_name }}.ts.net
+      # Allows your Tailscale domain AND your public Caddy domain
+      Origins = {{ [
+        'https://cockpit.' ~ inventory_hostname ~ '.' ~ domain_name,
+        'wss://cockpit.' ~ inventory_hostname ~ '.' ~ domain_name
+      ] | join(' ') }}
       ProtocolHeader = X-Forwarded-Proto
   notify: Restart Cockpit
 
@@ -41,7 +44,3 @@
     name: cockpit.socket
     enabled: true
     state: started
-
-- name: Expose Cockpit through Tailscale
-  ansible.builtin.command: tailscale serve --service=svc:cockpit --https=443 localhost:9090
-  changed_when: false

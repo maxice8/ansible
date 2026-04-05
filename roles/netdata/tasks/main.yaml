@@ -65,11 +65,6 @@
 - name: Flush handlers to start Netdata container
   ansible.builtin.meta: flush_handlers
 
-- name: Expose Netdata through Tailscale
-  ansible.builtin.command: tailscale serve --service=svc:netdata --https=443 localhost:19999
-  # Tailscale serve is idempotent in configuration but doesn't report status changes simply, so we silence the change status.
-  changed_when: false
-
 - name: Deploy Netdata Heartbeat Service and Timer
   when: (heartbeat_netdata | default('')) != ""
   block:
