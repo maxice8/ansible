@@ -7,10 +7,6 @@
   ansible.builtin.command: systemd-sysusers /etc/sysusers.d/syncthing.conf
   changed_when: true
 
-- name: Apply syncthing tmpfiles
-  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/syncthing.conf
-  changed_when: true
-
 - name: Restart Syncthing
   ansible.builtin.systemd:
     name: syncthing.service

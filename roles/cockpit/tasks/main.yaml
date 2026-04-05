@@ -7,7 +7,7 @@
     mode: "0644"
     content: |
       [WebService]
-      # Allows your Tailscale domain AND your public Caddy domain
+      # Allows protected Caddy domain
       Origins = {{ [
         'https://cockpit.' ~ inventory_hostname ~ '.' ~ domain_name,
         'wss://cockpit.' ~ inventory_hostname ~ '.' ~ domain_name

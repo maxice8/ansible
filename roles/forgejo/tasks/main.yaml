@@ -18,16 +18,6 @@
       u      forgejo  -    "Forgejo Daemon"  /data          -
   notify: Apply forgejo sysusers
 
-- name: Configure Forgejo tmpfiles
-  ansible.builtin.copy:
-    dest: /etc/tmpfiles.d/forgejo.conf
-    owner: root
-    group: root
-    mode: "0644"
-    content: |
-      d /etc/forgejo 0755 root root -
-  notify: Apply forgejo tmpfiles
-
 - name: Flush handlers to create Forgejo user
   ansible.builtin.meta: flush_handlers
 

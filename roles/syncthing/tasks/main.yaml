@@ -19,16 +19,6 @@
       u      syncthing  -              "Syncthing Daemon"    /var/syncthing -
   notify: Apply syncthing sysusers
 
-- name: Configure Syncthing tmpfiles
-  ansible.builtin.copy:
-    dest: /etc/tmpfiles.d/syncthing.conf
-    owner: root
-    group: root
-    mode: "0644"
-    content: |
-      d /etc/syncthing 0755 root root -
-  notify: Apply syncthing tmpfiles
-
 # Force Ansible to run the notified handler IMMEDIATELY
 - name: Flush handlers to create user before fetching
   ansible.builtin.meta: flush_handlers

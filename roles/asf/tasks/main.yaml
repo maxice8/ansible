@@ -18,8 +18,8 @@
     mode: "0644"
     content: |
       d /etc/asf 0755 root root -
-      # Ensure nobody can access these configs
-      d /etc/asf/config 0700 root root -
+      # Assign ownership natively to the asf user
+      d /etc/asf/config 0700 asf asf -
   notify: Apply asf tmpfiles
 
 - name: Declaratively create ASF system user
