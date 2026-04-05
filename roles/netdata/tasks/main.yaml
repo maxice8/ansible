@@ -18,6 +18,17 @@
 - name: Flush handlers to create Netdata directories
   ansible.builtin.meta: flush_handlers
 
+- name: Restrict Netdata web UI to localhost
+  ansible.builtin.copy:
+    dest: /etc/netdata/netdata.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [web]
+          bind to = 127.0.0.1
+  notify: Restart Netdata
+
 - name: Create health_alarm_notify.conf on host
   ansible.builtin.template:
     owner: root

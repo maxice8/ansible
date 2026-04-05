@@ -12,6 +12,30 @@
       ProtocolHeader = X-Forwarded-Proto
   notify: Restart Cockpit
 
+- name: Ensure cockpit.socket drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/cockpit.socket.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Restrict Cockpit to listen only on localhost
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/cockpit.socket.d/listen.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Socket]
+      # Clear the default listen stream
+      ListenStream=
+      # Bind exclusively to localhost
+      ListenStream=127.0.0.1:9090
+  notify:
+    - Reload systemd
+    - Restart Cockpit
+
 - name: Ensure Cockpit is started and enabled
   ansible.builtin.systemd:
     name: cockpit.socket
