@@ -4,5 +4,5 @@ creation_rules:
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
 
   # Matches settings.ryuu.yaml, settings.example.yaml, etc.
-  - path_regex: settings\..*\.yaml$
+  - path_regex: host_vars/.*\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
