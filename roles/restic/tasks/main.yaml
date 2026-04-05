@@ -73,37 +73,6 @@
     data: "{{ restic_repository_passphrase }}"
     force: true
 
-- name: Copy Backrest Tailscale serve.json
-  ansible.builtin.copy:
-    src: tailscale_serve.json
-    dest: /etc/restic/serve.json
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart ts-backrest
-
-- name: Store Backrest Tailscale Auth-Key as a Podman Secret
-  containers.podman.podman_secret:
-    name: ts_backrest_key
-    state: present
-    data: "{{ tailscale_oauth_secret }}?ephemeral=false"
-    force: true
-
-- name: Deploy Backrest Tailscale Quadlets
-  ansible.builtin.template:
-    owner: root
-    group: root
-    mode: "0644"
-    dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
-    src: "{{ item }}"
-  loop:
-    - backrest.network.j2
-    - ts-backrest-data.volume
-    - ts-backrest.container.j2
-  notify:
-    - Reload systemd
-    - Restart ts-backrest
-
 - name: Deploy Backrest Main Quadlets
   ansible.builtin.template:
     owner: root
@@ -112,6 +81,7 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     src: "{{ item }}"
   loop:
+    - backrest.network.j2
     - backrest-data.volume
     - backrest-cache.volume
     - backrest.container.j2

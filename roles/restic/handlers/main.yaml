@@ -3,11 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Restart ts-backrest
-  ansible.builtin.systemd:
-    name: ts-backrest.service
-    state: restarted
-
 - name: Restart backrest
   ansible.builtin.systemd:
     name: backrest.service

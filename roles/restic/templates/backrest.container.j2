@@ -1,16 +1,15 @@
 [Unit]
 Description=Backrest (Restic Web UI)
-Requires=ts-backrest.service
-After=ts-backrest.service
-BindsTo=ts-backrest.service
-PartOf=ts-backrest.service
 
 [Container]
 Image=ghcr.io/garethgeorge/backrest:latest
+AutoUpdate=registry
 ContainerName=backrest
 
-# Route all traffic through the Tailscale Sidecar
-Network=container:ts-backrest
+# Use a dedicated network and publish Web UI to localhost
+Network=backrest.network
+PublishPort=127.0.0.1:{{ backrest_port }}:9898
+
 SecurityLabelDisable=true
 
 # Persistent Data & Cache
