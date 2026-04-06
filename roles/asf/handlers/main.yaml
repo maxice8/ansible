@@ -3,14 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Apply asf tmpfiles
-  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/asf.conf
-  changed_when: true
-
-- name: Apply asf sysusers
-  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/asf.conf
-  changed_when: true
-
 - name: Restart ASF
   ansible.builtin.systemd:
     name: asf.service

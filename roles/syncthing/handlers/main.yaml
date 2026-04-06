@@ -3,10 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Apply syncthing sysusers
-  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/syncthing.conf
-  changed_when: true
-
 - name: Restart Syncthing
   ansible.builtin.systemd:
     name: syncthing.service

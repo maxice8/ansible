@@ -3,14 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Apply forgejo-runner sysusers
-  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/forgejo-runner.conf
-  changed_when: true
-
-- name: Apply forgejo-runner tmpfiles
-  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/forgejo-runner.conf
-  changed_when: true
-
 - name: Restart DinD
   ansible.builtin.systemd:
     name: dind.service

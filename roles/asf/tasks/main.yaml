@@ -20,7 +20,12 @@
       d /etc/asf 0755 root root -
       # Assign ownership natively to the asf user
       d /etc/asf/config 0700 asf asf -
-  notify: Apply asf tmpfiles
+  register: asf_tmpfiles_config
+
+- name: Apply asf tmpfiles immediately # noqa: no-handler
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/asf.conf
+  changed_when: true
+  when: asf_tmpfiles_config.changed
 
 - name: Declaratively create ASF system user
   ansible.builtin.copy:
@@ -29,10 +34,12 @@
     content: |
       # Type Name  ID   GECOS                   Home directory Shell
       u      asf   -    "ArchiSteamFarm Daemon" /app/config    -
-  notify: Apply asf sysusers
+  register: asf_sysusers_config
 
-- name: Flush handlers to create ASF user
-  ansible.builtin.meta: flush_handlers
+- name: Apply asf sysusers immediately # noqa: no-handler
+  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/asf.conf
+  changed_when: true
+  when: asf_sysusers_config.changed
 
 - name: Fetch newly created ASF user info
   ansible.builtin.getent:

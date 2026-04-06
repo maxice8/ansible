@@ -13,10 +13,12 @@
     mode: "0644"
     content: |
       d /etc/netdata 0755 root root -
-  notify: Apply netdata tmpfiles
+  register: netdata_tmpfiles_config
 
-- name: Flush handlers to create Netdata directories
-  ansible.builtin.meta: flush_handlers
+- name: Apply netdata tmpfiles immediately # noqa: no-handler
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/netdata.conf
+  changed_when: true
+  when: netdata_tmpfiles_config.changed
 
 - name: Restrict Netdata web UI to localhost
   ansible.builtin.copy:

@@ -16,10 +16,12 @@
     content: |
       d /etc/caddy 0755 root root -
       d /var/log/caddy 0755 root root -
-  notify: Apply caddy tmpfiles
+  register: caddy_tmpfiles_config
 
-- name: Flush handlers to create Caddy directories
-  ansible.builtin.meta: flush_handlers
+- name: Apply caddy tmpfiles immediately # noqa: no-handler
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/caddy.conf
+  changed_when: true
+  when: caddy_tmpfiles_config.changed
 
 - name: Copy Containerfile for custom build
   ansible.builtin.copy:

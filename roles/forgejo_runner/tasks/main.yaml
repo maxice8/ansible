@@ -17,7 +17,12 @@
     content: |
       # Type Name            ID   GECOS                   Home directory Shell
       u      forgejo-runner  -    "Forgejo Runner Daemon" /data          -
-  notify: Apply forgejo-runner sysusers
+  register: forgejo_runner_sysusers_config
+
+- name: Apply forgejo-runner sysusers immediately # noqa: no-handler
+  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/forgejo-runner.conf
+  changed_when: true
+  when: forgejo_runner_sysusers_config.changed
 
 - name: Configure Forgejo Runner tmpfiles
   ansible.builtin.copy:
@@ -27,10 +32,12 @@
     mode: "0644"
     content: |
       d /etc/forgejo-runner 0755 root root -
-  notify: Apply forgejo-runner tmpfiles
+  register: forgejo_runner_tmpfiles_config
 
-- name: Flush handlers to create Forgejo Runner user
-  ansible.builtin.meta: flush_handlers
+- name: Apply forgejo-runner tmpfiles immediately # noqa: no-handler
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/forgejo-runner.conf
+  changed_when: true
+  when: forgejo_runner_tmpfiles_config.changed
 
 - name: Fetch newly created Forgejo Runner user info
   ansible.builtin.getent:

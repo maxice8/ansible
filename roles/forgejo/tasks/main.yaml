@@ -16,10 +16,12 @@
     content: |
       # Type Name     ID   GECOS             Home directory Shell
       u      forgejo  -    "Forgejo Daemon"  /data          -
-  notify: Apply forgejo sysusers
+  register: forgejo_sysusers_config
 
-- name: Flush handlers to create Forgejo user
-  ansible.builtin.meta: flush_handlers
+- name: Apply forgejo sysusers immediately # noqa: no-handler
+  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/forgejo.conf
+  changed_when: true
+  when: forgejo_sysusers_config.changed
 
 - name: Fetch newly created Forgejo user info
   ansible.builtin.getent:

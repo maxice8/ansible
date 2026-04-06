@@ -3,10 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Apply netdata tmpfiles
-  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/netdata.conf
-  changed_when: true
-
 - name: Restart Netdata
   ansible.builtin.systemd:
     name: netdata.service

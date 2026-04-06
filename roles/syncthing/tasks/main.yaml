@@ -17,11 +17,12 @@
     content: |
       # Type Name       ID             GECOS                 Home directory Shell
       u      syncthing  -              "Syncthing Daemon"    /var/syncthing -
-  notify: Apply syncthing sysusers
+  register: syncthing_sysusers_config
 
-# Force Ansible to run the notified handler IMMEDIATELY
-- name: Flush handlers to create user before fetching
-  ansible.builtin.meta: flush_handlers
+- name: Apply syncthing sysusers immediately # noqa: no-handler
+  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/syncthing.conf
+  changed_when: true
+  when: syncthing_sysusers_config.changed
 
 - name: Fetch newly created Syncthing user info
   ansible.builtin.getent:

@@ -3,10 +3,6 @@
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Apply forgejo sysusers
-  ansible.builtin.command: systemd-sysusers /etc/sysusers.d/forgejo.conf
-  changed_when: true
-
 - name: Restart Forgejo
   ansible.builtin.systemd:
     name: forgejo.service
