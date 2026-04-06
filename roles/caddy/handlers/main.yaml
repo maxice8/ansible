@@ -17,6 +17,11 @@
     name: caddy.service
     state: restarted
 
+- name: Reload Caddy
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: reloaded
+
 - name: Reload Crowdsec
   ansible.builtin.systemd:
     name: crowdsec.service

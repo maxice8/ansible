@@ -41,6 +41,7 @@ HealthRetries=3
 [Service]
 Restart=always
 TimeoutStartSec=900
+ExecReload=/usr/bin/podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
 [Install]
 WantedBy=multi-user.target

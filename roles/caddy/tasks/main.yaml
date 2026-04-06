@@ -37,7 +37,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Restart Caddy
+  notify: Reload Caddy
 
 - name: Ensure Quadlet directory exists
   ansible.builtin.file:
