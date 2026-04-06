@@ -48,6 +48,11 @@ DropCapability=all
 ReadOnly=true
 Tmpfs=/tmp
 
+HealthCmd=CMD-SHELL curl -fkLsS -m 2 http://127.0.0.1:3000/api/healthz > /dev/null || exit 1
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+
 [Service]
 Restart=always
 TimeoutStartSec=900

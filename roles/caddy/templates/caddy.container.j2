@@ -33,6 +33,11 @@ ReadOnly=true
 Tmpfs=/tmp
 Tmpfs=/config
 
+HealthCmd=CMD-SHELL curl -fkLsS -m 2 http://127.0.0.1:2019/metrics > /dev/null || exit 1
+HealthInterval=15s
+HealthTimeout=5s
+HealthRetries=3
+
 [Service]
 Restart=always
 TimeoutStartSec=900
