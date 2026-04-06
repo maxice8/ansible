@@ -74,10 +74,9 @@
 
           [Service]
           Type=oneshot
-          ExecStart=/bin/sh -c \
-            'podman inspect --format "{% raw %}{{ .State.Health.Status }}{% endraw %}" syncthing | \
-            grep -q healthy && \
-            curl -fsS -m 5 --retry 3 {{ heartbeat_syncthing }} > /dev/null'
+          # Use absolute paths, quote the URL, and use || true to guarantee a 0 exit code
+          ExecStart=/bin/sh -c '/usr/bin/podman inspect --format "{% raw %}{{ .State.Health.Status }}{% endraw %}" syncthing \
+            | /usr/bin/grep -q healthy && /usr/bin/curl -fsS -m 5 --retry 3 "{{ heartbeat_syncthing }}" > /dev/null || true'
 
     - name: Create Syncthing Heartbeat Timer
       ansible.builtin.copy:
