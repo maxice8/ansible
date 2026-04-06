@@ -1,0 +1,27 @@
+# Tailscale OAuth secret to register tailscale devices with
+# different tags, see the 'Tailscale OAuth' section in the
+# README for more information.
+tailscale_oauth_secret: ""
+
+# List of IPs which are to be trusted by Crowdsec
+crowdsec_trusted_ips: []
+
+# Webhook URL to send notifications on Discord
+netdata_discord_alarm_webhook_url: ""
+
+# Token provided by the Forgejo to register runners
+# can be shared across all runners and we --name them
+# differently based on the inventory hostname
+forgejo_runner_token: ""
+
+# Hostname of the Hetzner StorageBox
+restic_ssh_hostname: ""
+# Username to access the Hetzner StorageBox
+restic_ssh_username: ""
+# Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
+restic_ssh_password: ""
+
+# For authentication with OAuth2 Proxy through PocketID
+oauth2_proxy_client_id: ""
+oauth2_proxy_client_secret: ""
+oauth2_proxy_cookie_secret: ""

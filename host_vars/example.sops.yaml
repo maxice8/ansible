@@ -1,8 +1,3 @@
-# Tailscale OAuth secret to register tailscale devices with
-# different tags, see the 'Tailscale OAuth' section in the
-# README for more information.
-tailscale_oauth_secret: ""
-
 # Auth key used by tsidp to register itself, everything from
 # tag:container and user devices should have access to it to
 # allow for OAuth2 authentication.
@@ -10,18 +5,8 @@ tsidp_tskey: ""
 
 # API Key to auth to Crowdsec with Caddy
 caddy_crowdsec_api_key: ""
-# List of IPs which are to be trusted by Crowdsec
-crowdsec_trusted_ips: []
 # API Key to crowdsec firewall bouncer
 caddy_cs_firewall_bouncer_key: ""
-
-# Webhook URL to send notifications on Discord
-netdata_discord_alarm_webhook_url: ""
-
-# Token provided by the Forgejo to register runners
-# can be shared across all runners and we --name them
-# differently based on the inventory hostname
-forgejo_runner_token: ""
 
 # ansible/vars/settings.yaml (Append to the bottom)
 # Password for the ArchiSteamFarm Web UI (IPC)
@@ -33,17 +18,5 @@ heartbeat_keep_vm_alive: ""
 heartbeat_syncthing: ""
 heartbeat_netdata: ""
 
-# Hostname of the Hetzner StorageBox
-restic_ssh_hostname: ""
-# Username to access the Hetzner StorageBox
-restic_ssh_username: ""
-# Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
-restic_ssh_password: ""
-
 # Encryption key for Pocket ID, it can be any string but should be kept secret and unique to your deployment
 pocket_id_encryption_key: ""
-
-# For authentication with OAuth2 Proxy through PocketID
-oauth2_proxy_client_id: ""
-oauth2_proxy_client_secret: ""
-oauth2_proxy_cookie_secret: ""
