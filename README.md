@@ -25,12 +25,14 @@ pacman -S age sops
 
 ### Configuration
 
-We use hostname-namespaced configuration files in the following formats:
+We use encrypted configuration files in the following formats:
 
-- `host_vars/$HOSTNAME.sops.yaml` for Ansible configuration (see `host_vars/example.sops.yaml`)
+- `group_vars/servers.sops.yaml` for cluster-wide Ansible configuration (see `group_vars/example.sops.yaml`)
+- `host_vars/$HOSTNAME.sops.yaml` for node-specific Ansible configuration (see `host_vars/example.sops.yaml`)
 - `$HOSTNAME.env` for Butane configuration (see `example.env`)
 
 ```
+cp group_vars/example.sops.yaml group_vars/servers.sops.yaml
 cp host_vars/example.sops.yaml host_vars/ryuu.sops.yaml
 cp example.env ryuu.env
 ```
@@ -45,12 +47,7 @@ First define the following in your Tailscale ACL:
 ```json
 "tagOwners": {
     "tag:ansible-oauth": ["autogroup:admin"],
-    "tag:tsidp": ["autogroup:admin", "tag:ansible-oauth"],
-    "tag:syncthing": ["autogroup:admin", "tag:ansible-oauth"],
-    "tag:forgejo": ["autogroup:admin", "tag:ansible-oauth"],
-    "tag:forgejo-runner": ["autogroup:admin", "tag:ansible-oauth"],
-    "tag:asf": ["autogroup:admin", "tag:ansible-oauth"],
-    "tag:backrest": ["autogroup:admin", "tag:ansible-oauth"]
+    "tag:tsidp": ["autogroup:admin", "tag:ansible-oauth"]
 }
 ```
 
@@ -82,11 +79,13 @@ Replace the `age` section in `.sops.yaml` so it encrypts with your public key, y
 With all setup you can encrypt both files
 
 ```
+sops -e -i group_vars/servers.sops.yaml
 sops -e -i host_vars/ryuu.sops.yaml
 sops -e -i ryuu.env
 ```
 
 *Note: If you need to edit these files in the future, do not use `cat` or `nano` directly. Instead, use SOPS to decrypt and open them in your default editor on the fly:*
+`sops group_vars/servers.sops.yaml`
 `sops host_vars/ryuu.sops.yaml`
 
 ### Deploying
