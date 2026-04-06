@@ -39,7 +39,7 @@
     dest: "/etc/containers/systemd/{{ item | regex_replace('\\.j2$', '') }}"
     owner: root
     group: root
-    mode: "0644"
+    mode: "0600"
   loop:
     - keep-vm-alive.build
     - keep-vm-alive.container.j2
