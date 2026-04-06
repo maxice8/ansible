@@ -5,3 +5,4 @@ exclude_paths:
   - .cache/
   - .forgejo/workflows/
   - "host_vars/*.sops.yaml"
+  - "group_vars/*.sops.yaml"
