@@ -1,6 +1,0 @@
----
-- name: Restart tsidp
-  ansible.builtin.systemd:
-    daemon_reload: true
-    name: tsidp.service
-    state: restarted

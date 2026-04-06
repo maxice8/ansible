@@ -24,7 +24,6 @@ servers:
         - whoami
         - syncthing
         - netdata
-        - tsidp
         - asf
       # Ports used by the services
       whoami_port: 30001

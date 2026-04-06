@@ -1,8 +1,3 @@
-# Auth key used by tsidp to register itself, everything from
-# tag:container and user devices should have access to it to
-# allow for OAuth2 authentication.
-tsidp_tskey: ""
-
 # API Key to auth to Crowdsec with Caddy
 caddy_crowdsec_api_key: ""
 # API Key to crowdsec firewall bouncer
