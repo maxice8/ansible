@@ -12,7 +12,7 @@ Network=host
 
 {% if caddy_crowdsec_api_key != "" -%}
 # Auto-register Caddy Bouncer Key
-Environment=BOUNCER_KEY_caddy={{ caddy_crowdsec_api_key }}
+Secret=caddy_crowdsec_api_key,type=env,target=BOUNCER_KEY_caddy
 {% endif -%}
 
 # Ensure Caddy collections are installed

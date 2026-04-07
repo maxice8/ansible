@@ -57,6 +57,13 @@
     force: true
   when: caddy_crowdsec_api_key != ""
 
+- name: Store Firewall Bouncer Key as Podman Secret
+  containers.podman.podman_secret:
+    name: caddy_cs_firewall_bouncer_key
+    state: present
+    data: "{{ caddy_cs_firewall_bouncer_key }}"
+  when: caddy_cs_firewall_bouncer_key != ""
+
 - name: Deploy Caddy Quadlets
   ansible.builtin.template:
     owner: root
