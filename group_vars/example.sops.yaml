@@ -15,8 +15,3 @@ restic_ssh_hostname: ""
 restic_ssh_username: ""
 # Password to access the Hetzner StorageBox, we use it once to install our generated ssh-key
 restic_ssh_password: ""
-
-# For authentication with OAuth2 Proxy through PocketID
-oauth2_proxy_client_id: ""
-oauth2_proxy_client_secret: ""
-oauth2_proxy_cookie_secret: ""
