@@ -25,6 +25,7 @@ servers:
         - syncthing
         - netdata
         - asf
+        - pomerium
       # Ports used by the services
       whoami_port: 30001
       forgejo_port: 30002
@@ -32,3 +33,4 @@ servers:
       pocket_id_port: 30003
       asf_port: 30004
       backrest_port: 30005
+      pomerium_port: 30006

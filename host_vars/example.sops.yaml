@@ -15,3 +15,10 @@ heartbeat_netdata: ""
 
 # Encryption key for Pocket ID, it can be any string but should be kept secret and unique to your deployment
 pocket_id_encryption_key: ""
+
+# Register an OIDC app in Pocket ID for Pomerium and place the credentials here
+pomerium_client_id: ""
+pomerium_client_secret: ""
+
+# Must be a base64 encoded 32-byte string. Generate with: base64 /dev/urandom | head -c 43
+pomerium_cookie_secret: ""

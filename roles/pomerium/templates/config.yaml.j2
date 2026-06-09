@@ -1,0 +1,63 @@
+# Caddy terminates TLS, so Pomerium runs in insecure mode locally
+insecure_server: true
+address: ":{{ pomerium_port }}"
+
+# OIDC Integration (Pocket ID)
+idp_provider: "oidc"
+idp_provider_url: "https://id.{{ domain_name }}"
+authenticate_service_url: "https://pomerium.{{ domain_name }}"
+
+routes:
+  - name: "Cockpit"
+    description: "Fedora CoreOS System Administration"
+    from: https://cockpit.{{ inventory_hostname }}.{{ domain_name }}
+    to: http://127.0.0.1:9090
+    pass_identity_headers: true
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+
+{% if 'netdata' in configured_services %}
+  - name: "Netdata"
+    description: "Real-time System Metrics and Monitoring"
+    from: https://netdata.{{ inventory_hostname }}.{{ domain_name }}
+    to: http://127.0.0.1:19999
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+
+{% if 'syncthing' in configured_services %}
+  - name: "Syncthing"
+    description: "P2P File Synchronization Dashboard"
+    from: https://syncthing.{{ inventory_hostname }}.{{ domain_name }}
+    to: http://127.0.0.1:8384
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+
+{% if 'asf' in configured_services %}
+  - name: "ArchiSteamFarm"
+    description: "Steam Account Management and Idling"
+    from: https://asf.{{ inventory_hostname }}.{{ domain_name }}
+    to: http://127.0.0.1:{{ asf_port }}
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+
+{% if 'restic' in configured_services %}
+  - name: "Backrest"
+    description: "Restic Backup Web Interface"
+    from: https://backrest.{{ inventory_hostname }}.{{ domain_name }}
+    to: http://127.0.0.1:{{ backrest_port }}
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}

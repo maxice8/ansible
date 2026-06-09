@@ -30,38 +30,24 @@
     respond /_health 200
 }
 
-(protect_with_oauth2) {
-    # 1. Skip authentication checks for the proxy's own login and callback routes
-    @requires_auth {
-        not path /oauth2/*
+pomerium.{{ domain_name }} {
+    reverse_proxy localhost:{{ pomerium_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
     }
     
-    # 2. Forward all other requests to the proxy for verification
-    forward_auth @requires_auth localhost:4180 {
-        uri /oauth2/auth
-        copy_headers X-Auth-Request-User X-Auth-Request-Email
-        
-        # Explicit headers required by oauth2-proxy
-        header_up X-Real-IP {remote_host}
-        
-        # Catch the 401 Unauthorized and redirect to the proxy sign-in page
-        @error status 401
-        handle_response @error {
-            redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
-        }
+    {% if caddy_crowdsec_api_key != "" -%}
+    route {
+        crowdsec
     }
-    
-    # 3. Serve the actual OAuth2 Proxy login and callback pages
-    reverse_proxy /oauth2/* localhost:4180 {
-        # Explicit headers required by oauth2-proxy
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Uri {uri}
-    }
+    {% endif -%}
 }
 
 cockpit.{{ inventory_hostname }}.{{ domain_name }} {
-    import protect_with_oauth2
-    reverse_proxy localhost:9090
+    reverse_proxy localhost:{{ pomerium_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
     
     {% if caddy_crowdsec_api_key != "" -%}
     route {
@@ -72,8 +58,10 @@ cockpit.{{ inventory_hostname }}.{{ domain_name }} {
 
 {% if 'netdata' in configured_services -%}
 netdata.{{ inventory_hostname }}.{{ domain_name }} {
-    import protect_with_oauth2
-    reverse_proxy localhost:19999
+    reverse_proxy localhost:{{ pomerium_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
     
     {% if caddy_crowdsec_api_key != "" -%}
     route {
@@ -85,10 +73,7 @@ netdata.{{ inventory_hostname }}.{{ domain_name }} {
 
 {% if 'syncthing' in configured_services -%}
 syncthing.{{ inventory_hostname }}.{{ domain_name }} {
-    import protect_with_oauth2
-    
-    # Proxy to the local port we will publish from the sidecar
-    reverse_proxy localhost:8384 {
+    reverse_proxy localhost:{{ pomerium_port }} {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
     }
@@ -103,10 +88,7 @@ syncthing.{{ inventory_hostname }}.{{ domain_name }} {
 
 {% if 'asf' in configured_services -%}
 asf.{{ inventory_hostname }}.{{ domain_name }} {
-    import protect_with_oauth2
-    
-    # Proxy to the published ASF port on localhost
-    reverse_proxy localhost:{{ asf_port }} {
+    reverse_proxy localhost:{{ pomerium_port }} {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
     }
@@ -130,10 +112,7 @@ asf.{{ inventory_hostname }}.{{ domain_name }} {
 {% endif -%}
 {% if 'restic' in configured_services -%}
 backrest.{{ inventory_hostname }}.{{ domain_name }} {
-    import protect_with_oauth2
-    
-    # Proxy to the published Backrest port on localhost
-    reverse_proxy localhost:{{ backrest_port }} {
+    reverse_proxy localhost:{{ pomerium_port }} {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
     }
@@ -158,7 +137,11 @@ backrest.{{ inventory_hostname }}.{{ domain_name }} {
 
 {% if 'forgejo' in configured_services -%}
 git.{{ domain_name }} {
-    reverse_proxy localhost:{{ forgejo_port }}
+    reverse_proxy localhost:{{ forgejo_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+    
     {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
@@ -177,7 +160,11 @@ git.{{ domain_name }} {
 {% endif -%}
 {% if 'whoami' in configured_services -%}
 whoami.{{ domain_name }} {
-    reverse_proxy localhost:{{ whoami_port }}
+    reverse_proxy localhost:{{ whoami_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+    
     {% if caddy_crowdsec_api_key != "" -%}
     route {
         crowdsec
@@ -196,7 +183,11 @@ whoami.{{ domain_name }} {
 {% endif -%}
 {% if 'pocket_id' in configured_services -%}
 id.{{ domain_name }} {
-    reverse_proxy localhost:{{ pocket_id_port }}
+    reverse_proxy localhost:{{ pocket_id_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
     
     {% if caddy_crowdsec_api_key != "" -%}
     route {
