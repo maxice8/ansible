@@ -1,4 +1,4 @@
-name: Ansible Lint
+name: Pyinfra Lint
 on:
   push:
     branches: ["master"]
@@ -9,10 +9,18 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Forgejo's checkout action (already working properly via data.forgejo.org)
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Lint with Docker Image
-        # This runs the command directly inside the container
-        uses: docker://pipelinecomponents/ansible-lint:latest
+      # Explicitly pull Ruff from GitHub
+      - name: Lint Python Code (Ruff)
+        uses: https://github.com/astral-sh/ruff-action@v3
         with:
-          args: "ansible-lint"
+          args: "check ."
+
+      # Explicitly pull Ruff from GitHub
+      - name: Check Code Formatting (Ruff)
+        uses: https://github.com/astral-sh/ruff-action@v3
+        with:
+          args: "format --check ."
