@@ -1,8 +1,0 @@
-[Unit]
-Description=Build keep-vm-alive container image
-
-[Build]
-ImageTag=localhost/keep-vm-alive:latest
-File=/etc/keep-vm-alive/Containerfile
-SetWorkingDirectory=/etc/keep-vm-alive
-PodmanArgs=--network=host

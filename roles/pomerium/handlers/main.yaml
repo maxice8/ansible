@@ -1,9 +1,0 @@
----
-- name: Reload systemd
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Restart Pomerium
-  ansible.builtin.systemd:
-    name: pomerium.service
-    state: restarted

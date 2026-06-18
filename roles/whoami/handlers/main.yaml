@@ -1,6 +1,0 @@
----
-- name: Restart whoami
-  ansible.builtin.systemd:
-    daemon_reload: true
-    name: whoami.service
-    state: restarted

@@ -1,8 +1,0 @@
-[Unit]
-Description=Build custom Caddy with CrowdSec bouncer
-
-[Build]
-ImageTag=localhost/caddy-custom:latest
-File=/etc/caddy/Containerfile
-SetWorkingDirectory=/etc/caddy
-PodmanArgs=--network=host

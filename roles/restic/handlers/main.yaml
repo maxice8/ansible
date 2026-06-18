@@ -1,9 +1,0 @@
----
-- name: Reload systemd
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Restart backrest
-  ansible.builtin.systemd:
-    name: backrest.service
-    state: restarted

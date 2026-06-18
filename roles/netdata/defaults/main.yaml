@@ -1,3 +1,0 @@
----
-# Webhook URL where we notify the channel in Discord
-netdata_discord_alarm_webhook_url: ""
