@@ -22,7 +22,8 @@ ensure_secret("pomerium_cookie_secret", host.data.get("pomerium_cookie_secret", 
 domain = host.data.domain_name
 svcs = host.data.configured_services
 
-routes = [f"""  - name: "Cockpit"
+routes = [
+    f"""  - name: "Cockpit"
     description: "Fedora CoreOS System Administration"
     from: https://cockpit.{host.name}.{domain}
     to: http://127.0.0.1:9090
@@ -30,7 +31,8 @@ routes = [f"""  - name: "Cockpit"
     policy:
       - allow:
           or:
-            - authenticated_user: true"""]
+            - authenticated_user: true"""
+]
 
 if "netdata" in svcs:
     routes.append(
@@ -49,14 +51,18 @@ if "restic" in svcs:
         f'  - name: "Backrest"\n    description: "Restic UI"\n    from: https://backrest.{host.name}.{domain}\n    to: http://127.0.0.1:{host.data.backrest_port}\n    policy:\n      - allow:\n          or:\n            - authenticated_user: true'
     )
 
-config_yaml = f"""insecure_server: true
+config_yaml = (
+    f"""insecure_server: true
 address: ":{host.data.pomerium_port}"
 idp_provider: "oidc"
 idp_provider_url: "https://id.{domain}"
 authenticate_service_url: "https://pomerium.{domain}"
 
 routes:
-""" + "\n".join(routes) + "\n"
+"""
+    + "\n".join(routes)
+    + "\n"
+)
 
 config_changed = files.put(
     name="Template Pomerium route configuration",

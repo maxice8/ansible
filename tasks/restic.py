@@ -50,7 +50,8 @@ if (
 ):
     server.shell(
         name="Install SSH key via temporary container",
-        commands=[f"""
+        commands=[
+            f"""
             podman run --rm --network host --security-opt label=disable \\
             -v /etc/restic/ssh:/mnt/ssh:ro -e SSHPASS="{host.data.restic_ssh_password}" \\
             docker.io/library/alpine:latest sh -c \\
@@ -59,7 +60,8 @@ if (
              sshpass -e ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 23 \\
              '{host.data.restic_ssh_username}@{host.data.restic_ssh_hostname}' install-ssh-key || true" && \\
             touch /etc/restic/ssh/.key_installed
-        """],
+        """
+        ],
     )
 
 ensure_secret(
@@ -85,7 +87,7 @@ Image=ghcr.io/garethgeorge/backrest:latest
 AutoUpdate=registry
 ContainerName=backrest
 Network=backrest.network
-PublishPort=127.0.0.1:{host.data.get('backrest_port', 9898)}:9898
+PublishPort=127.0.0.1:{host.data.get("backrest_port", 9898)}:9898
 
 SecurityLabelDisable=true
 Volume=backrest-data.volume:/data:Z

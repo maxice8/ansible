@@ -15,7 +15,7 @@ files.directory(
 )
 
 sh_content = f"""#!/usr/bin/env bash
-HEARTBEAT_URL="{host.data.get('heartbeat_keep_vm_alive', '')}"
+HEARTBEAT_URL="{host.data.get("heartbeat_keep_vm_alive", "")}"
 CPU_LOAD=25
 RUN_TIME=45
 SLEEP_TIME=255
