@@ -1,12 +1,13 @@
 # .sops.yaml
 creation_rules:
+  # Matches settings.ryuu.env, settings.example.env, etc.
+  - path_regex: host_vars/.*\.env$
+    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
+
+  # Matches group level env files
+  - path_regex: group_vars/.*\.env$
+    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
+
+  # Catch-all for any other .env files in the root
   - path_regex: \.env$
-    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
-
-  # Matches settings.ryuu.yaml, settings.example.yaml, etc.
-  - path_regex: host_vars/.*\.yaml$
-    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
-
-  # Matches settings.ryuu.yaml, settings.example.yaml, etc.
-  - path_regex: group_vars/.*\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w

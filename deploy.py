@@ -1,18 +1,15 @@
 import os
 import subprocess
 
-import yaml
 from pyinfra import host, local
 
 from inventory import plain_group_vars
 
 
 def load_sops_vars(filepath):
-    # If the file doesn't exist (e.g., no host vars for this specific host), return empty
     if not os.path.exists(filepath):
         return {}
 
-    # Explicitly tell SOPS where to find the age key
     env = os.environ.copy()
     env["SOPS_AGE_KEY_FILE"] = os.path.abspath(".age-key.txt")
 
@@ -24,19 +21,35 @@ def load_sops_vars(filepath):
             text=True,
             check=True,
         )
-        return yaml.safe_load(result.stdout) or {}
-    except subprocess.CalledProcessError as e:
-        # Don't swallow the error silently! Print SOPS's actual stderr output
-        print(f"SOPS Decryption failed for {filepath}:\n{e.stderr}")
-        raise
+
+        # Parse standard ENV key=value pairs natively in Python
+        vars_dict = {}
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            if "=" in line:
+                key, val = line.split("=", 1)
+                key = key.strip().lower()  # Convert CROWDSEC to crowdsec
+                val = val.strip().strip('"').strip("'")
+
+                # Reconstruct lists from comma-separated strings
+                if key == "crowdsec_trusted_ips" and val:
+                    vars_dict[key] = [ip.strip() for ip in val.split(",")]
+                else:
+                    vars_dict[key] = val
+
+        return vars_dict
+
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         raise
 
 
-# 1. Load Secrets & Vars into the host dynamically
-sops_host_vars = load_sops_vars(f"host_vars/{host.name}.sops.yaml")
-sops_group_vars = load_sops_vars("group_vars/servers.sops.yaml")
+# Make sure to update the file extensions being loaded here!
+sops_host_vars = load_sops_vars(f"host_vars/{host.name}.sops.env")
+sops_group_vars = load_sops_vars("group_vars/servers.sops.env")
 
 all_vars = {**plain_group_vars, **sops_group_vars, **sops_host_vars}
 
