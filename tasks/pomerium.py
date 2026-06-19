@@ -106,12 +106,10 @@ WantedBy=multi-user.target
 """,
 )
 
-if quadlet_changed:
-    systemd.daemon_reload(name="Reload systemd for pomerium")
-
 systemd.service(
     name="Ensure Pomerium service is started",
     service="pomerium.service",
     running=True,
     restarted=(quadlet_changed or config_changed),
+    daemon_reload=quadlet_changed,
 )

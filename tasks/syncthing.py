@@ -77,14 +77,12 @@ WantedBy=multi-user.target
 )
 
 changes = net_changed or vol_changed or container_changed
-if changes:
-    systemd.daemon_reload(name="Reload systemd for syncthing")
-
 systemd.service(
     name="Ensure Syncthing service is started",
     service="syncthing.service",
     running=True,
     restarted=changes,
+    daemon_reload=changes,
 )
 
 # 3. Optional Heartbeat
@@ -111,12 +109,10 @@ if heartbeat_url:
         mode="0644",
     ).changed
 
-    if hb_timer_changed:
-        systemd.daemon_reload(name="Reload systemd for syncthing heartbeat")
-
     systemd.service(
         name="Ensure Syncthing Heartbeat Timer is started",
         service="syncthing-heartbeat.timer",
         running=True,
         enabled=True,
+        daemon_reload=hb_timer_changed,
     )

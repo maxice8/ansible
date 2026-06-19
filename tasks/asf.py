@@ -96,12 +96,10 @@ WantedBy=multi-user.target
 )
 
 changes = net_changed or container_changed
-if changes:
-    systemd.daemon_reload(name="Reload systemd for asf")
-
 systemd.service(
     name="Ensure ASF service is started",
     service="asf.service",
     running=True,
     restarted=(changes or json_changed or ipc_changed),
+    daemon_reload=changes,
 )

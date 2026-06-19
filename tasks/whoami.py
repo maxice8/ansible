@@ -39,12 +39,10 @@ WantedBy=multi-user.target
 )
 
 changes = net_changed or container_changed
-if changes:
-    systemd.daemon_reload(name="Reload systemd for whoami")
-
 systemd.service(
     name="Ensure whoami service is started",
     service="whoami.service",
     running=True,
     restarted=changes,
+    daemon_reload=changes,
 )

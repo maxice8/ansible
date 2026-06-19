@@ -34,9 +34,6 @@ socket_changed = files.put(
     mode="0644",
 ).changed
 
-if socket_changed:
-    systemd.daemon_reload(name="Reload systemd for cockpit socket")
-
 if config_changed or socket_changed:
     systemd.service(name="Restart Cockpit", service="cockpit", restarted=True)
 
@@ -45,4 +42,5 @@ systemd.service(
     service="cockpit.socket",
     running=True,
     enabled=True,
+    daemon_reload=socket_changed,
 )

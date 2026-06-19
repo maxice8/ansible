@@ -83,14 +83,12 @@ WantedBy=multi-user.target
 )
 
 quadlet_changes = lib_vol_changed or cache_vol_changed or container_changed
-if quadlet_changes:
-    systemd.daemon_reload(name="Reload systemd for netdata")
-
 systemd.service(
     name="Ensure Netdata service is started",
     service="netdata.service",
     running=True,
     restarted=(quadlet_changes or conf_changed or alarm_changed),
+    daemon_reload=quadlet_changes,
 )
 
 # 5. Optional Heartbeat
@@ -117,12 +115,10 @@ if heartbeat_url:
         mode="0644",
     ).changed
 
-    if hb_timer_changed:
-        systemd.daemon_reload(name="Reload systemd for netdata heartbeat")
-
     systemd.service(
         name="Ensure Netdata Heartbeat Timer is started",
         service="netdata-heartbeat.timer",
         running=True,
         enabled=True,
+        daemon_reload=hb_timer_changed,
     )

@@ -90,13 +90,10 @@ WantedBy=multi-user.target
 )
 
 changes = net_changed or vol_changed or container_changed
-
-if changes:
-    systemd.daemon_reload(name="Reload systemd for forgejo")
-
 systemd.service(
     name="Ensure Forgejo service is started",
     service="forgejo.service",
     running=True,
     restarted=changes,
+    daemon_reload=changes,
 )

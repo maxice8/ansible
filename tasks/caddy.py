@@ -267,13 +267,12 @@ WantedBy=multi-user.target
 """,
     )
 
-    if cs_changed:
-        systemd.daemon_reload(name="Reload systemd for crowdsec")
     systemd.service(
         name="Ensure CrowdSec service is started",
         service="crowdsec.service",
         running=True,
         restarted=cs_changed,
+        daemon_reload=cs_changed,
     )
 
 if api_key and bouncer_key:
@@ -319,11 +318,10 @@ WantedBy=multi-user.target
 """,
     )
 
-    if fw_changed:
-        systemd.daemon_reload(name="Reload systemd for cs-firewall")
     systemd.service(
         name="Ensure Firewall Bouncer is started",
         service="cs-firewall.service",
         running=True,
         restarted=fw_changed,
+        daemon_reload=fw_changed,
     )

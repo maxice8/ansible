@@ -29,12 +29,10 @@ gro_file = files.put(
     mode="0644",
 )
 
-if gro_file.changed:
-    systemd.daemon_reload(name="Reload systemd for tailscale-gro")
-
 systemd.service(
     name="Enable and start Tailscale GRO optimization service",
     service="tailscale-gro.service",
     running=True,
     enabled=True,
+    daemon_reload=gro_file.changed,
 )

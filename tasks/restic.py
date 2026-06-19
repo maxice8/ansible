@@ -117,12 +117,10 @@ WantedBy=multi-user.target
 )
 
 changes = net_c or data_c or cache_c or cont_c
-if changes:
-    systemd.daemon_reload(name="Reload systemd for backrest")
-
 systemd.service(
     name="Ensure Backrest service is started",
     service="backrest.service",
     running=True,
     restarted=changes,
+    daemon_reload=changes,
 )

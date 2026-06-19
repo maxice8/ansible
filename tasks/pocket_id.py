@@ -63,13 +63,10 @@ WantedBy=multi-user.target
 )
 
 changes = net_changed or vol_changed or container_changed
-
-if changes:
-    systemd.daemon_reload(name="Reload systemd for pocket-id")
-
 systemd.service(
     name="Ensure Pocket ID service is started",
     service="pocket-id.service",
     running=True,
     restarted=changes,
+    daemon_reload=changes,
 )
