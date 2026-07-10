@@ -64,13 +64,36 @@ configured_services = host_services + group_services
 
 setattr(host.data, "configured_services", configured_services)
 
-# 3. Base Setup
-local.include("tasks/00_common.py")
-local.include("tasks/tailscale.py")
-local.include("tasks/podman.py")
-local.include("tasks/cockpit.py")
+# 3. Execution Filtering Logic
+# Grabs a comma-separated list from the terminal, e.g., TASKS=podman,pingvin_share
+only_tasks_env = os.environ.get("TASKS")
+targeted_tasks = (
+    [t.strip() for t in only_tasks_env.split(",")] if only_tasks_env else None
+)
+
+
+def should_run(task_name):
+    # If no limit is provided, run everything as normal
+    if targeted_tasks is None:
+        return True
+    return task_name in targeted_tasks
+
+
+# 00_common setup should almost always run to ensure folder structures exist,
+# but we respect the filter if explicitly targeted.
+if should_run("00_common") or targeted_tasks:
+    local.include("tasks/00_common.py")
+
+if should_run("tailscale"):
+    local.include("tasks/tailscale.py")
+
+if should_run("podman"):
+    local.include("tasks/podman.py")
+
+if should_run("cockpit"):
+    local.include("tasks/cockpit.py")
 
 # 4. Service Loop
 for service in configured_services:
-    # Dynamically include the task script for each service
-    local.include(f"tasks/{service}.py")
+    if should_run(service):
+        local.include(f"tasks/{service}.py")
