@@ -88,6 +88,14 @@ if "whoami" in svcs:
     caddy_blocks.append(proxy_block("whoami", host.data.whoami_port, "whoami"))
 if "pocket_id" in svcs:
     caddy_blocks.append(proxy_block("id", host.data.pocket_id_port, "pocket_id"))
+if "pingvin_share" in svcs:
+    caddy_blocks.append(
+        proxy_block(
+            f"share.{host.name}",
+            host.data.get("pingvin_share_port", 3000),
+            "pingvin_share",
+        )
+    )
 
 caddyfile = "{\n" + "\n\n".join(caddy_blocks) + "\n"
 caddyfile_changed = files.put(

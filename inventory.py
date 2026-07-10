@@ -27,6 +27,7 @@ servers = [
                 "netdata",
                 "asf",
                 "pomerium",
+                "pingvin_share",
             ],
             "group_services": ["restic"],
             "whoami_port": 30001,
@@ -36,6 +37,7 @@ servers = [
             "asf_port": 30004,
             "backrest_port": 30005,
             "pomerium_port": 30006,
+            "pingvin_share_port": 30007,
         },
     ),
 ]
