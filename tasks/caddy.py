@@ -188,6 +188,66 @@ if api_key:
         path="/etc/crowdsec-custom/parsers", user="root", group="root", mode="0755"
     )
 
+    wl_tailscale_changed = files.put(
+        name="Whitelist Tailscale network",
+        src=io.StringIO(
+            "name: ansible-whitelist-tailscale\n"
+            "description: 'Whitelist for Tailscale CGNAT network'\n"
+            "whitelist:\n"
+            "  reason: 'Trusted via Ansible (Tailscale)'\n"
+            "  cidr:\n"
+            "    - '100.64.0.0/10'\n"
+        ),
+        dest="/etc/crowdsec-custom/parsers/ansible-whitelist-tailscale.yaml",
+        user="root",
+        group="root",
+        mode="0644",
+    ).changed
+
+    trusted_ips = host.data.get("crowdsec_trusted_ips", [])
+    wl_static_changed = False
+    if trusted_ips:
+        yaml_ips = "\n".join([f'    - "{ip}"' for ip in trusted_ips])
+        wl_static_changed = files.put(
+            name="Whitelist static trusted IPs",
+            src=io.StringIO(
+                "name: ansible-whitelist-static\n"
+                "description: 'Whitelist static trusted IPs'\n"
+                "whitelist:\n"
+                "  reason: 'Trusted'\n"
+                "  ip:\n"
+                f"{yaml_ips}\n"
+            ),
+            dest="/etc/crowdsec-custom/parsers/ansible-whitelist-static.yaml",
+            user="root",
+            group="root",
+            mode="0644",
+        ).changed
+
+    wl_controller_changed = False
+    try:
+        my_ip = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode("utf8")
+        wl_controller_changed = files.put(
+            name="Whitelist controller IP",
+            src=io.StringIO(
+                "name: ansible-whitelist-controller\n"
+                "description: 'Trusted Controller IP'\n"
+                "whitelist:\n"
+                "  reason: 'Trusted Controller'\n"
+                "  ip:\n"
+                f"    - \"{my_ip}\"\n"
+            ),
+            dest="/etc/crowdsec-custom/parsers/ansible-whitelist-controller.yaml",
+            user="root",
+            group="root",
+            mode="0644",
+        ).changed
+    except Exception as e:
+        host.noop(f"Failed to fetch controller IP for whitelisting: {e}")
+
+    # Track overall whitelist file state changes
+    whitelists_changed = wl_tailscale_changed or wl_static_changed or wl_controller_changed
+
     files.put(
         name="Create caddy.yaml acquis",
         src=io.StringIO(
@@ -198,45 +258,6 @@ if api_key:
         group="root",
         mode="0644",
     )
-    files.put(
-        name="Whitelist Tailscale network",
-        src=io.StringIO(
-            "name: ansible-whitelist-tailscale\ndescription: 'Whitelist for Tailscale CGNAT network'\nwhitelist:\n  reason: 'Trusted via Ansible (Tailscale)'\n  cidr:\n    - '100.64.0.0/10'\n"
-        ),
-        dest="/etc/crowdsec-custom/parsers/ansible-whitelist-tailscale.yaml",
-        user="root",
-        group="root",
-        mode="0644",
-    )
-
-    trusted_ips = host.data.get("crowdsec_trusted_ips", [])
-    if trusted_ips:
-        yaml_ips = "\n".join([f'    - "{ip}"' for ip in trusted_ips])
-        files.put(
-            name="Whitelist static trusted IPs",
-            src=io.StringIO(
-                f"name: ansible-whitelist-static\ndescription: 'Whitelist static trusted IPs'\nwhitelist:\n  reason: 'Trusted'\n  ip:\n{yaml_ips}\n"
-            ),
-            dest="/etc/crowdsec-custom/parsers/ansible-whitelist-static.yaml",
-            user="root",
-            group="root",
-            mode="0644",
-        )
-
-    try:
-        my_ip = urllib.request.urlopen("https://api.ipify.org").read().decode("utf8")
-        files.put(
-            name="Whitelist controller IP",
-            src=io.StringIO(
-                f"name: ansible-whitelist-controller\nwhitelist:\n  reason: 'Trusted Controller'\n  ip:\n    - \"{my_ip}\"\n"
-            ),
-            dest="/etc/crowdsec-custom/parsers/ansible-whitelist-controller.yaml",
-            user="root",
-            group="root",
-            mode="0644",
-        )
-    except Exception:
-        pass
 
     deploy_quadlet("crowdsec-data.volume", "[Volume]")
     deploy_quadlet("crowdsec-config.volume", "[Volume]")
@@ -279,7 +300,7 @@ WantedBy=multi-user.target
         name="Ensure CrowdSec service is started",
         service="crowdsec.service",
         running=True,
-        restarted=cs_changed,
+        restarted=cs_changed or whitelists_changed,  # Restart if container or whitelists changed
         daemon_reload=cs_changed,
     )
 
