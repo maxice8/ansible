@@ -7,13 +7,6 @@ plain_group_vars = {
 # Define your hosts and their specific data
 servers = [
     (
-        "mika",
-        {
-            "host_services": ["keep_vm_alive"],
-            "group_services": [],
-        },
-    ),
-    (
         "ryuu",
         {
             "ssh_user": "core",  # Replaces ansible_user: core
