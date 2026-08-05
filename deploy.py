@@ -62,7 +62,7 @@ host_services = host.data.get("host_services", [])
 group_services = host.data.get("group_services", [])
 configured_services = host_services + group_services
 
-setattr(host.data, "configured_services", configured_services)
+host.data.configured_services = configured_services
 
 # 3. Execution Filtering Logic
 # Grabs a comma-separated list from the terminal, e.g., TASKS=podman,pingvin_share

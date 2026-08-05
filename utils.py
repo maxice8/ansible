@@ -1,8 +1,9 @@
 # utils.py
 import io
+
 from pyinfra import host
 from pyinfra.api import FactBase
-from pyinfra.operations import server, files
+from pyinfra.operations import files, server
 
 
 class ShellFact(FactBase):

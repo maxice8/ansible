@@ -226,7 +226,11 @@ if api_key:
 
     wl_controller_changed = False
     try:
-        my_ip = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode("utf8")
+        my_ip = (
+            urllib.request.urlopen("https://api.ipify.org", timeout=5)
+            .read()
+            .decode("utf8")
+        )
         wl_controller_changed = files.put(
             name="Whitelist controller IP",
             src=io.StringIO(
@@ -235,18 +239,22 @@ if api_key:
                 "whitelist:\n"
                 "  reason: 'Trusted Controller'\n"
                 "  ip:\n"
-                f"    - \"{my_ip}\"\n"
+                f'    - "{my_ip}"\n'
             ),
             dest="/etc/crowdsec-custom/parsers/ansible-whitelist-controller.yaml",
             user="root",
             group="root",
             mode="0644",
         ).changed
-    except Exception as e:
+    except urllib.error.HTTPError as e:
+        host.noop(f"Failed to fetch controller IP for whitelisting: {e}")
+    except urllib.error.URLError as e:
         host.noop(f"Failed to fetch controller IP for whitelisting: {e}")
 
     # Track overall whitelist file state changes
-    whitelists_changed = wl_tailscale_changed or wl_static_changed or wl_controller_changed
+    whitelists_changed = (
+        wl_tailscale_changed or wl_static_changed or wl_controller_changed
+    )
 
     files.put(
         name="Create caddy.yaml acquis",
@@ -300,7 +308,8 @@ WantedBy=multi-user.target
         name="Ensure CrowdSec service is started",
         service="crowdsec.service",
         running=True,
-        restarted=cs_changed or whitelists_changed,  # Restart if container or whitelists changed
+        restarted=cs_changed
+        or whitelists_changed,  # Restart if container or whitelists changed
         daemon_reload=cs_changed,
     )
 

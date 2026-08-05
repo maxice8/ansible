@@ -1,6 +1,7 @@
 # tasks/pingvin_share.py
 from pyinfra import host
 from pyinfra.operations import systemd
+
 from utils import deploy_quadlet
 
 # 1. Quadlets
