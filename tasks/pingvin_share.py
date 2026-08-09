@@ -25,8 +25,7 @@ Image=docker.io/smp46/pingvin-share-x:latest
 AutoUpdate=registry
 ContainerName=pingvin-share
 Network=pingvin-share.network
-# Map container port 3000 to the host port
-PublishPort=127.0.0.1:{host.data.get("pingvin_share_port", 3000)}:3000
+PublishPort=127.0.0.1:{host.data.pingvin_share_port}:3000
 Environment=TRUST_PROXY=true
 Volume=pingvin-share-data.volume:/opt/app/backend/data:U
 Volume=pingvin-share-images.volume:/opt/app/frontend/public/img:U

@@ -62,25 +62,17 @@ caddy_blocks.append(proxy_block(f"cockpit.{host.name}", 9090, "cockpit"))
 
 if "netdata" in svcs:
     caddy_blocks.append(
-        proxy_block(
-            f"netdata.{host.name}", host.data.get("pomerium_port", 30006), "netdata"
-        )
+        proxy_block(f"netdata.{host.name}", host.data.pomerium_port, "netdata")
     )
 if "syncthing" in svcs:
     caddy_blocks.append(
-        proxy_block(
-            f"syncthing.{host.name}", host.data.get("pomerium_port", 30006), "syncthing"
-        )
+        proxy_block(f"syncthing.{host.name}", host.data.pomerium_port, "syncthing")
     )
 if "asf" in svcs:
-    caddy_blocks.append(
-        proxy_block(f"asf.{host.name}", host.data.get("pomerium_port", 30006), "asf")
-    )
+    caddy_blocks.append(proxy_block(f"asf.{host.name}", host.data.pomerium_port, "asf"))
 if "restic" in svcs:
     caddy_blocks.append(
-        proxy_block(
-            f"backrest.{host.name}", host.data.get("pomerium_port", 30006), "restic"
-        )
+        proxy_block(f"backrest.{host.name}", host.data.pomerium_port, "restic")
     )
 if "forgejo" in svcs:
     caddy_blocks.append(proxy_block("git", host.data.forgejo_port, "forgejo"))
@@ -92,13 +84,13 @@ if "pingvin_share" in svcs:
     caddy_blocks.append(
         proxy_block(
             f"share.{host.name}",
-            host.data.get("pingvin_share_port", 3000),
+            host.data.pingvin_share_port,
             "pingvin_share",
         )
     )
 if "netbird_server" in svcs:
-    netbird_server_port = host.data.get("netbird_server_port", 30008)
-    netbird_dashboard_port = host.data.get("netbird_dashboard_port", 30009)
+    netbird_server_port = host.data.netbird_server_port
+    netbird_dashboard_port = host.data.netbird_dashboard_port
     caddy_blocks.append(
         f"""netbird.{host.data.domain_name} {{
     @grpc header Content-Type application/grpc*

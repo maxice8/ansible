@@ -87,7 +87,7 @@ Image=ghcr.io/garethgeorge/backrest:latest
 AutoUpdate=registry
 ContainerName=backrest
 Network=backrest.network
-PublishPort=127.0.0.1:{host.data.get("backrest_port", 9898)}:9898
+PublishPort=127.0.0.1:{host.data.backrest_port}:9898
 
 SecurityLabelDisable=true
 Volume=backrest-data.volume:/data:Z
