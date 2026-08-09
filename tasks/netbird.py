@@ -1,23 +1,6 @@
 import io
 
-from pyinfra import host
-from pyinfra.facts.server import Command
-from pyinfra.operations import files, server, systemd
-
-if host.get_fact(Command, command="command -v semodule || true"):
-    cil = files.put(
-        name="Upload NetBird SELinux CIL policy",
-        src=io.StringIO(
-            "(type netbird_t)\n(allow netbird_t ssh_port_t (tcp_socket (name_bind)))\n"
-        ),
-        dest="/etc/selinux/netbird-ssh.cil",
-    )
-
-    if cil.changed:
-        server.shell(
-            name="Install NetBird SELinux CIL policy",
-            commands=["semodule -i /etc/selinux/netbird-ssh.cil"],
-        )
+from pyinfra.operations import files, systemd
 
 # NetBird UDP GRO Optimization (Carried over from Tailscale setup)
 gro_file = files.put(
