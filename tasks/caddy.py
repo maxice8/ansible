@@ -3,7 +3,7 @@ import io
 import urllib.request
 
 from pyinfra import host
-from pyinfra.operations import files, server, systemd
+from pyinfra.operations import files, systemd
 
 from utils import ShellFact, apply_tmpfiles, deploy_quadlet, ensure_secret
 
@@ -96,6 +96,30 @@ if "pingvin_share" in svcs:
             "pingvin_share",
         )
     )
+if "netbird_server" in svcs:
+    netbird_server_port = host.data.get("netbird_server_port", 30008)
+    netbird_dashboard_port = host.data.get("netbird_dashboard_port", 30009)
+    caddy_blocks.append(
+        f"""netbird.{host.data.domain_name} {{
+    @grpc header Content-Type application/grpc*
+    reverse_proxy @grpc h2c://127.0.0.1:{netbird_server_port}
+
+    @backend path /relay* /ws-proxy/* /api/* /oauth2/*
+    reverse_proxy @backend 127.0.0.1:{netbird_server_port}
+
+    reverse_proxy /* 127.0.0.1:{netbird_dashboard_port}
+
+    log {{
+        output file /var/log/caddy/netbird.{host.data.domain_name}.log {{
+            roll_size 100MiB
+            roll_keep 5
+            roll_keep_for 100d
+        }}
+        format json
+        level INFO
+    }}
+}}"""
+    )
 
 caddyfile = "{\n" + "\n\n".join(caddy_blocks) + "\n"
 caddyfile_changed = files.put(
@@ -167,16 +191,11 @@ if cf_changed or build_changed or image_exists != "yes":
         name="Rebuild caddy container", service="caddy-build.service", restarted=True
     )
 
-if caddyfile_changed:
-    server.shell(
-        name="Reload Caddy", commands=["systemctl reload caddy.service || true"]
-    )
-
 systemd.service(
     name="Ensure Caddy service is started",
     service="caddy.service",
     running=True,
-    restarted=caddy_cont_changed,
+    restarted=caddy_cont_changed or caddyfile_changed,
 )
 
 # CrowdSec Integrations

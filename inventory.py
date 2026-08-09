@@ -22,6 +22,7 @@ servers = [
                 "asf",
                 "pomerium",
                 "pingvin_share",
+                "netbird_server",
             ],
             "group_services": ["restic"],
             "whoami_port": 30001,
@@ -32,6 +33,8 @@ servers = [
             "backrest_port": 30005,
             "pomerium_port": 30006,
             "pingvin_share_port": 30007,
+            "netbird_server_port": 30008,
+            "netbird_dashboard_port": 30009,
         },
     ),
 ]
