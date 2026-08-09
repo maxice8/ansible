@@ -1,11 +1,9 @@
-# tasks/forgejo.py
 from pyinfra import host
 from pyinfra.facts.server import Users
 from pyinfra.operations import systemd
 
 from utils import apply_sysusers, deploy_quadlet
 
-# 1. Declaratively create the user via systemd-sysusers helper
 apply_sysusers("forgejo", 'u forgejo - "Forgejo Daemon" /data -')
 
 # Fetch dynamic IDs
@@ -13,7 +11,6 @@ forgejo_user = host.get_fact(Users).get("forgejo", {})
 f_uid = forgejo_user.get("uid", "forgejo")
 f_gid = forgejo_user.get("gid", "forgejo")
 
-# 2. Quadlets
 net_changed = deploy_quadlet(
     "forgejo.network",
     """[Unit]

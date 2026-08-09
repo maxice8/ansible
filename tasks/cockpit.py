@@ -1,4 +1,3 @@
-# tasks/cockpit.py
 import io
 
 from pyinfra import host

@@ -1,4 +1,3 @@
-# tasks/asf.py
 import io
 import json
 
@@ -9,7 +8,6 @@ from pyinfra.operations import files, systemd
 
 from utils import apply_sysusers, apply_tmpfiles, deploy_quadlet
 
-# 1. Tmpfiles & Sysusers
 apply_tmpfiles("asf", "d /etc/asf 0755 root root -\nd /etc/asf/config 0700 asf asf -")
 apply_sysusers("asf", 'u asf - "ArchiSteamFarm Daemon" /app/config -')
 
@@ -18,7 +16,6 @@ asf_user_info = host.get_fact(Users).get("asf", {})
 asf_uid = asf_user_info.get("uid", "asf")
 asf_gid = asf_user_info.get("gid", "asf")
 
-# 2. Idempotent Config Bootstrapping
 asf_json = (
     json.dumps(
         {
@@ -59,7 +56,6 @@ if not host.get_fact(File, path="/etc/asf/config/IPC.config"):
         mode="0600",
     ).changed
 
-# 3. Quadlets
 net_changed = deploy_quadlet(
     "asf.network", "[Unit]\nDescription=Isolated IPv4 Network for asf\n\n[Network]"
 )

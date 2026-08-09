@@ -47,7 +47,6 @@ def load_sops_vars(filepath):
         raise
 
 
-# Make sure to update the file extensions being loaded here!
 sops_host_vars = load_sops_vars(f"host_vars/{host.name}.sops.env")
 sops_group_vars = load_sops_vars("group_vars/servers.sops.env")
 
@@ -57,15 +56,12 @@ all_vars = {**plain_group_vars, **sops_group_vars, **sops_host_vars}
 for key, value in all_vars.items():
     setattr(host.data, key, value)
 
-# 2. Determine services to configure
 host_services = host.data.get("host_services", [])
 group_services = host.data.get("group_services", [])
 configured_services = host_services + group_services
 
 host.data.configured_services = configured_services
 
-# 3. Execution Filtering Logic
-# Grabs a comma-separated list from the terminal, e.g., TASKS=podman,pingvin_share
 only_tasks_env = os.environ.get("TASKS")
 targeted_tasks = (
     [t.strip() for t in only_tasks_env.split(",")] if only_tasks_env else None
@@ -90,7 +86,6 @@ if should_run("podman"):
 if should_run("cockpit"):
     local.include("tasks/cockpit.py")
 
-# 4. Service Loop
 for service in configured_services:
     if should_run(service):
         local.include(f"tasks/{service}.py")

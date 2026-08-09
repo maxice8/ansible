@@ -2,7 +2,6 @@ import io
 
 from pyinfra.operations import files, systemd
 
-# NetBird UDP GRO Optimization (Carried over from Tailscale setup)
 gro_file = files.put(
     name="Deploy NetBird UDP GRO optimization service",
     src=io.StringIO(

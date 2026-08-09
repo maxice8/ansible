@@ -1,6 +1,3 @@
-# inventory.py
-
-
 plain_group_vars = {
     "domain_name": "maxice8.com",
 }
@@ -10,7 +7,7 @@ servers = [
     (
         "ryuu",
         {
-            "ssh_user": "core",  # Replaces ansible_user: core
+            "ssh_user": "core",
             "host_services": [
                 "caddy",
                 "pocket_id",

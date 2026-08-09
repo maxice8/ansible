@@ -1,4 +1,3 @@
-# tasks/caddy.py
 import io
 import urllib.request
 

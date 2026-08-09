@@ -1,4 +1,3 @@
-# tasks/restic.py
 import io
 
 from pyinfra import host
@@ -7,7 +6,6 @@ from pyinfra.operations import files, server, systemd
 
 from utils import deploy_quadlet, ensure_secret
 
-# 1. Restic Config & SSH Keys
 files.directory(
     name="Ensure Restic config directory exists",
     path="/etc/restic",
@@ -68,7 +66,6 @@ secret_changed = ensure_secret(
     "restic_repository_passphrase", host.data.get("restic_repository_passphrase", "")
 )
 
-# 2. Quadlets
 net_c = deploy_quadlet(
     "backrest.network",
     "[Unit]\nDescription=Isolated IPv4 Network for backrest\n\n[Network]",

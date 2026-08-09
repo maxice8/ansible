@@ -1,4 +1,3 @@
-# tasks/netdata.py
 import io
 
 from pyinfra import host
@@ -6,7 +5,6 @@ from pyinfra.operations import files, systemd
 
 from utils import apply_tmpfiles, deploy_quadlet
 
-# 1. Enable Podman Socket
 systemd.service(
     name="Ensure Podman socket is enabled (for container metrics)",
     service="podman.socket",
@@ -14,10 +12,8 @@ systemd.service(
     enabled=True,
 )
 
-# 2. Tmpfiles
 apply_tmpfiles("netdata", "d /etc/netdata 0755 root root -")
 
-# 3. Configurations
 conf_changed = files.put(
     name="Restrict Netdata web UI to localhost",
     src=io.StringIO("[web]\n    bind to = 127.0.0.1\n"),
@@ -38,7 +34,6 @@ alarm_changed = files.put(
     mode="0644",
 ).changed
 
-# 4. Quadlets
 lib_vol_changed = deploy_quadlet("netdata-lib.volume", "[Volume]")
 cache_vol_changed = deploy_quadlet("netdata-cache.volume", "[Volume]")
 
@@ -91,7 +86,6 @@ systemd.service(
     daemon_reload=quadlet_changes,
 )
 
-# 5. Optional Heartbeat
 heartbeat_url = host.data.get("heartbeat_netdata", "")
 if heartbeat_url:
     files.put(

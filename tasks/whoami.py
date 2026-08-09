@@ -1,4 +1,3 @@
-# tasks/whoami.py
 from pyinfra import host
 from pyinfra.operations import systemd
 

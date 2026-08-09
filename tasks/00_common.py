@@ -12,7 +12,7 @@ for directory in ["/etc/containers/systemd", "/etc/sysusers.d", "/etc/tmpfiles.d
 
 if host.data.get("ssh_pub_key"):
     server.user_authorized_keys(
-        name="Ensure admin SSH key is authorized for the ubuntu user",
+        name="Ensure admin SSH key is authorized for the configured user",
         public_keys=[host.data.get("ssh_pub_key")],
         user=host.data.get("ssh_user"),
     )

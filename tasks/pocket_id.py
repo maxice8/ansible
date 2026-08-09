@@ -1,4 +1,3 @@
-# tasks/pocket_id.py
 from pyinfra import host
 from pyinfra.operations import systemd
 
@@ -11,7 +10,6 @@ secret_changed = ensure_secret(
     "pocket_id_encryption_key", host.data.pocket_id_encryption_key
 )
 
-# 2. Quadlets
 net_changed = deploy_quadlet(
     "pocket-id.network",
     "[Unit]\nDescription=Isolated IPv4 Network for pocket-id\n\n[Network]",

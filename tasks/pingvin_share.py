@@ -1,10 +1,8 @@
-# tasks/pingvin_share.py
 from pyinfra import host
 from pyinfra.operations import systemd
 
 from utils import deploy_quadlet
 
-# 1. Quadlets
 net_changed = deploy_quadlet(
     "pingvin-share.network",
     "[Unit]\nDescription=Isolated IPv4 Network for Pingvin Share\n\n[Network]",

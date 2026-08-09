@@ -1,4 +1,3 @@
-# tasks/forgejo_runner.py
 import io
 
 from pyinfra import host
@@ -7,7 +6,6 @@ from pyinfra.operations import files, systemd
 
 from utils import apply_sysusers, apply_tmpfiles, deploy_quadlet, ensure_secret
 
-# 1. Sysusers and Tmpfiles
 apply_sysusers("forgejo-runner", 'u forgejo-runner - "Forgejo Runner Daemon" /data -')
 apply_tmpfiles("forgejo-runner", "d /etc/forgejo-runner 0755 root root -")
 
@@ -15,7 +13,6 @@ runner_user = host.get_fact(Users).get("forgejo-runner", {})
 r_uid = runner_user.get("uid", "forgejo-runner")
 r_gid = runner_user.get("gid", "forgejo-runner")
 
-# 2. Config & Entrypoint script
 labels_list = host.data.get(
     "forgejo_runner_labels",
     "alpine:docker://alpine:latest,docker:docker://docker:dind,ubuntu-latest:docker://node:20-bookworm",
@@ -104,7 +101,6 @@ secret_changed = ensure_secret(
     "forgejo_runner_token", host.data.get("forgejo_runner_token", "")
 )
 
-# 4. Quadlets
 net_c = deploy_quadlet(
     "forgejo-runner.network",
     "[Unit]\nDescription=Isolated IPv4 Network for forgejo-runner\n\n[Network]",

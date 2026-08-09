@@ -1,4 +1,3 @@
-# tasks/syncthing.py
 import io
 
 from pyinfra import host
@@ -7,14 +6,12 @@ from pyinfra.operations import files, systemd
 
 from utils import apply_sysusers, deploy_quadlet
 
-# 1. Sysusers
 apply_sysusers("syncthing", 'u syncthing - "Syncthing Daemon" /var/syncthing -')
 
 syncthing_user = host.get_fact(Users).get("syncthing", {})
 st_uid = syncthing_user.get("uid", "syncthing")
 st_gid = syncthing_user.get("gid", "syncthing")
 
-# 2. Quadlets
 net_changed = deploy_quadlet(
     "syncthing.network",
     """[Unit]
@@ -85,7 +82,6 @@ systemd.service(
     daemon_reload=changes,
 )
 
-# 3. Optional Heartbeat
 heartbeat_url = host.data.get("heartbeat_syncthing", "")
 if heartbeat_url:
     files.put(

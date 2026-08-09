@@ -1,4 +1,3 @@
-# tasks/pomerium.py
 import io
 
 from pyinfra import host
@@ -21,7 +20,6 @@ cookie_secret_changed = ensure_secret(
     "pomerium_cookie_secret", host.data.get("pomerium_cookie_secret", "")
 )
 
-# 2. Dynamic Route Configuration
 domain = host.data.domain_name
 svcs = host.data.configured_services
 
@@ -76,7 +74,6 @@ config_changed = files.put(
     mode="0600",
 ).changed
 
-# 3. Quadlet
 quadlet_changed = deploy_quadlet(
     "pomerium.container",
     f"""
