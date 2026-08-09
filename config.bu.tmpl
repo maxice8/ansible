@@ -48,12 +48,11 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/bin/sh -c 'echo "enable tailscaled.service" > /etc/systemd/system-preset/99-tailscale.preset'
         ExecStart=/bin/sh -c 'echo "enable cockpit.socket" > /etc/systemd/system-preset/99-cockpit.preset'
 
         # Added ostree, selinux, networkmanager, and storaged plugins
         ExecStart=/usr/bin/rpm-ostree install -y --idempotent --allow-inactive \
-          python3 tailscale \
+          python3 \
           cockpit-ws cockpit-system cockpit-podman \
           cockpit-ostree cockpit-selinux cockpit-networkmanager cockpit-storaged cockpit-files
 

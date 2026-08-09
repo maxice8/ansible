@@ -1,6 +1,5 @@
 # inventory.py
 plain_group_vars = {
-    "tailnet_name": "neko-great",
     "domain_name": "maxice8.com",
 }
 

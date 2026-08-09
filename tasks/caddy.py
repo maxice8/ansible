@@ -188,22 +188,6 @@ if api_key:
         path="/etc/crowdsec-custom/parsers", user="root", group="root", mode="0755"
     )
 
-    wl_tailscale_changed = files.put(
-        name="Whitelist Tailscale network",
-        src=io.StringIO(
-            "name: ansible-whitelist-tailscale\n"
-            "description: 'Whitelist for Tailscale CGNAT network'\n"
-            "whitelist:\n"
-            "  reason: 'Trusted via Ansible (Tailscale)'\n"
-            "  cidr:\n"
-            "    - '100.64.0.0/10'\n"
-        ),
-        dest="/etc/crowdsec-custom/parsers/ansible-whitelist-tailscale.yaml",
-        user="root",
-        group="root",
-        mode="0644",
-    ).changed
-
     trusted_ips = host.data.get("crowdsec_trusted_ips", [])
     wl_static_changed = False
     if trusted_ips:
@@ -253,7 +237,7 @@ if api_key:
 
     # Track overall whitelist file state changes
     whitelists_changed = (
-        wl_tailscale_changed or wl_static_changed or wl_controller_changed
+        wl_static_changed or wl_controller_changed
     )
 
     files.put(
