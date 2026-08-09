@@ -73,16 +73,13 @@ targeted_tasks = (
 
 
 def should_run(task_name):
-    # If no limit is provided, run everything as normal
     if targeted_tasks is None:
         return True
     return task_name in targeted_tasks
 
 
-# 00_common setup should almost always run to ensure folder structures exist,
-# but we respect the filter if explicitly targeted.
-if should_run("00_common") or targeted_tasks:
-    local.include("tasks/00_common.py")
+# Common host state is a prerequisite for every deployment, including filtered runs.
+local.include("tasks/00_common.py")
 
 if should_run("netbird"):
     local.include("tasks/netbird.py")

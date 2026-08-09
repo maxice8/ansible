@@ -87,6 +87,9 @@ make ryuu
 
 Use pyinfra to deploy the services.
 
+`tasks/00_common.py` always runs, including when `TASKS` limits a deployment. It
+maintains the directories and SSH access that other tasks require.
+
 ```bash
 # Execute deployment against host target (e.g., ryuu) with sudo elevation
 uv run pyinfra inventory.py deploy.py --sudo --limit ryuu
