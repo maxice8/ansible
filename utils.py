@@ -1,5 +1,6 @@
-# utils.py
+import hashlib
 import io
+import shlex
 
 from pyinfra import host
 from pyinfra.api import FactBase
@@ -15,20 +16,32 @@ class ShellFact(FactBase):
 
 
 def ensure_secret(secret_name, secret_value):
-    """Idempotently creates a podman secret if it doesn't exist."""
+    """Create or replace a Podman secret when its configured value changes."""
     if not secret_value:
         return False
-    exists = host.get_fact(
-        ShellFact, f"podman secret exists {secret_name} && echo 'yes' || echo 'no'"
+
+    secret_hash = hashlib.sha256(secret_value.encode()).hexdigest()
+    hash_label = "io.maxice8.content-sha256"
+    current_hash = host.get_fact(
+        ShellFact,
+        "podman secret inspect "
+        f"--format '{{{{ index .Spec.Labels \"{hash_label}\" }}}}' "
+        f"{shlex.quote(secret_name)} 2>/dev/null || true",
     )
-    if exists != "yes":
+
+    if current_hash != secret_hash:
         server.shell(
-            name=f"Store {secret_name} as Podman Secret",
+            name=f"Store {secret_name} as Podman secret",
             commands=[
-                f"echo -n '{secret_value}' | podman secret create {secret_name} -"
+                (
+                    "head -c -1 | podman secret create --replace "
+                    f"--label {hash_label}={secret_hash} {shlex.quote(secret_name)} -"
+                )
             ],
+            _stdin=secret_value,
         )
         return True
+
     return False
 
 

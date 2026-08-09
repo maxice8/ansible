@@ -14,9 +14,12 @@ files.directory(
     mode="0755",
 )
 
-# 1. Secrets
-ensure_secret("pomerium_client_secret", host.data.get("pomerium_client_secret", ""))
-ensure_secret("pomerium_cookie_secret", host.data.get("pomerium_cookie_secret", ""))
+client_secret_changed = ensure_secret(
+    "pomerium_client_secret", host.data.get("pomerium_client_secret", "")
+)
+cookie_secret_changed = ensure_secret(
+    "pomerium_cookie_secret", host.data.get("pomerium_cookie_secret", "")
+)
 
 # 2. Dynamic Route Configuration
 domain = host.data.domain_name
@@ -110,6 +113,11 @@ systemd.service(
     name="Ensure Pomerium service is started",
     service="pomerium.service",
     running=True,
-    restarted=(quadlet_changed or config_changed),
+    restarted=(
+        quadlet_changed
+        or config_changed
+        or client_secret_changed
+        or cookie_secret_changed
+    ),
     daemon_reload=quadlet_changed,
 )

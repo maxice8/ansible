@@ -64,7 +64,7 @@ if (
         ],
     )
 
-ensure_secret(
+secret_changed = ensure_secret(
     "restic_repository_passphrase", host.data.get("restic_repository_passphrase", "")
 )
 
@@ -116,7 +116,7 @@ WantedBy=multi-user.target
 """,
 )
 
-changes = net_c or data_c or cache_c or cont_c
+changes = net_c or data_c or cache_c or cont_c or secret_changed
 systemd.service(
     name="Ensure Backrest service is started",
     service="backrest.service",

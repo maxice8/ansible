@@ -7,8 +7,9 @@ from utils import deploy_quadlet, ensure_secret
 if not host.data.get("pocket_id_encryption_key"):
     raise ValueError("pocket_id_encryption_key is missing from host data.")
 
-# 1. Secret
-ensure_secret("pocket_id_encryption_key", host.data.pocket_id_encryption_key)
+secret_changed = ensure_secret(
+    "pocket_id_encryption_key", host.data.pocket_id_encryption_key
+)
 
 # 2. Quadlets
 net_changed = deploy_quadlet(
@@ -62,7 +63,7 @@ WantedBy=multi-user.target
 """,
 )
 
-changes = net_changed or vol_changed or container_changed
+changes = net_changed or vol_changed or container_changed or secret_changed
 systemd.service(
     name="Ensure Pocket ID service is started",
     service="pocket-id.service",

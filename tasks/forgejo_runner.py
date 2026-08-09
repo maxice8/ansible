@@ -100,8 +100,9 @@ entrypoint_changed = files.put(
     mode="0755",
 ).changed
 
-# 3. Secret
-ensure_secret("forgejo_runner_token", host.data.get("forgejo_runner_token", ""))
+secret_changed = ensure_secret(
+    "forgejo_runner_token", host.data.get("forgejo_runner_token", "")
+)
 
 # 4. Quadlets
 net_c = deploy_quadlet(
@@ -200,5 +201,7 @@ systemd.service(
     name="Ensure Forgejo Runner service is started",
     service="runner.service",
     running=True,
-    restarted=(runner_changes or config_changed or entrypoint_changed),
+    restarted=(
+        runner_changes or config_changed or entrypoint_changed or secret_changed
+    ),
 )

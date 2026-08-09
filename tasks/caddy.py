@@ -132,9 +132,9 @@ caddyfile_changed = files.put(
 ).changed
 
 # Secrets
-ensure_secret("caddy_crowdsec_api_key", api_key)
+api_secret_changed = ensure_secret("caddy_crowdsec_api_key", api_key)
 bouncer_key = host.data.get("caddy_cs_firewall_bouncer_key", "")
-ensure_secret("caddy_cs_firewall_bouncer_key", bouncer_key)
+bouncer_secret_changed = ensure_secret("caddy_cs_firewall_bouncer_key", bouncer_key)
 
 # Caddy Quadlets
 deploy_quadlet("caddy-data.volume", "[Volume]")
@@ -195,7 +195,7 @@ systemd.service(
     name="Ensure Caddy service is started",
     service="caddy.service",
     running=True,
-    restarted=caddy_cont_changed or caddyfile_changed,
+    restarted=caddy_cont_changed or caddyfile_changed or api_secret_changed,
 )
 
 # CrowdSec Integrations
@@ -327,8 +327,7 @@ WantedBy=multi-user.target
         name="Ensure CrowdSec service is started",
         service="crowdsec.service",
         running=True,
-        restarted=cs_changed
-        or whitelists_changed,  # Restart if container or whitelists changed
+        restarted=cs_changed or whitelists_changed or api_secret_changed,
         daemon_reload=cs_changed,
     )
 
@@ -379,6 +378,6 @@ WantedBy=multi-user.target
         name="Ensure Firewall Bouncer is started",
         service="cs-firewall.service",
         running=True,
-        restarted=fw_changed,
+        restarted=fw_changed or bouncer_secret_changed,
         daemon_reload=fw_changed,
     )
