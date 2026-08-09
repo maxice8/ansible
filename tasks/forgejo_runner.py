@@ -4,7 +4,12 @@ from pyinfra import host
 from pyinfra.facts.server import Users
 from pyinfra.operations import files, systemd
 
-from utils import apply_sysusers, apply_tmpfiles, deploy_quadlet, ensure_secret
+from utils import (
+    apply_sysusers,
+    apply_tmpfiles,
+    deploy_quadlet,
+    ensure_secret,
+)
 
 apply_sysusers("forgejo-runner", 'u forgejo-runner - "Forgejo Runner Daemon" /data -')
 apply_tmpfiles("forgejo-runner", "d /etc/forgejo-runner 0755 root root -")
@@ -103,7 +108,7 @@ secret_changed = ensure_secret(
 
 net_c = deploy_quadlet(
     "forgejo-runner.network",
-    "[Unit]\nDescription=Isolated IPv4 Network for forgejo-runner\n\n[Network]",
+    "[Unit]\nDescription=Isolated Dual-Stack Network for forgejo-runner\n\n[Network]\nIPv6=True",
 )
 dind_vol_c = deploy_quadlet("dind-data.volume", "[Volume]")
 dind_c = deploy_quadlet(
@@ -198,6 +203,10 @@ systemd.service(
     service="runner.service",
     running=True,
     restarted=(
-        runner_changes or config_changed or entrypoint_changed or secret_changed
+        net_c
+        or runner_changes
+        or config_changed
+        or entrypoint_changed
+        or secret_changed
     ),
 )

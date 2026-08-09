@@ -15,9 +15,10 @@ st_gid = syncthing_user.get("gid", "syncthing")
 net_changed = deploy_quadlet(
     "syncthing.network",
     """[Unit]
-Description=Isolated IPv4 Network for syncthing
+Description=Isolated Dual-Stack Network for syncthing
 
 [Network]
+IPv6=True
 """,
 )
 

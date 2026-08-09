@@ -99,14 +99,14 @@ if host.get_fact(File, path=config_path) and host.get_fact(
         name="Ensure NetBird server is started",
         service="netbird-server.service",
         running=True,
-        restarted=server_changed,
+        restarted=network_changed or server_changed,
     )
 
     systemd.service(
         name="Ensure NetBird dashboard is started",
         service="netbird-dashboard.service",
         running=True,
-        restarted=dashboard_changed,
+        restarted=network_changed or dashboard_changed,
     )
 else:
     host.noop(

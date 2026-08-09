@@ -6,7 +6,11 @@ from pyinfra.facts.files import File
 from pyinfra.facts.server import Users
 from pyinfra.operations import files, systemd
 
-from utils import apply_sysusers, apply_tmpfiles, deploy_quadlet
+from utils import (
+    apply_sysusers,
+    apply_tmpfiles,
+    deploy_quadlet,
+)
 
 apply_tmpfiles("asf", "d /etc/asf 0755 root root -\nd /etc/asf/config 0700 asf asf -")
 apply_sysusers("asf", 'u asf - "ArchiSteamFarm Daemon" /app/config -')
@@ -57,7 +61,8 @@ if not host.get_fact(File, path="/etc/asf/config/IPC.config"):
     ).changed
 
 net_changed = deploy_quadlet(
-    "asf.network", "[Unit]\nDescription=Isolated IPv4 Network for asf\n\n[Network]"
+    "asf.network",
+    "[Unit]\nDescription=Isolated Dual-Stack Network for asf\n\n[Network]\nIPv6=True",
 )
 
 container_changed = deploy_quadlet(
@@ -90,6 +95,7 @@ TimeoutStartSec=900
 WantedBy=multi-user.target
 """,
 )
+
 
 changes = net_changed or container_changed
 systemd.service(
