@@ -23,7 +23,7 @@ volume_changed = deploy_quadlet(
 
 network_changed = deploy_quadlet(
     "netbird-server.network",
-    "[Network]\nNetworkName=netbird-server",
+    "[Network]\nNetworkName=netbird-server\nIPv6=True",
 )
 
 server_changed = deploy_quadlet(
