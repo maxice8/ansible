@@ -202,11 +202,12 @@ if api_key:
         name="Whitelist NetBird network",
         src=io.StringIO(
             "name: ansible-whitelist-netbird\n"
-            "description: 'Whitelist for NetBird CGNAT network'\n"
+            "description: 'Whitelist for NetBird networks'\n"
             "whitelist:\n"
             "  reason: 'Trusted via Ansible (NetBird)'\n"
             "  cidr:\n"
             "    - '100.64.0.0/10'\n"
+            "    - 'fdcb:d175:272d:bff5::/64'\n"
         ),
         dest="/etc/crowdsec-custom/parsers/ansible-whitelist-netbird.yaml",
         user="root",
