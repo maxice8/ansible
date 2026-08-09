@@ -41,9 +41,16 @@ storage:
           name=netbird
           baseurl=https://pkgs.netbird.io/yum/
           enabled=1
-          gpgcheck=0
+          gpgcheck=1
           gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
           repo_gpgcheck=1
+
+    - path: /etc/systemd/system-preset/10-homelab.preset
+      mode: 0644
+      contents:
+        inline: |
+          enable cockpit.socket
+          enable netbird.service
 systemd:
   units:
     - name: serial-getty@ttyS0.service
@@ -60,8 +67,6 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/bin/sh -c 'echo "enable netbird.service" > /etc/systemd/system-preset/99-netbird.preset'
-        ExecStart=/bin/sh -c 'echo "enable cockpit.socket" > /etc/systemd/system-preset/99-cockpit.preset'
 
         # Added ostree, selinux, networkmanager, and storaged plugins
         ExecStart=/usr/bin/rpm-ostree install -y --idempotent --allow-inactive \
