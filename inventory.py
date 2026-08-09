@@ -1,4 +1,6 @@
 # inventory.py
+
+
 plain_group_vars = {
     "domain_name": "maxice8.com",
 }

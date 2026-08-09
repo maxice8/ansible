@@ -84,6 +84,9 @@ def should_run(task_name):
 if should_run("00_common") or targeted_tasks:
     local.include("tasks/00_common.py")
 
+if should_run("netbird"):
+    local.include("tasks/netbird.py")
+
 if should_run("podman"):
     local.include("tasks/podman.py")
 

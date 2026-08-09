@@ -188,6 +188,22 @@ if api_key:
         path="/etc/crowdsec-custom/parsers", user="root", group="root", mode="0755"
     )
 
+    wl_netbird_changed = files.put(
+        name="Whitelist NetBird network",
+        src=io.StringIO(
+            "name: ansible-whitelist-netbird\n"
+            "description: 'Whitelist for NetBird CGNAT network'\n"
+            "whitelist:\n"
+            "  reason: 'Trusted via Ansible (NetBird)'\n"
+            "  cidr:\n"
+            "    - '100.64.0.0/10'\n"
+        ),
+        dest="/etc/crowdsec-custom/parsers/ansible-whitelist-netbird.yaml",
+        user="root",
+        group="root",
+        mode="0644",
+    ).changed
+
     trusted_ips = host.data.get("crowdsec_trusted_ips", [])
     wl_static_changed = False
     if trusted_ips:
@@ -237,7 +253,7 @@ if api_key:
 
     # Track overall whitelist file state changes
     whitelists_changed = (
-        wl_static_changed or wl_controller_changed
+        wl_netbird_changed or wl_static_changed or wl_controller_changed
     )
 
     files.put(

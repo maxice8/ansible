@@ -32,6 +32,18 @@ storage:
           address1=${IPV6_ADDRESS},${IPV6_GATEWAY}
           dns=2001:4860:4860::8888;2001:4860:4860::8844;
           method=manual
+
+    - path: /etc/yum.repos.d/netbird.repo
+      mode: 0644
+      contents:
+        inline: |
+          [netbird]
+          name=netbird
+          baseurl=https://pkgs.netbird.io/yum/
+          enabled=1
+          gpgcheck=0
+          gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
+          repo_gpgcheck=1
 systemd:
   units:
     - name: serial-getty@ttyS0.service
@@ -48,11 +60,12 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
+        ExecStart=/bin/sh -c 'echo "enable netbird.service" > /etc/systemd/system-preset/99-netbird.preset'
         ExecStart=/bin/sh -c 'echo "enable cockpit.socket" > /etc/systemd/system-preset/99-cockpit.preset'
 
         # Added ostree, selinux, networkmanager, and storaged plugins
         ExecStart=/usr/bin/rpm-ostree install -y --idempotent --allow-inactive \
-          python3 \
+          python3 netbird \
           cockpit-ws cockpit-system cockpit-podman \
           cockpit-ostree cockpit-selinux cockpit-networkmanager cockpit-storaged cockpit-files
 

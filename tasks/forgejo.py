@@ -45,7 +45,7 @@ ContainerName=forgejo
 
 Network=forgejo.network
 PublishPort=127.0.0.1:{host.data.forgejo_port}:3000
-PublishPort=22:{host.data.forgejo_ssh_port}
+PublishPort=23:{host.data.forgejo_ssh_port}
 
 User={f_uid}:{f_gid}
 Environment=USER_UID={f_uid}
@@ -64,7 +64,7 @@ Environment=FORGEJO__server__DOMAIN=git.{host.data.domain_name}
 Environment=FORGEJO__server__ROOT_URL=https://git.{host.data.domain_name}
 Environment=FORGEJO__server__SSH_DOMAIN=git.{host.data.domain_name}
 Environment=SSH_LISTEN_PORT={host.data.forgejo_ssh_port}
-Environment=FORGEJO__server__SSH_PORT=22
+Environment=FORGEJO__server__SSH_PORT=23
 Environment=FORGEJO__server__START_SSH_SERVER=true
 Environment=FORGEJO__server__BUILTIN_SSH_SERVER_USER=git
 
