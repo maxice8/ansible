@@ -1,4 +1,5 @@
 import io
+import json
 
 from pyinfra import host
 from pyinfra.facts.server import Users
@@ -61,6 +62,23 @@ host:
   workdir_parent:
 """
 
+daemon_json = (
+    json.dumps(
+        {
+            "ipv6": True,
+            "experimental": True,
+            "ip6tables": True,
+            "fixed-cidr-v6": "fd7a:115c:a1e0:1::/64",
+            "default-address-pools": [
+                {"base": "172.30.0.0/16", "size": 24},
+                {"base": "fd7a:115c:a1e0:100::/56", "size": 64},
+            ],
+        },
+        indent=2,
+    )
+    + "\n"
+)
+
 entrypoint_sh = f"""#!/bin/sh
 set -e
 cd /data
@@ -101,6 +119,14 @@ entrypoint_changed = files.put(
     group="forgejo-runner",
     mode="0755",
 ).changed
+daemon_changed = files.put(
+    name="Deploy Docker daemon.json",
+    src=io.StringIO(daemon_json),
+    dest="/etc/forgejo-runner/daemon.json",
+    user="root",
+    group="root",
+    mode="0644",
+).changed
 
 secret_changed = ensure_secret(
     "forgejo_runner_token", host.data.get("forgejo_runner_token", "")
@@ -125,6 +151,7 @@ Network=forgejo-runner.network
 PodmanArgs=--privileged
 Exec=dockerd -H tcp://0.0.0.0:2375 --tls=false
 Volume=dind-data.volume:/var/lib/docker
+Volume=/etc/forgejo-runner/daemon.json:/etc/docker/daemon.json:ro,z
 
 [Service]
 Restart=always
@@ -186,8 +213,8 @@ WantedBy=multi-user.target
 """,
 )
 
-dind_changes = net_c or dind_vol_c or dind_c
-runner_changes = run_vol_c or run_c
+dind_changes = net_c or dind_vol_c or dind_c or daemon_changed
+runner_changes = run_vol_c or run_c or daemon_changed
 
 if dind_changes or runner_changes:
     systemd.daemon_reload(name="Reload systemd for forgejo-runner")
