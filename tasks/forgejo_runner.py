@@ -151,7 +151,7 @@ Requires=dind.service
 After=dind.service
 
 [Container]
-Image=code.forgejo.org/forgejo/runner:12
+Image=code.forgejo.org/forgejo/runner:13
 AutoUpdate=registry
 ContainerName=forgejo-runner
 Network=forgejo-runner.network

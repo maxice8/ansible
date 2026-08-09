@@ -39,7 +39,7 @@ Description=Forgejo Server
 After=network-online.target
 
 [Container]
-Image=codeberg.org/forgejo/forgejo:15-rootless
+Image=codeberg.org/forgejo/forgejo:16-rootless
 AutoUpdate=registry
 ContainerName=forgejo
 
