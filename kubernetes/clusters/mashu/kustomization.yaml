@@ -21,3 +21,4 @@ resources:
   - asf.yaml
   - pocket-id.yaml
   - pomerium.yaml
+  - netbird.yaml

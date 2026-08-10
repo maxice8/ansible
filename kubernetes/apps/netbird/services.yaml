@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-server
+spec:
+  selector:
+    app.kubernetes.io/name: netbird-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-server-h2c
+spec:
+  selector:
+    app.kubernetes.io/name: netbird-server
+  ports:
+    - name: h2c
+      port: 80
+      targetPort: http
+      appProtocol: kubernetes.io/h2c
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbird-dashboard
+spec:
+  selector:
+    app.kubernetes.io/name: netbird-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
