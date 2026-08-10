@@ -82,6 +82,9 @@ spec:
                 yq -o=json -i 'del(.sync.identity)' /data/config.json
                 touch /data/.sync-identity-rotated
               fi
+          env:
+            - name: TMPDIR
+              value: /data
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
