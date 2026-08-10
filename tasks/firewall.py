@@ -42,8 +42,8 @@ table inet hostfilter {
     chain prerouting {
         type nat hook prerouting priority dstnat; policy accept;
 
-        tcp dport 80 counter redirect to :8000
-        tcp dport 443 counter redirect to :8443
+        iifname "enp0s6" tcp dport 80 counter redirect to :8000
+        iifname "enp0s6" tcp dport 443 counter redirect to :8443
     }
 
     chain input {
