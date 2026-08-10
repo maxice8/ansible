@@ -40,16 +40,16 @@ spec:
         gateway:
           enabled: false
 
+        additionalArguments:
+          - --entryPoints.web.http.redirections.entryPoint.to=:443
+          - --entryPoints.web.http.redirections.entryPoint.scheme=https
+          - --entryPoints.web.http.redirections.entryPoint.permanent=true
+
         ports:
           traefik:
             port: 9000
           web:
             port: 8000
-            redirections:
-              entryPoint:
-                to: ":443"
-                scheme: https
-                permanent: true
           websecure:
             port: 8443
 
