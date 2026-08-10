@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: platform-routes
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "70"
 spec:
   project: default
   source:

@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: staging-certificate
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "51"
 spec:
   project: default
   source:

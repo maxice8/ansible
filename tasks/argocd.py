@@ -124,6 +124,9 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
 '''
     ),
     dest="/usr/local/src/argocd-root-application.yaml",
