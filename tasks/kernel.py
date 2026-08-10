@@ -22,6 +22,8 @@ for module in kernel_modules:
 sysctl_values = {
     "net.ipv4.ip_forward": 1,
     "net.ipv6.conf.all.forwarding": 1,
+    "net.ipv6.conf.all.accept_ra": 2,
+    "net.ipv6.conf.default.accept_ra": 2,
     "net.bridge.bridge-nf-call-iptables": 1,
     "net.bridge.bridge-nf-call-ip6tables": 1,
     "fs.inotify.max_user_instances": 8192,

@@ -23,11 +23,16 @@ k3s_config_changed = files.put(
     name="Deploy the K3s server configuration",
     src=io.StringIO(
         f'''node-name: "{host.name}"
-node-ip: "{host.data.private_ipv4}"
+node-ip: "{host.data.private_ipv4},{host.data.public_ipv6}"
 tls-san:
   - "{host.name}"
   - "{host.data.private_ipv4}"
+  - "{host.data.public_ipv4}"
+  - "{host.data.public_ipv6}"
   - "{host.data.netbird_ipv4}"
+cluster-cidr: "10.42.0.0/16,fd42:10:42::/56"
+service-cidr: "10.43.0.0/16,fd42:10:43::/112"
+flannel-ipv6-masq: true
 secrets-encryption: true
 write-kubeconfig-mode: "0600"
 disable:

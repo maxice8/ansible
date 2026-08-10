@@ -12,6 +12,8 @@ servers = (
             {
                 "netbird_ipv4": "100.119.192.118",
                 "private_ipv4": "10.0.0.112",
+                "public_ipv4": "167.126.15.226",
+                "public_ipv6": "2603:c025:4005:8f7e:0:b837:618:268c",
                 "ssh_hostname": "167.126.15.226",
                 "ssh_user": "ubuntu",
             },
