@@ -21,6 +21,15 @@ server.hostname(
     hostname=host.name,
 )
 
-for task in ("user", "ssh", "netbird", "kernel", "services", "firewall", "k3s"):
+for task in (
+    "user",
+    "ssh",
+    "netbird",
+    "kernel",
+    "services",
+    "firewall",
+    "k3s",
+    "argocd",
+):
     if should_run(task_name=task):
         local.include(f"tasks/{task}.py")

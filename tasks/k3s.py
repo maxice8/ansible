@@ -4,6 +4,13 @@ from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import files, server, systemd
 
+K3S_INSTALLER_SHA256 = (
+    "8598e002e61d658fed7b7542fc6d2c66d8da6eae69e088830105d2ee1ffb6d91"
+)
+K3S_INSTALLER_URL = (
+    "https://raw.githubusercontent.com/k3s-io/k3s/v1.35.5%2Bk3s1/install.sh"
+)
+
 files.directory(
     name="Create the K3s configuration directory",
     path="/etc/rancher/k3s",
@@ -43,9 +50,9 @@ files.directory(
 
 files.download(
     name="Download the pinned K3s installer",
-    src=host.data.k3s_installer_url,
+    src=K3S_INSTALLER_URL,
     dest="/usr/local/src/install-k3s.sh",
-    sha256sum=host.data.k3s_installer_sha256,
+    sha256sum=K3S_INSTALLER_SHA256,
     user="root",
     group="root",
     mode="0755",
@@ -74,6 +81,6 @@ systemd.service(
     service="k3s.service",
     running=True,
     enabled=True,
-    restarted=k3s_config_changed and not k3s_install_changed,
+    restarted=k3s_config_changed or k3s_install_changed,
     daemon_reload=k3s_install_changed,
 )
