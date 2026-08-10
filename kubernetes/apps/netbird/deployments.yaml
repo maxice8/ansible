@@ -38,19 +38,16 @@ spec:
             - name: data
               mountPath: /var/lib/netbird
           readinessProbe:
-            httpGet:
-              path: /health
-              port: health
+            tcpSocket:
+              port: http
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
-              port: health
+            tcpSocket:
+              port: http
             periodSeconds: 30
           startupProbe:
-            httpGet:
-              path: /health
-              port: health
+            tcpSocket:
+              port: http
             failureThreshold: 60
             periodSeconds: 5
           resources:
