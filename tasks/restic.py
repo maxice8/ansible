@@ -85,7 +85,7 @@ cache_c = deploy_quadlet("backrest-cache.volume", "[Volume]")
 
 cont_c = deploy_quadlet(
     "backrest.container",
-    f"""
+    """
 [Unit]
 Description=Backrest (Restic Web UI)
 
@@ -94,7 +94,7 @@ Image=ghcr.io/garethgeorge/backrest:latest
 AutoUpdate=registry
 ContainerName=backrest
 Network=backrest.network
-PublishPort=127.0.0.1:{host.data.backrest_port}:9898
+PublishPort=127.0.0.1:9898:9898
 
 SecurityLabelDisable=true
 Volume=backrest-data.volume:/data:Z

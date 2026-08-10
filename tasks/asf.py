@@ -85,7 +85,7 @@ AutoUpdate=registry
 ContainerName=asf
 
 Network=asf.network
-PublishPort=127.0.0.1:{host.data.asf_port}:1242
+PublishPort=127.0.0.1:1242:1242
 
 User={asf_uid}:{asf_gid}
 Volume=/etc/asf/config:/app/config:U,Z

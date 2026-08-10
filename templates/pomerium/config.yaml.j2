@@ -40,7 +40,7 @@ routes:
   - name: "ArchiSteamFarm"
     description: "Steam Accounts"
     from: https://asf.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:{{ asf_port }}
+    to: http://127.0.0.1:1242
     policy:
       - allow:
           or:
@@ -50,7 +50,7 @@ routes:
   - name: "Backrest"
     description: "Restic UI"
     from: https://backrest.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:{{ backrest_port }}
+    to: http://127.0.0.1:9898
     policy:
       - allow:
           or:
