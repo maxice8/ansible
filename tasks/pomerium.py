@@ -28,6 +28,8 @@ routes = [
     description: "Fedora CoreOS System Administration"
     from: https://cockpit.{host.name}.{domain}
     to: http://127.0.0.1:9090
+    allow_websockets: true
+    preserve_host_header: true
     pass_identity_headers: true
     policy:
       - allow:
