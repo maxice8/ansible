@@ -11,6 +11,7 @@ servers = (
             "mashu",
             {
                 "netbird_ipv4": "100.119.192.118",
+                "private_ipv4": "10.0.0.112",
                 "ssh_hostname": "167.126.15.226",
                 "ssh_user": "ubuntu",
             },
