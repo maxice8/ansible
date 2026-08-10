@@ -1,4 +1,3 @@
-from pyinfra import host
 from pyinfra.operations import systemd
 
 from utils import deploy_quadlet
@@ -10,7 +9,7 @@ net_changed = deploy_quadlet(
 
 container_changed = deploy_quadlet(
     "whoami.container",
-    f"""
+    """
 [Unit]
 Description=Traefik Whoami
 
@@ -20,8 +19,7 @@ AutoUpdate=registry
 ContainerName=whoami
 Network=whoami.network
 UserNS=auto
-Exec=--port {host.data.whoami_port}
-PublishPort=127.0.0.1:{host.data.whoami_port}:{host.data.whoami_port}
+Exec=--port 8080
 
 NoNewPrivileges=true
 DropCapability=all

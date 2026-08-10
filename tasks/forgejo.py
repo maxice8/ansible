@@ -41,7 +41,6 @@ AutoUpdate=registry
 ContainerName=forgejo
 
 Network=forgejo.network
-PublishPort=127.0.0.1:{host.data.forgejo_port}:3000
 PublishPort=23:{host.data.forgejo_ssh_port}
 
 User={f_uid}:{f_gid}

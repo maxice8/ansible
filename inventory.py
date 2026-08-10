@@ -9,7 +9,6 @@ servers = [
         {
             "ssh_user": "core",
             "host_services": [
-                "caddy",
                 "pocket_id",
                 "forgejo",
                 "forgejo_runner",
@@ -20,18 +19,13 @@ servers = [
                 "pomerium",
                 "pingvin_share",
                 "netbird_server",
+                "caddy",
             ],
             "group_services": ["restic"],
-            "whoami_port": 30001,
-            "forgejo_port": 30002,
             "forgejo_ssh_port": 30022,
-            "pocket_id_port": 30003,
             "asf_port": 30004,
             "backrest_port": 30005,
             "pomerium_port": 30006,
-            "pingvin_share_port": 30007,
-            "netbird_server_port": 30008,
-            "netbird_dashboard_port": 30009,
         },
     ),
 ]

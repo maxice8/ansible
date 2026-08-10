@@ -31,7 +31,6 @@ AutoUpdate=registry
 ContainerName=pocket-id
 Network=pocket-id.network
 UserNS=auto
-PublishPort=127.0.0.1:{host.data.pocket_id_port}:1411
 
 Secret=pocket_id_encryption_key,type=env,target=ENCRYPTION_KEY
 Environment=APP_URL=https://id.{host.data.domain_name}

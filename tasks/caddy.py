@@ -36,7 +36,7 @@ svcs = host.data.configured_services
 caddy_blocks = []
 if api_key:
     caddy_blocks.append(
-        "    crowdsec {\n        api_key {$CADDY_CROWDSEC_API_KEY}\n    }\n    order crowdsec first"
+        "    crowdsec {\n        api_url http://crowdsec:8080\n        api_key {$CADDY_CROWDSEC_API_KEY}\n    }\n    order crowdsec first"
     )
 
 caddy_blocks.append(
@@ -45,8 +45,8 @@ caddy_blocks.append(
 caddy_blocks.append(f"{host.data.domain_name} {{\n    respond /_health 200\n}}")
 
 
-def proxy_block(subdomain, port, name):
-    block = f"{subdomain}.{host.data.domain_name} {{\n    reverse_proxy localhost:{port} {{\n        header_up Host {{host}}\n        header_up X-Real-IP {{remote_host}}\n"
+def proxy_block(subdomain: str, upstream: str, name: str) -> str:
+    block = f"{subdomain}.{host.data.domain_name} {{\n    reverse_proxy {upstream} {{\n        header_up Host {{host}}\n        header_up X-Real-IP {{remote_host}}\n"
     if name == "pocket_id":
         block += "        header_up X-Forwarded-Proto {scheme}\n"
     block += "    }\n"
@@ -56,49 +56,48 @@ def proxy_block(subdomain, port, name):
     return block
 
 
-caddy_blocks.append(proxy_block("pomerium", host.data.pomerium_port, "pomerium"))
-caddy_blocks.append(proxy_block(f"cockpit.{host.name}", 9090, "cockpit"))
+pomerium_upstream = f"host.containers.internal:{host.data.pomerium_port}"
+caddy_blocks.append(proxy_block("pomerium", pomerium_upstream, "pomerium"))
+caddy_blocks.append(proxy_block(f"cockpit.{host.name}", pomerium_upstream, "cockpit"))
 
 if "netdata" in svcs:
     caddy_blocks.append(
-        proxy_block(f"netdata.{host.name}", host.data.pomerium_port, "netdata")
+        proxy_block(f"netdata.{host.name}", pomerium_upstream, "netdata")
     )
 if "syncthing" in svcs:
     caddy_blocks.append(
-        proxy_block(f"syncthing.{host.name}", host.data.pomerium_port, "syncthing")
+        proxy_block(f"syncthing.{host.name}", pomerium_upstream, "syncthing")
     )
 if "asf" in svcs:
-    caddy_blocks.append(proxy_block(f"asf.{host.name}", host.data.pomerium_port, "asf"))
+    caddy_blocks.append(proxy_block(f"asf.{host.name}", pomerium_upstream, "asf"))
 if "restic" in svcs:
     caddy_blocks.append(
-        proxy_block(f"backrest.{host.name}", host.data.pomerium_port, "restic")
+        proxy_block(f"backrest.{host.name}", pomerium_upstream, "restic")
     )
 if "forgejo" in svcs:
-    caddy_blocks.append(proxy_block("git", host.data.forgejo_port, "forgejo"))
+    caddy_blocks.append(proxy_block("git", "forgejo:3000", "forgejo"))
 if "whoami" in svcs:
-    caddy_blocks.append(proxy_block("whoami", host.data.whoami_port, "whoami"))
+    caddy_blocks.append(proxy_block("whoami", "whoami:8080", "whoami"))
 if "pocket_id" in svcs:
-    caddy_blocks.append(proxy_block("id", host.data.pocket_id_port, "pocket_id"))
+    caddy_blocks.append(proxy_block("id", "pocket-id:1411", "pocket_id"))
 if "pingvin_share" in svcs:
     caddy_blocks.append(
         proxy_block(
             f"share.{host.name}",
-            host.data.pingvin_share_port,
+            "pingvin-share:3000",
             "pingvin_share",
         )
     )
 if "netbird_server" in svcs:
-    netbird_server_port = host.data.netbird_server_port
-    netbird_dashboard_port = host.data.netbird_dashboard_port
     caddy_blocks.append(
         f"""netbird.{host.data.domain_name} {{
     @grpc header Content-Type application/grpc*
-    reverse_proxy @grpc h2c://127.0.0.1:{netbird_server_port}
+    reverse_proxy @grpc h2c://netbird-server:80
 
     @backend path /relay* /ws-proxy/* /api/* /oauth2/*
-    reverse_proxy @backend 127.0.0.1:{netbird_server_port}
+    reverse_proxy @backend netbird-server:80
 
-    reverse_proxy /* 127.0.0.1:{netbird_dashboard_port}
+    reverse_proxy /* netbird-dashboard:80
 
     log {{
         output file /var/log/caddy/netbird.{host.data.domain_name}.log {{
@@ -128,6 +127,13 @@ bouncer_key = host.data.get("caddy_cs_firewall_bouncer_key", "")
 bouncer_secret_changed = ensure_secret("caddy_cs_firewall_bouncer_key", bouncer_key)
 
 # Caddy Quadlets
+crowdsec_network_changed = False
+if api_key:
+    crowdsec_network_changed = deploy_quadlet(
+        "crowdsec.network",
+        "[Unit]\nDescription=Isolated Dual-Stack Network for CrowdSec\n\n[Network]\nIPv6=True",
+    )
+
 deploy_quadlet("caddy-data.volume", "[Volume]")
 build_changed = deploy_quadlet(
     "caddy.build",
@@ -144,7 +150,15 @@ Image=localhost/caddy-custom:latest
 ContainerName=caddy
 AutoUpdate=local
 {"Secret=caddy_crowdsec_api_key,type=env,target=CADDY_CROWDSEC_API_KEY" if api_key else ""}
-Network=host
+{"Network=crowdsec.network" if api_key else ""}
+{"Network=forgejo.network" if "forgejo" in svcs else ""}
+{"Network=whoami.network" if "whoami" in svcs else ""}
+{"Network=pocket-id.network" if "pocket_id" in svcs else ""}
+{"Network=pingvin-share.network" if "pingvin_share" in svcs else ""}
+{"Network=netbird-server.network" if "netbird_server" in svcs else ""}
+PublishPort=80:80
+PublishPort=443:443
+PublishPort=443:443/udp
 Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
 Volume=caddy-data.volume:/data
 Volume=/var/log/caddy:/var/log/caddy:rw,z
@@ -174,7 +188,7 @@ WantedBy=multi-user.target
 """,
 )
 
-if build_changed or caddy_cont_changed:
+if build_changed or caddy_cont_changed or crowdsec_network_changed:
     systemd.daemon_reload(name="Reload systemd for caddy")
 
 if cf_changed or build_changed or image_exists != "yes":
@@ -186,7 +200,12 @@ systemd.service(
     name="Ensure Caddy service is started",
     service="caddy.service",
     running=True,
-    restarted=caddy_cont_changed or caddyfile_changed or api_secret_changed,
+    restarted=(
+        caddy_cont_changed
+        or caddyfile_changed
+        or api_secret_changed
+        or crowdsec_network_changed
+    ),
 )
 
 # CrowdSec Integrations
@@ -291,7 +310,8 @@ After=network-online.target
 Image=docker.io/crowdsecurity/crowdsec:latest
 ContainerName=crowdsec
 AutoUpdate=registry
-Network=host
+Network=crowdsec.network
+PublishPort=127.0.0.1:8080:8080
 Secret=caddy_crowdsec_api_key,type=env,target=BOUNCER_KEY_caddy
 Environment=COLLECTIONS=crowdsecurity/caddy
 Volume=crowdsec-data.volume:/var/lib/crowdsec/data

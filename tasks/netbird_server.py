@@ -39,7 +39,6 @@ Image=docker.io/netbirdio/netbird-server:latest
 AutoUpdate=registry
 ContainerName=netbird-server
 Network=netbird-server.network
-PublishPort=127.0.0.1:{host.data.netbird_server_port}:80
 PublishPort=3478:3478/udp
 Volume=netbird-data.volume:/var/lib/netbird:Z
 Volume={config_path}:/etc/netbird/config.yaml:ro,Z
@@ -70,7 +69,6 @@ Image=docker.io/netbirdio/dashboard:latest
 AutoUpdate=registry
 ContainerName=netbird-dashboard
 Network=netbird-server.network
-PublishPort=127.0.0.1:{host.data.netbird_dashboard_port}:80
 EnvironmentFile={dashboard_env_path}
 
 NoNewPrivileges=true

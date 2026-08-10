@@ -1,4 +1,3 @@
-from pyinfra import host
 from pyinfra.operations import systemd
 
 from utils import deploy_quadlet
@@ -13,7 +12,7 @@ img_vol_changed = deploy_quadlet("pingvin-share-images.volume", "[Volume]")
 
 container_changed = deploy_quadlet(
     "pingvin-share.container",
-    f"""
+    """
 [Unit]
 Description=Pingvin Share X (File Sharing)
 After=network-online.target
@@ -23,7 +22,6 @@ Image=docker.io/smp46/pingvin-share-x:latest
 AutoUpdate=registry
 ContainerName=pingvin-share
 Network=pingvin-share.network
-PublishPort=127.0.0.1:{host.data.pingvin_share_port}:3000
 Environment=TRUST_PROXY=true
 Volume=pingvin-share-data.volume:/opt/app/backend/data:U
 Volume=pingvin-share-images.volume:/opt/app/frontend/public/img:U
