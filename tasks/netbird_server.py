@@ -18,12 +18,15 @@ files.directory(
 
 volume_changed = deploy_quadlet(
     "netbird-data.volume",
-    "[Volume]\nVolumeName=netbird-data",
+    """[Volume]
+VolumeName=netbird-data""",
 )
 
 network_changed = deploy_quadlet(
     "netbird-server.network",
-    "[Network]\nNetworkName=netbird-server\nIPv6=True",
+    """[Network]
+NetworkName=netbird-server
+IPv6=True""",
 )
 
 server_changed = deploy_quadlet(

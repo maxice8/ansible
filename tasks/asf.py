@@ -12,7 +12,11 @@ from utils import (
     deploy_quadlet,
 )
 
-apply_tmpfiles("asf", "d /etc/asf 0755 root root -\nd /etc/asf/config 0700 asf asf -")
+apply_tmpfiles(
+    "asf",
+    """d /etc/asf 0755 root root -
+d /etc/asf/config 0700 asf asf -""",
+)
 apply_sysusers("asf", 'u asf - "ArchiSteamFarm Daemon" /app/config -')
 
 # Fetch dynamic User IDs
@@ -62,7 +66,11 @@ if not host.get_fact(File, path="/etc/asf/config/IPC.config"):
 
 net_changed = deploy_quadlet(
     "asf.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for asf\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for asf
+
+[Network]
+IPv6=True""",
 )
 
 container_changed = deploy_quadlet(

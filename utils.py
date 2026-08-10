@@ -57,6 +57,32 @@ def deploy_quadlet(filename: str, content: str) -> bool:
     ).changed
 
 
+def deploy_template(
+    *,
+    name: str,
+    src: str,
+    dest: str,
+    user: str = "root",
+    group: str = "root",
+    mode: str = "0644",
+    **data: object,
+) -> bool:
+    """Render a local Jinja template and deploy the result."""
+    return files.template(
+        name=name,
+        src=src,
+        dest=dest,
+        user=user,
+        group=group,
+        mode=mode,
+        jinja_env_kwargs={
+            "lstrip_blocks": True,
+            "trim_blocks": True,
+        },
+        **data,
+    ).changed
+
+
 def apply_sysusers(name: str, content: str) -> bool:
     """Deploys and immediately applies a sysusers config."""
     changed = files.put(

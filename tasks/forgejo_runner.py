@@ -19,16 +19,6 @@ runner_user = host.get_fact(Users).get("forgejo-runner", {})
 r_uid = runner_user.get("uid", "forgejo-runner")
 r_gid = runner_user.get("gid", "forgejo-runner")
 
-labels_list = host.data.get(
-    "forgejo_runner_labels",
-    "alpine:docker://alpine:latest,docker:docker://docker:dind,ubuntu-latest:docker://node:20-bookworm",
-)
-labels_yaml = (
-    "\n".join([f'    - "{lbl.strip()}"' for lbl in labels_list.split(",")])
-    if labels_list
-    else "    []"
-)
-
 config_yaml = f"""log:
   level: info
 
@@ -41,7 +31,9 @@ runner:
   shutdown_timeout: 3h
   fetch_interval: 2s
   labels:
-{labels_yaml}
+    - "alpine:docker://alpine:latest"
+    - "docker:docker://docker:dind"
+    - "ubuntu-latest:docker://node:20-bookworm"
 
 cache:
   enabled: true
@@ -134,7 +126,11 @@ secret_changed = ensure_secret(
 
 net_c = deploy_quadlet(
     "forgejo-runner.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for forgejo-runner\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for forgejo-runner
+
+[Network]
+IPv6=True""",
 )
 dind_vol_c = deploy_quadlet("dind-data.volume", "[Volume]")
 dind_c = deploy_quadlet(
@@ -163,13 +159,14 @@ WantedBy=multi-user.target
 )
 
 run_vol_c = deploy_quadlet(
-    "forgejo-runner-data.volume", f"[Volume]\nUser={r_uid}\nGroup={r_gid}"
+    "forgejo-runner-data.volume",
+    f"""[Volume]
+User={r_uid}
+Group={r_gid}""",
 )
-add_host = (
-    f"AddHost=git.{host.data.domain_name}:host-gateway\n"
-    if "forgejo" in host.data.configured_services
-    else ""
-)
+add_host = f"AddHost=git.{host.data.domain_name}:host-gateway"
+if "forgejo" not in host.data.configured_services:
+    add_host = ""
 
 run_c = deploy_quadlet(
     "runner.container",

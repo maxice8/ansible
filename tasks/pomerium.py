@@ -1,9 +1,7 @@
-import io
-
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
-from utils import deploy_quadlet, ensure_secret
+from utils import deploy_quadlet, deploy_template, ensure_secret
 
 files.directory(
     name="Ensure Pomerium config directory exists",
@@ -20,61 +18,20 @@ cookie_secret_changed = ensure_secret(
     "pomerium_cookie_secret", host.data.get("pomerium_cookie_secret", "")
 )
 
-domain = host.data.domain_name
-svcs = host.data.configured_services
-
-routes = [
-    f"""  - name: "Cockpit"
-    description: "Fedora CoreOS System Administration"
-    from: https://cockpit.{host.name}.{domain}
-    to: http://127.0.0.1:9090
-    allow_websockets: true
-    preserve_host_header: true
-    pass_identity_headers: true
-    policy:
-      - allow:
-          or:
-            - authenticated_user: true"""
-]
-
-if "netdata" in svcs:
-    routes.append(
-        f'  - name: "Netdata"\n    description: "System Metrics"\n    from: https://netdata.{host.name}.{domain}\n    to: http://127.0.0.1:19999\n    policy:\n      - allow:\n          or:\n            - authenticated_user: true'
-    )
-if "syncthing" in svcs:
-    routes.append(
-        f'  - name: "Syncthing"\n    description: "P2P Files"\n    from: https://syncthing.{host.name}.{domain}\n    to: http://127.0.0.1:8384\n    policy:\n      - allow:\n          or:\n            - authenticated_user: true'
-    )
-if "asf" in svcs:
-    routes.append(
-        f'  - name: "ArchiSteamFarm"\n    description: "Steam Accounts"\n    from: https://asf.{host.name}.{domain}\n    to: http://127.0.0.1:{host.data.asf_port}\n    policy:\n      - allow:\n          or:\n            - authenticated_user: true'
-    )
-if "restic" in svcs:
-    routes.append(
-        f'  - name: "Backrest"\n    description: "Restic UI"\n    from: https://backrest.{host.name}.{domain}\n    to: http://127.0.0.1:{host.data.backrest_port}\n    policy:\n      - allow:\n          or:\n            - authenticated_user: true'
-    )
-
-config_yaml = (
-    f"""insecure_server: true
-address: ":{host.data.pomerium_port}"
-idp_provider: "oidc"
-idp_provider_url: "https://id.{domain}"
-authenticate_service_url: "https://pomerium.{domain}"
-
-routes:
-"""
-    + "\n".join(routes)
-    + "\n"
-)
-
-config_changed = files.put(
+config_changed = deploy_template(
     name="Template Pomerium route configuration",
-    src=io.StringIO(config_yaml),
+    src="templates/pomerium/config.yaml.j2",
     dest="/etc/pomerium/config.yaml",
     user="root",
     group="root",
     mode="0600",
-).changed
+    asf_port=host.data.get("asf_port"),
+    backrest_port=host.data.get("backrest_port"),
+    domain=host.data.domain_name,
+    hostname=host.name,
+    port=host.data.pomerium_port,
+    services=host.data.configured_services,
+)
 
 quadlet_changed = deploy_quadlet(
     "pomerium.container",

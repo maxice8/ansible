@@ -4,7 +4,11 @@ from utils import deploy_quadlet
 
 net_changed = deploy_quadlet(
     "pingvin-share.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for Pingvin Share\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for Pingvin Share
+
+[Network]
+IPv6=True""",
 )
 
 data_vol_changed = deploy_quadlet("pingvin-share-data.volume", "[Volume]")

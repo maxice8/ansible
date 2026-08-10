@@ -12,10 +12,16 @@ secret_changed = ensure_secret(
 
 net_changed = deploy_quadlet(
     "pocket-id.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for pocket-id\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for pocket-id
+
+[Network]
+IPv6=True""",
 )
 vol_changed = deploy_quadlet(
-    "pocket-id-data.volume", "[Volume]\n# Persists the Pocket ID SQLite DB"
+    "pocket-id-data.volume",
+    """[Volume]
+# Persists the Pocket ID SQLite DB""",
 )
 
 container_changed = deploy_quadlet(

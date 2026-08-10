@@ -4,7 +4,11 @@ from utils import deploy_quadlet
 
 net_changed = deploy_quadlet(
     "whoami.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for whoami\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for whoami
+
+[Network]
+IPv6=True""",
 )
 
 container_changed = deploy_quadlet(

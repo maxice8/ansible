@@ -21,7 +21,13 @@ files.directory(
     mode="0700",
 )
 
-ssh_config = f"Host {host.data.get('restic_ssh_hostname', '')}\n  Port 23\n  IdentityFile /root/.ssh/restic_key\n  IdentitiesOnly yes\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n"
+ssh_config = f"""Host {host.data.get("restic_ssh_hostname", "")}
+  Port 23
+  IdentityFile /root/.ssh/restic_key
+  IdentitiesOnly yes
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+"""
 files.put(
     name="Create native SSH Config",
     src=io.StringIO(ssh_config),
@@ -68,7 +74,11 @@ secret_changed = ensure_secret(
 
 net_c = deploy_quadlet(
     "backrest.network",
-    "[Unit]\nDescription=Isolated Dual-Stack Network for backrest\n\n[Network]\nIPv6=True",
+    """[Unit]
+Description=Isolated Dual-Stack Network for backrest
+
+[Network]
+IPv6=True""",
 )
 data_c = deploy_quadlet("backrest-data.volume", "[Volume]")
 cache_c = deploy_quadlet("backrest-cache.volume", "[Volume]")

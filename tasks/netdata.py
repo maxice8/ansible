@@ -16,7 +16,11 @@ apply_tmpfiles("netdata", "d /etc/netdata 0755 root root -")
 
 conf_changed = files.put(
     name="Restrict Netdata web UI to localhost",
-    src=io.StringIO("[web]\n    bind to = 127.0.0.1\n"),
+    src=io.StringIO(
+        """[web]
+    bind to = 127.0.0.1
+"""
+    ),
     dest="/etc/netdata/netdata.conf",
     user="root",
     group="root",
@@ -26,7 +30,10 @@ conf_changed = files.put(
 alarm_changed = files.put(
     name="Create health_alarm_notify.conf on host",
     src=io.StringIO(
-        f'SEND_DISCORD="YES"\nDISCORD_WEBHOOK_URL="{host.data.netdata_discord_alarm_webhook_url}"\nDEFAULT_RECIPIENT_DISCORD="netdata-alerts"\n'
+        f"""SEND_DISCORD="YES"
+DISCORD_WEBHOOK_URL="{host.data.netdata_discord_alarm_webhook_url}"
+DEFAULT_RECIPIENT_DISCORD="netdata-alerts"
+"""
     ),
     dest="/etc/netdata/health_alarm_notify.conf",
     user="root",
@@ -91,7 +98,13 @@ if heartbeat_url:
     files.put(
         name="Deploy netdata-heartbeat.service",
         src=io.StringIO(
-            f'[Unit]\nDescription=Netdata Heartbeat\n[Service]\nType=oneshot\nExecStart=/bin/sh -c \'/usr/bin/podman inspect --format "{{{{ .State.Health.Status }}}}" netdata | /usr/bin/grep -q healthy && /usr/bin/curl -fsS -m 5 --retry 3 "{heartbeat_url}" > /dev/null || true\'\n'
+            f"""[Unit]
+Description=Netdata Heartbeat
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/usr/bin/podman inspect --format "{{{{ .State.Health.Status }}}}" netdata | /usr/bin/grep -q healthy && /usr/bin/curl -fsS -m 5 --retry 3 "{heartbeat_url}" > /dev/null || true'
+"""
         ),
         dest="/etc/systemd/system/netdata-heartbeat.service",
         user="root",
@@ -101,7 +114,16 @@ if heartbeat_url:
     hb_timer_changed = files.put(
         name="Deploy netdata-heartbeat.timer",
         src=io.StringIO(
-            "[Unit]\nDescription=Netdata Heartbeat Timer\n[Timer]\nOnCalendar=*:0/5\nPersistent=true\n[Install]\nWantedBy=timers.target\n"
+            """[Unit]
+Description=Netdata Heartbeat Timer
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
         ),
         dest="/etc/systemd/system/netdata-heartbeat.timer",
         user="root",

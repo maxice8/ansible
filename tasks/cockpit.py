@@ -3,12 +3,13 @@ import io
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
-origins = f"https://cockpit.{host.name}.{host.data.domain_name} wss://cockpit.{host.name}.{host.data.domain_name}"
-
 config_changed = files.put(
     name="Configure Cockpit Origins and Proxy Headers",
     src=io.StringIO(
-        f"[WebService]\nOrigins = {origins}\nProtocolHeader = X-Forwarded-Proto\n"
+        f"""[WebService]
+Origins = https://cockpit.{host.name}.{host.data.domain_name} wss://cockpit.{host.name}.{host.data.domain_name}
+ProtocolHeader = X-Forwarded-Proto
+"""
     ),
     dest="/etc/cockpit/cockpit.conf",
     user="root",
@@ -26,7 +27,12 @@ files.directory(
 
 socket_changed = files.put(
     name="Restrict Cockpit to listen only on localhost",
-    src=io.StringIO("[Socket]\nListenStream=\nListenStream=127.0.0.1:9090\n"),
+    src=io.StringIO(
+        """[Socket]
+ListenStream=
+ListenStream=127.0.0.1:9090
+"""
+    ),
     dest="/etc/systemd/system/cockpit.socket.d/listen.conf",
     user="root",
     group="root",

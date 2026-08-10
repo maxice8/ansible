@@ -24,7 +24,13 @@ files.line(
 files.put(
     name="Create podman-system-prune service",
     src=io.StringIO(
-        "[Unit]\nDescription=Run Podman system prune\n[Service]\nType=oneshot\nExecStart=/usr/bin/podman system prune -af\n"
+        """[Unit]
+Description=Run Podman system prune
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/podman system prune -af
+"""
     ),
     dest="/etc/systemd/system/podman-system-prune.service",
     user="root",
@@ -32,18 +38,27 @@ files.put(
     mode="0644",
 )
 
-timer_file = files.put(
+timer_changed = files.put(
     name="Create podman-system-prune timer",
     src=io.StringIO(
-        "[Unit]\nDescription=Run Podman system prune daily\n[Timer]\nOnCalendar=daily\nPersistent=true\n[Install]\nWantedBy=timers.target\n"
+        """[Unit]
+Description=Run Podman system prune daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
     ),
     dest="/etc/systemd/system/podman-system-prune.timer",
     user="root",
     group="root",
     mode="0644",
-)
+).changed
 
-if timer_file.changed:
+if timer_changed:
     systemd.daemon_reload(name="Reload systemd for podman-system-prune")
 
 systemd.service(

@@ -4,10 +4,18 @@ import urllib.request
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
-from utils import ShellFact, apply_tmpfiles, deploy_quadlet, ensure_secret
+from utils import (
+    ShellFact,
+    apply_tmpfiles,
+    deploy_quadlet,
+    deploy_template,
+    ensure_secret,
+)
 
 apply_tmpfiles(
-    "caddy", "d /etc/caddy 0755 root root -\nd /var/log/caddy 0755 root root -"
+    "caddy",
+    """d /etc/caddy 0755 root root -
+d /var/log/caddy 0755 root root -""",
 )
 
 image_exists = host.get_fact(
@@ -31,95 +39,20 @@ cf_changed = files.put(
 
 api_key = host.data.get("caddy_crowdsec_api_key", "")
 svcs = host.data.configured_services
-
-# Caddyfile Generation
-caddy_blocks = []
-if api_key:
-    caddy_blocks.append(
-        "    crowdsec {\n        api_url http://crowdsec:8080\n        api_key {$CADDY_CROWDSEC_API_KEY}\n    }\n    order crowdsec first"
-    )
-
-caddy_blocks.append(
-    """    servers {\n        metrics\n    }\n    log {\n        output file /var/log/caddy/caddy_main.log {\n            roll_size 100MiB\n            roll_keep 5\n            roll_keep_for 100d\n        }\n        format json\n        level INFO\n    }\n}\n:2019 {\n    metrics\n}"""
-)
-caddy_blocks.append(f"{host.data.domain_name} {{\n    respond /_health 200\n}}")
-
-
-def proxy_block(subdomain: str, upstream: str, name: str) -> str:
-    block = f"{subdomain}.{host.data.domain_name} {{\n    reverse_proxy {upstream} {{\n        header_up Host {{host}}\n        header_up X-Real-IP {{remote_host}}\n"
-    if name == "pocket_id":
-        block += "        header_up X-Forwarded-Proto {scheme}\n"
-    block += "    }\n"
-    if api_key:
-        block += "    route {\n        crowdsec\n    }\n"
-    block += f"    log {{\n        output file /var/log/caddy/{subdomain}.{host.data.domain_name}.log {{\n            roll_size 100MiB\n            roll_keep 5\n            roll_keep_for 100d\n        }}\n        format json\n        level INFO\n    }}\n}}"
-    return block
-
-
 pomerium_upstream = f"host.containers.internal:{host.data.pomerium_port}"
-caddy_blocks.append(proxy_block("pomerium", pomerium_upstream, "pomerium"))
-caddy_blocks.append(proxy_block(f"cockpit.{host.name}", pomerium_upstream, "cockpit"))
-
-if "netdata" in svcs:
-    caddy_blocks.append(
-        proxy_block(f"netdata.{host.name}", pomerium_upstream, "netdata")
-    )
-if "syncthing" in svcs:
-    caddy_blocks.append(
-        proxy_block(f"syncthing.{host.name}", pomerium_upstream, "syncthing")
-    )
-if "asf" in svcs:
-    caddy_blocks.append(proxy_block(f"asf.{host.name}", pomerium_upstream, "asf"))
-if "restic" in svcs:
-    caddy_blocks.append(
-        proxy_block(f"backrest.{host.name}", pomerium_upstream, "restic")
-    )
-if "forgejo" in svcs:
-    caddy_blocks.append(proxy_block("git", "forgejo:3000", "forgejo"))
-if "whoami" in svcs:
-    caddy_blocks.append(proxy_block("whoami", "whoami:8080", "whoami"))
-if "pocket_id" in svcs:
-    caddy_blocks.append(proxy_block("id", "pocket-id:1411", "pocket_id"))
-if "pingvin_share" in svcs:
-    caddy_blocks.append(
-        proxy_block(
-            f"share.{host.name}",
-            "pingvin-share:3000",
-            "pingvin_share",
-        )
-    )
-if "netbird_server" in svcs:
-    caddy_blocks.append(
-        f"""netbird.{host.data.domain_name} {{
-    @grpc header Content-Type application/grpc*
-    reverse_proxy @grpc h2c://netbird-server:80
-
-    @backend path /relay* /ws-proxy/* /api/* /oauth2/*
-    reverse_proxy @backend netbird-server:80
-
-    reverse_proxy /* netbird-dashboard:80
-
-    log {{
-        output file /var/log/caddy/netbird.{host.data.domain_name}.log {{
-            roll_size 100MiB
-            roll_keep 5
-            roll_keep_for 100d
-        }}
-        format json
-        level INFO
-    }}
-}}"""
-    )
-
-caddyfile = "{\n" + "\n\n".join(caddy_blocks) + "\n"
-caddyfile_changed = files.put(
+caddyfile_changed = deploy_template(
     name="Template Caddyfile",
-    src=io.StringIO(caddyfile),
+    src="templates/caddy/Caddyfile.j2",
     dest="/etc/caddy/Caddyfile",
     user="root",
     group="root",
     mode="0644",
-).changed
+    crowdsec_enabled=bool(api_key),
+    domain=host.data.domain_name,
+    hostname=host.name,
+    pomerium_upstream=pomerium_upstream,
+    services=svcs,
+)
 
 # Secrets
 api_secret_changed = ensure_secret("caddy_crowdsec_api_key", api_key)
@@ -131,13 +64,24 @@ crowdsec_network_changed = False
 if api_key:
     crowdsec_network_changed = deploy_quadlet(
         "crowdsec.network",
-        "[Unit]\nDescription=Isolated Dual-Stack Network for CrowdSec\n\n[Network]\nIPv6=True",
+        """[Unit]
+Description=Isolated Dual-Stack Network for CrowdSec
+
+[Network]
+IPv6=True""",
     )
 
 deploy_quadlet("caddy-data.volume", "[Volume]")
 build_changed = deploy_quadlet(
     "caddy.build",
-    "[Unit]\nDescription=Build custom Caddy with CrowdSec bouncer\n[Build]\nImageTag=localhost/caddy-custom:latest\nFile=/etc/caddy/Containerfile\nSetWorkingDirectory=/etc/caddy\nPodmanArgs=--network=host",
+    """[Unit]
+Description=Build custom Caddy with CrowdSec bouncer
+
+[Build]
+ImageTag=localhost/caddy-custom:latest
+File=/etc/caddy/Containerfile
+SetWorkingDirectory=/etc/caddy
+PodmanArgs=--network=host""",
 )
 caddy_cont_changed = deploy_quadlet(
     "caddy.container",
@@ -217,42 +161,36 @@ if api_key:
         path="/etc/crowdsec-custom/parsers", user="root", group="root", mode="0755"
     )
 
-    wl_netbird_changed = files.put(
+    wl_netbird_changed = deploy_template(
         name="Whitelist NetBird network",
-        src=io.StringIO(
-            "name: ansible-whitelist-netbird\n"
-            "description: 'Whitelist for NetBird networks'\n"
-            "whitelist:\n"
-            "  reason: 'Trusted via Ansible (NetBird)'\n"
-            "  cidr:\n"
-            "    - '100.64.0.0/10'\n"
-            "    - 'fdcb:d175:272d:bff5::/64'\n"
-        ),
+        src="templates/crowdsec/whitelist.yaml.j2",
         dest="/etc/crowdsec-custom/parsers/ansible-whitelist-netbird.yaml",
         user="root",
         group="root",
         mode="0644",
-    ).changed
+        description="Whitelist for NetBird networks",
+        whitelist_name="ansible-whitelist-netbird",
+        reason="Trusted via Ansible (NetBird)",
+        values=["100.64.0.0/10", "fdcb:d175:272d:bff5::/64"],
+        value_type="cidr",
+    )
 
     trusted_ips = host.data.get("crowdsec_trusted_ips", [])
     wl_static_changed = False
     if trusted_ips:
-        yaml_ips = "\n".join([f'    - "{ip}"' for ip in trusted_ips])
-        wl_static_changed = files.put(
+        wl_static_changed = deploy_template(
             name="Whitelist static trusted IPs",
-            src=io.StringIO(
-                "name: ansible-whitelist-static\n"
-                "description: 'Whitelist static trusted IPs'\n"
-                "whitelist:\n"
-                "  reason: 'Trusted'\n"
-                "  ip:\n"
-                f"{yaml_ips}\n"
-            ),
+            src="templates/crowdsec/whitelist.yaml.j2",
             dest="/etc/crowdsec-custom/parsers/ansible-whitelist-static.yaml",
             user="root",
             group="root",
             mode="0644",
-        ).changed
+            description="Whitelist static trusted IPs",
+            whitelist_name="ansible-whitelist-static",
+            reason="Trusted",
+            values=trusted_ips,
+            value_type="ip",
+        )
 
     wl_controller_changed = False
     try:
@@ -261,21 +199,19 @@ if api_key:
             .read()
             .decode("utf8")
         )
-        wl_controller_changed = files.put(
+        wl_controller_changed = deploy_template(
             name="Whitelist controller IP",
-            src=io.StringIO(
-                "name: ansible-whitelist-controller\n"
-                "description: 'Trusted Controller IP'\n"
-                "whitelist:\n"
-                "  reason: 'Trusted Controller'\n"
-                "  ip:\n"
-                f'    - "{my_ip}"\n'
-            ),
+            src="templates/crowdsec/whitelist.yaml.j2",
             dest="/etc/crowdsec-custom/parsers/ansible-whitelist-controller.yaml",
             user="root",
             group="root",
             mode="0644",
-        ).changed
+            description="Trusted Controller IP",
+            whitelist_name="ansible-whitelist-controller",
+            reason="Trusted Controller",
+            values=[my_ip],
+            value_type="ip",
+        )
     except urllib.error.HTTPError as e:
         host.noop(f"Failed to fetch controller IP for whitelisting: {e}")
     except urllib.error.URLError as e:
@@ -289,7 +225,11 @@ if api_key:
     files.put(
         name="Create caddy.yaml acquis",
         src=io.StringIO(
-            "filenames:\n  - /var/log/caddy/*.log\nlabels:\n  type: caddy\n"
+            """filenames:
+  - /var/log/caddy/*.log
+labels:
+  type: caddy
+"""
         ),
         dest="/etc/crowdsec-custom/acquis.d/caddy.yaml",
         user="root",
@@ -345,10 +285,31 @@ WantedBy=multi-user.target
 
 if api_key and bouncer_key:
     files.directory(path="/etc/crowdsec", user="root", group="root", mode="0755")
-    bouncer_conf = "mode: ${BACKEND}\npid_dir: /var/run/\nupdate_frequency: 10s\ndaemonize: false\nlog_mode: stdout\nlog_level: info\napi_url: ${API_URL}\napi_key: ${API_KEY}\ndisable_ipv6: ${DISABLE_IPV6}\nnftables:\n  ipv4:\n    enabled: true\n    set-only: false\n    table: crowdsec\n    chain: crowdsec-chain\n  ipv6:\n    enabled: true\n    set-only: false\n    table: crowdsec6\n    chain: crowdsec6-chain\n"
     files.put(
         name="Create Firewall Bouncer config",
-        src=io.StringIO(bouncer_conf),
+        src=io.StringIO(
+            """mode: ${BACKEND}
+pid_dir: /var/run/
+update_frequency: 10s
+daemonize: false
+log_mode: stdout
+log_level: info
+api_url: ${API_URL}
+api_key: ${API_KEY}
+disable_ipv6: ${DISABLE_IPV6}
+nftables:
+  ipv4:
+    enabled: true
+    set-only: false
+    table: crowdsec
+    chain: crowdsec-chain
+  ipv6:
+    enabled: true
+    set-only: false
+    table: crowdsec6
+    chain: crowdsec6-chain
+"""
+        ),
         dest="/etc/crowdsec/crowdsec-firewall-bouncer.yaml",
         user="root",
         group="root",

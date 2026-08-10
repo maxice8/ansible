@@ -1,0 +1,58 @@
+insecure_server: true
+address: ":{{ port }}"
+idp_provider: "oidc"
+idp_provider_url: "https://id.{{ domain }}"
+authenticate_service_url: "https://pomerium.{{ domain }}"
+
+routes:
+  - name: "Cockpit"
+    description: "Fedora CoreOS System Administration"
+    from: https://cockpit.{{ hostname }}.{{ domain }}
+    to: http://127.0.0.1:9090
+    allow_websockets: true
+    preserve_host_header: true
+    pass_identity_headers: true
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% if "netdata" in services %}
+  - name: "Netdata"
+    description: "System Metrics"
+    from: https://netdata.{{ hostname }}.{{ domain }}
+    to: http://127.0.0.1:19999
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+{% if "syncthing" in services %}
+  - name: "Syncthing"
+    description: "P2P Files"
+    from: https://syncthing.{{ hostname }}.{{ domain }}
+    to: http://127.0.0.1:8384
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+{% if "asf" in services %}
+  - name: "ArchiSteamFarm"
+    description: "Steam Accounts"
+    from: https://asf.{{ hostname }}.{{ domain }}
+    to: http://127.0.0.1:{{ asf_port }}
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}
+{% if "restic" in services %}
+  - name: "Backrest"
+    description: "Restic UI"
+    from: https://backrest.{{ hostname }}.{{ domain }}
+    to: http://127.0.0.1:{{ backrest_port }}
+    policy:
+      - allow:
+          or:
+            - authenticated_user: true
+{% endif %}

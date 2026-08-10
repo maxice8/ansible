@@ -88,7 +88,13 @@ if heartbeat_url:
     files.put(
         name="Deploy syncthing-heartbeat.service",
         src=io.StringIO(
-            f'[Unit]\nDescription=Syncthing Heartbeat\n[Service]\nType=oneshot\nExecStart=/bin/sh -c \'/usr/bin/podman inspect --format "{{{{ .State.Health.Status }}}}" syncthing | /usr/bin/grep -q healthy && /usr/bin/curl -fsS -m 5 --retry 3 "{heartbeat_url}" > /dev/null || true\'\n'
+            f"""[Unit]
+Description=Syncthing Heartbeat
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/usr/bin/podman inspect --format "{{{{ .State.Health.Status }}}}" syncthing | /usr/bin/grep -q healthy && /usr/bin/curl -fsS -m 5 --retry 3 "{heartbeat_url}" > /dev/null || true'
+"""
         ),
         dest="/etc/systemd/system/syncthing-heartbeat.service",
         user="root",
@@ -98,7 +104,16 @@ if heartbeat_url:
     hb_timer_changed = files.put(
         name="Deploy syncthing-heartbeat.timer",
         src=io.StringIO(
-            "[Unit]\nDescription=Syncthing Heartbeat Timer\n[Timer]\nOnCalendar=*:0/5\nPersistent=true\n[Install]\nWantedBy=timers.target\n"
+            """[Unit]
+Description=Syncthing Heartbeat Timer
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
         ),
         dest="/etc/systemd/system/syncthing-heartbeat.timer",
         user="root",
