@@ -17,6 +17,13 @@ spec:
 
         deployment:
           replicas: 1
+          dnsPolicy: ClusterFirstWithHostNet
+
+        hostNetwork: true
+
+        updateStrategy:
+          type: Recreate
+          rollingUpdate: null
 
         ingressClass:
           enabled: false
@@ -33,9 +40,15 @@ spec:
         gateway:
           enabled: false
 
+        ports:
+          web:
+            port: 80
+          websecure:
+            port: 443
+
         service:
           spec:
-            type: LoadBalancer
+            type: ClusterIP
 
         logs:
           general:
@@ -50,6 +63,15 @@ spec:
           limits:
             cpu: 500m
             memory: 256Mi
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_BIND_SERVICE
+          readOnlyRootFilesystem: true
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik
