@@ -39,6 +39,13 @@ firewall_config_changed = files.put(
 destroy table inet hostfilter
 
 table inet hostfilter {
+    chain prerouting {
+        type nat hook prerouting priority dstnat; policy accept;
+
+        tcp dport 80 counter redirect to :8000
+        tcp dport 443 counter redirect to :8443
+    }
+
     chain input {
         type filter hook input priority -10; policy drop;
 
@@ -48,8 +55,8 @@ table inet hostfilter {
         ct state invalid counter drop
         meta l4proto { icmp, ipv6-icmp } counter accept
         iifname { "cni0", "flannel.1" } counter accept
+        ct original proto-dst { 80, 443 } counter accept
         tcp dport 22 counter accept
-        tcp dport { 80, 443 } counter accept
     }
 
     chain forward {
@@ -104,7 +111,7 @@ firewall_revision = host.get_fact(
     Command,
     command=(
         "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'tcp dport 22' >/dev/null && printf current || printf stale"
+        "grep -F 'redirect to :8443' >/dev/null && printf current || printf stale"
     ),
 )
 firewall_changed = (
