@@ -45,6 +45,11 @@ spec:
             port: 9000
           web:
             port: 8000
+            redirections:
+              entryPoint:
+                to: ":443"
+                scheme: https
+                permanent: true
           websecure:
             port: 8443
 
