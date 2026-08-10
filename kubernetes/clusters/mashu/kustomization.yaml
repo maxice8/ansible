@@ -14,6 +14,5 @@ resources:
   - staging-certificate.yaml
   - production-certificate.yaml
   - backrest.yaml
-  - cattle-system-namespace.yaml
   - rancher.yaml
   - platform-routes.yaml
