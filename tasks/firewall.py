@@ -46,6 +46,13 @@ table inet hostfilter {
         iifname "enp0s6" tcp dport 443 counter redirect to :8443
     }
 
+    chain output_nat {
+        type nat hook output priority dstnat; policy accept;
+
+        fib daddr type local tcp dport 80 counter redirect to :8000
+        fib daddr type local tcp dport 443 counter redirect to :8443
+    }
+
     chain input {
         type filter hook input priority -10; policy drop;
 

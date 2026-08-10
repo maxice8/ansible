@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: netbird-server
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -78,7 +78,7 @@ kind: Deployment
 metadata:
   name: netbird-dashboard
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: netbird-dashboard
