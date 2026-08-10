@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-certificate
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "52"
+spec:
+  project: default
+  source:
+    repoURL: https://git.maxice8.com/max/ansible.git
+    targetRevision: master
+    path: kubernetes/platform/production-certificate
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gateway-system

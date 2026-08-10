@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backrest
+  namespace: backrest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backrest
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backrest
+    spec:
+      containers:
+        - name: backrest
+          image: ghcr.io/garethgeorge/backrest:v1.14.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BACKREST_CONFIG
+              value: /data/config.json
+            - name: BACKREST_DATA
+              value: /data
+            - name: BACKREST_PORT
+              value: 0.0.0.0:9898
+            - name: TMPDIR
+              value: /tmp
+            - name: TZ
+              value: America/Sao_Paulo
+            - name: XDG_CACHE_HOME
+              value: /cache
+          ports:
+            - name: http
+              containerPort: 9898
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_READ_SEARCH
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: cache
+              mountPath: /cache
+            - name: temporary
+              mountPath: /tmp
+            - name: k3s-volumes
+              mountPath: /source/k3s-volumes
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: backrest-data
+        - name: cache
+          emptyDir: {}
+        - name: temporary
+          emptyDir: {}
+        - name: k3s-volumes
+          hostPath:
+            path: /var/lib/rancher/k3s/storage
+            type: Directory

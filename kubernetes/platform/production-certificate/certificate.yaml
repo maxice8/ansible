@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-mashu-maxice8-com
+  namespace: gateway-system
+spec:
+  secretName: wildcard-mashu-maxice8-com
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  dnsNames:
+    - mashu.maxice8.com
+    - "*.mashu.maxice8.com"

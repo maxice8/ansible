@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 40.2.0
+    helm:
+      releaseName: traefik
+      values: |
+        image:
+          tag: v3.7.1
+
+        deployment:
+          replicas: 1
+
+        ingressClass:
+          enabled: false
+
+        providers:
+          kubernetesCRD:
+            enabled: false
+          kubernetesIngress:
+            enabled: false
+          kubernetesGateway:
+            enabled: true
+            experimentalChannel: false
+
+        gateway:
+          enabled: false
+
+        service:
+          spec:
+            type: LoadBalancer
+
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

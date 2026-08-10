@@ -1,5 +1,6 @@
 import io
 import re
+from pathlib import Path
 
 from pyinfra import host
 from pyinfra.facts.server import Command
@@ -142,4 +143,58 @@ if root_application_changed or root_application_state != "present":
     server.shell(
         name="Apply the Mashu root application",
         commands=["k3s kubectl apply -f /usr/local/src/argocd-root-application.yaml"],
+    )
+
+age_identity_source = Path(".age-key.txt")
+if not age_identity_source.is_file():
+    raise RuntimeError("Argo CD requires .age-key.txt to bootstrap SOPS")
+
+files.directory(
+    name="Create the SOPS age identity directory",
+    path="/etc/sops/age",
+    user="root",
+    group="root",
+    mode="0700",
+)
+age_identity_changed = files.put(
+    name="Install the SOPS age identity",
+    src=str(age_identity_source),
+    dest="/etc/sops/age/keys.txt",
+    user="root",
+    group="root",
+    mode="0600",
+).changed
+
+sops_namespace_state = host.get_fact(
+    Command,
+    command=(
+        "k3s kubectl get namespace sops-secrets-operator >/dev/null 2>&1 "
+        "&& printf present || printf absent"
+    ),
+)
+if sops_namespace_state != "present":
+    server.shell(
+        name="Create the SOPS operator namespace",
+        commands=["k3s kubectl create namespace sops-secrets-operator"],
+    )
+
+age_secret_state = host.get_fact(
+    Command,
+    command=(
+        "k3s kubectl get secret sops-age-identity "
+        "-n sops-secrets-operator >/dev/null 2>&1 "
+        "&& printf present || printf absent"
+    ),
+)
+if age_identity_changed or age_secret_state != "present":
+    server.shell(
+        name="Apply the SOPS age identity Secret",
+        commands=[
+            (
+                "k3s kubectl create secret generic sops-age-identity "
+                "-n sops-secrets-operator "
+                "--from-file=keys.txt=/etc/sops/age/keys.txt "
+                "--dry-run=client -o yaml | k3s kubectl apply -f -"
+            )
+        ],
     )

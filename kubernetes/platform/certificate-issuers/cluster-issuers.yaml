@@ -1,0 +1,39 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    email: thinkabit.ukim@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    solvers:
+      - selector:
+          dnsZones:
+            - maxice8.com
+        dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    email: thinkabit.ukim@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-production-account
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - selector:
+          dnsZones:
+            - maxice8.com
+        dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token

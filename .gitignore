@@ -8,3 +8,4 @@
 
 # This file should be present to decrypt stuff
 .age-key.txt
+.cloudflare-api-token

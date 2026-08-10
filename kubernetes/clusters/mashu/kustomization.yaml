@@ -5,3 +5,13 @@ namespace: argocd
 
 resources:
   - ../../platform/argocd
+  - gateway-api.yaml
+  - traefik.yaml
+  - public-gateway.yaml
+  - cert-manager.yaml
+  - sops-secrets-operator.yaml
+  - certificate-issuers.yaml
+  - staging-certificate.yaml
+  - production-certificate.yaml
+  - backrest.yaml
+  - platform-routes.yaml
