@@ -15,7 +15,7 @@ class ShellFact(FactBase):
         return output[0] if output else ""
 
 
-def ensure_secret(secret_name, secret_value):
+def ensure_secret(secret_name: str, secret_value: str) -> bool:
     """Create or replace a Podman secret when its configured value changes."""
     if not secret_value:
         return False
@@ -45,7 +45,7 @@ def ensure_secret(secret_name, secret_value):
     return False
 
 
-def deploy_quadlet(filename, content):
+def deploy_quadlet(filename: str, content: str) -> bool:
     """Deploys a Quadlet file to /etc/containers/systemd and returns True if changed."""
     return files.put(
         name=f"Deploy {filename}",
@@ -57,7 +57,7 @@ def deploy_quadlet(filename, content):
     ).changed
 
 
-def apply_sysusers(name, content):
+def apply_sysusers(name: str, content: str) -> bool:
     """Deploys and immediately applies a sysusers config."""
     changed = files.put(
         name=f"Create {name} sysusers",
@@ -75,7 +75,7 @@ def apply_sysusers(name, content):
     return changed
 
 
-def apply_tmpfiles(name, content):
+def apply_tmpfiles(name: str, content: str) -> bool:
     """Deploys and immediately applies a tmpfiles config."""
     changed = files.put(
         name=f"Create {name} tmpfiles",

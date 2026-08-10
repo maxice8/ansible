@@ -6,7 +6,7 @@ from pyinfra import host, local
 from inventory import plain_group_vars
 
 
-def load_sops_vars(filepath):
+def load_sops_vars(filepath: str) -> dict:
     if not os.path.exists(filepath):
         return {}
 
@@ -68,7 +68,7 @@ targeted_tasks = (
 )
 
 
-def should_run(task_name):
+def should_run(task_name: str) -> bool:
     if targeted_tasks is None:
         return True
     return task_name in targeted_tasks
