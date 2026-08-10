@@ -13,6 +13,90 @@ spec:
       labels:
         app.kubernetes.io/name: backrest
     spec:
+      initContainers:
+        - name: configure-backrest
+          image: docker.io/mikefarah/yq:4.47.2
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ ! -s /data/config.json ]; then
+                exit 0
+              fi
+
+              export REPOSITORY_PASSWORD
+              REPOSITORY_PASSWORD="$(cat /credentials/repository-password)"
+              yq -o=json -i '
+                .repos = ((.repos // []) | map(select(.id != "mashu-storage-box"))) + [{
+                  "id": "mashu-storage-box",
+                  "guid": "8b5ac525fa913aeb3288ebdc25f9552fbb644c4b73652142baa84c793919fbc1",
+                  "uri": "sftp:u439340@u439340.your-storagebox.de:mashu-restic",
+                  "password": strenv(REPOSITORY_PASSWORD),
+                  "autoUnlock": true,
+                  "flags": [
+                    "--option=sftp.args=\"-oBatchMode=yes -oIdentitiesOnly=yes -oStrictHostKeyChecking=yes -oUserKnownHostsFile=/credentials/known_hosts -i /credentials/id_ed25519 -p 23\""
+                  ],
+                  "commandPrefix": {},
+                  "prunePolicy": {
+                    "schedule": {
+                      "cron": "0 0 1 * *",
+                      "clock": "CLOCK_LAST_RUN_TIME"
+                    },
+                    "maxUnusedPercent": 10
+                  },
+                  "checkPolicy": {
+                    "schedule": {
+                      "cron": "0 0 1 * *",
+                      "clock": "CLOCK_LAST_RUN_TIME"
+                    }
+                  }
+                }]
+                |
+                .plans = ((.plans // []) | map(select(.id != "mashu-volumes"))) + [{
+                  "id": "mashu-volumes",
+                  "repo": "mashu-storage-box",
+                  "paths": ["/source/k3s-volumes"],
+                  "excludes": [
+                    "/source/k3s-volumes/*_backrest_backrest-data/kvdb.sqlite*",
+                    "/source/k3s-volumes/*_backrest_backrest-data/oplog.sqlite*",
+                    "/source/k3s-volumes/*_backrest_backrest-data/processlogs",
+                    "/source/k3s-volumes/*_backrest_backrest-data/tasklogs"
+                  ],
+                  "schedule": {
+                    "cron": "0 3 * * *",
+                    "clock": "CLOCK_LOCAL"
+                  },
+                  "retention": {
+                    "policyTimeBucketed": {
+                      "daily": 7,
+                      "weekly": 4,
+                      "monthly": 6,
+                      "keepLastN": 10
+                    }
+                  },
+                  "hooks": []
+                }]
+              ' /data/config.json
+
+              if [ ! -e /data/.sync-identity-rotated ]; then
+                yq -o=json -i 'del(.sync.identity)' /data/config.json
+                touch /data/.sync-identity-rotated
+              fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: data
+              mountPath: /data
       containers:
         - name: backrest
           image: ghcr.io/garethgeorge/backrest:v1.14.1
@@ -24,6 +108,8 @@ spec:
               value: /data
             - name: BACKREST_PORT
               value: 0.0.0.0:9898
+            - name: RESTIC_PASSWORD_FILE
+              value: /credentials/repository-password
             - name: TMPDIR
               value: /tmp
             - name: TZ
@@ -62,6 +148,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
             - name: data
               mountPath: /data
             - name: cache
@@ -72,6 +161,10 @@ spec:
               mountPath: /source/k3s-volumes
               readOnly: true
       volumes:
+        - name: credentials
+          secret:
+            secretName: backrest-credentials
+            defaultMode: 0400
         - name: data
           persistentVolumeClaim:
             claimName: backrest-data
