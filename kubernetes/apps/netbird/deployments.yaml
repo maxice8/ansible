@@ -14,6 +14,8 @@ spec:
       labels:
         app.kubernetes.io/name: netbird-server
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: netbird-server
           image: docker.io/netbirdio/netbird-server:latest
@@ -23,12 +25,9 @@ spec:
             - /etc/netbird/config.yaml
           ports:
             - name: http
-              containerPort: 80
-            - name: health
-              containerPort: 9000
+              containerPort: 8081
             - name: stun
               containerPort: 3478
-              hostPort: 3478
               protocol: UDP
           volumeMounts:
             - name: config
