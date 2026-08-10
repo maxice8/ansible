@@ -19,3 +19,5 @@ resources:
   - whoami.yaml
   - pingvin-share.yaml
   - asf.yaml
+  - pocket-id.yaml
+  - pomerium.yaml

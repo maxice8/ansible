@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pomerium-config
+data:
+  config.yaml: |
+    insecure_server: true
+    address: ":30006"
+    grpc_address: "127.0.0.1:5443"
+    idp_provider: "oidc"
+    idp_provider_url: "https://id.maxice8.com"
+    authenticate_service_url: "https://pomerium.maxice8.com"
+
+    routes:
+      - name: "ArchiSteamFarm"
+        description: "Steam Accounts"
+        from: "https://asf.mashu.maxice8.com"
+        to: "http://asf.asf.svc.cluster.local:1242"
+        policy:
+          - allow:
+              or:
+                - authenticated_user: true
