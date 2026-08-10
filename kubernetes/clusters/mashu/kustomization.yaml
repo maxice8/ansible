@@ -14,4 +14,5 @@ resources:
   - staging-certificate.yaml
   - production-certificate.yaml
   - backrest.yaml
+  - rancher.yaml
   - platform-routes.yaml

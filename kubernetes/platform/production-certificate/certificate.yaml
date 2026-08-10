@@ -12,3 +12,4 @@ spec:
   dnsNames:
     - mashu.maxice8.com
     - "*.mashu.maxice8.com"
+    - rancher.maxice8.com

@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - argocd-route.yaml
   - backrest-route.yaml
+  - rancher-route.yaml
   - test-service.yaml
