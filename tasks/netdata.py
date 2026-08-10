@@ -3,6 +3,7 @@ import io
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
+from inventory import POMERIUM_HOST_IPV4_GATEWAY
 from utils import apply_tmpfiles, deploy_quadlet
 
 systemd.service(
@@ -15,10 +16,10 @@ systemd.service(
 apply_tmpfiles("netdata", "d /etc/netdata 0755 root root -")
 
 conf_changed = files.put(
-    name="Restrict Netdata web UI to localhost",
+    name="Restrict Netdata web UI to private host addresses",
     src=io.StringIO(
-        """[web]
-    bind to = 127.0.0.1
+        f"""[web]
+    bind to = {POMERIUM_HOST_IPV4_GATEWAY}
 """
     ),
     dest="/etc/netdata/netdata.conf",
@@ -46,8 +47,10 @@ cache_vol_changed = deploy_quadlet("netdata-cache.volume", "[Volume]")
 
 container_changed = deploy_quadlet(
     "netdata.container",
-    """[Unit]
+    f"""[Unit]
 Description=Netdata Host Monitoring
+Requires=pomerium-network.service
+After=pomerium-network.service
 
 [Container]
 Image=docker.io/netdata/netdata:latest
@@ -68,9 +71,10 @@ Volume=/sys:/host/sys:ro
 Volume=/etc/os-release:/host/etc/os-release:ro
 Volume=/var/log:/host/var/log:ro
 Volume=/run/podman/podman.sock:/var/run/docker.sock:ro
+Volume=/etc/netdata/netdata.conf:/etc/netdata/netdata.conf:ro,z
 Volume=/etc/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro,z
 
-HealthCmd=CMD-SHELL curl -fkLsS -m 2 127.0.0.1:19999/api/v1/info > /dev/null || exit 1
+HealthCmd=CMD-SHELL curl -fkLsS -m 2 {POMERIUM_HOST_IPV4_GATEWAY}:19999/api/v1/info > /dev/null || exit 1
 HealthInterval=15s
 HealthTimeout=10s
 HealthRetries=3

@@ -41,7 +41,6 @@ AutoUpdate=registry
 ContainerName=syncthing
 HostName=syncthing
 Network=syncthing.network
-PublishPort=127.0.0.1:8384:8384
 PublishPort=22000:22000/tcp
 PublishPort=22000:22000/udp
 PublishPort=21027:21027/udp

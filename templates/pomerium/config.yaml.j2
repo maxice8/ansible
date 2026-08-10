@@ -1,14 +1,16 @@
 insecure_server: true
-address: ":{{ port }}"
+address: ":30006"
+grpc_address: "127.0.0.1:5443"
 idp_provider: "oidc"
 idp_provider_url: "https://id.{{ domain }}"
 authenticate_service_url: "https://pomerium.{{ domain }}"
 
 routes:
+{% if "cockpit" in services %}
   - name: "Cockpit"
     description: "Fedora CoreOS System Administration"
     from: https://cockpit.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:9090
+    to: http://{{ host_gateway }}:9090
     allow_websockets: true
     preserve_host_header: true
     pass_identity_headers: true
@@ -16,11 +18,12 @@ routes:
       - allow:
           or:
             - authenticated_user: true
+{% endif %}
 {% if "netdata" in services %}
   - name: "Netdata"
     description: "System Metrics"
     from: https://netdata.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:19999
+    to: http://{{ host_gateway }}:19999
     policy:
       - allow:
           or:
@@ -30,7 +33,7 @@ routes:
   - name: "Syncthing"
     description: "P2P Files"
     from: https://syncthing.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:8384
+    to: http://syncthing:8384
     policy:
       - allow:
           or:
@@ -40,7 +43,7 @@ routes:
   - name: "ArchiSteamFarm"
     description: "Steam Accounts"
     from: https://asf.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:1242
+    to: http://asf:1242
     policy:
       - allow:
           or:
@@ -50,7 +53,7 @@ routes:
   - name: "Backrest"
     description: "Restic UI"
     from: https://backrest.{{ hostname }}.{{ domain }}
-    to: http://127.0.0.1:9898
+    to: http://backrest:9898
     policy:
       - allow:
           or:

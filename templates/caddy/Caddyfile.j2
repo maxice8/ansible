@@ -29,10 +29,7 @@
 }
 
 pomerium.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -49,11 +46,9 @@ pomerium.{{ domain }} {
     }
 }
 
+{% if "cockpit" in services %}
 cockpit.{{ hostname }}.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -69,13 +64,11 @@ cockpit.{{ hostname }}.{{ domain }} {
         level INFO
     }
 }
+{% endif %}
 {% if "netdata" in services %}
 
 netdata.{{ hostname }}.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -95,10 +88,7 @@ netdata.{{ hostname }}.{{ domain }} {
 {% if "syncthing" in services %}
 
 syncthing.{{ hostname }}.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -118,10 +108,7 @@ syncthing.{{ hostname }}.{{ domain }} {
 {% if "asf" in services %}
 
 asf.{{ hostname }}.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -141,10 +128,7 @@ asf.{{ hostname }}.{{ domain }} {
 {% if "restic" in services %}
 
 backrest.{{ hostname }}.{{ domain }} {
-    reverse_proxy {{ pomerium_upstream }} {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy {{ pomerium_upstream }}
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -164,10 +148,7 @@ backrest.{{ hostname }}.{{ domain }} {
 {% if "forgejo" in services %}
 
 git.{{ domain }} {
-    reverse_proxy forgejo:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy forgejo:3000
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -187,10 +168,7 @@ git.{{ domain }} {
 {% if "whoami" in services %}
 
 whoami.{{ domain }} {
-    reverse_proxy whoami:8080 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy whoami:8080
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -210,11 +188,7 @@ whoami.{{ domain }} {
 {% if "pocket_id" in services %}
 
 id.{{ domain }} {
-    reverse_proxy pocket-id:1411 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
+    reverse_proxy pocket-id:1411
 {% if crowdsec_enabled %}
     route {
         crowdsec
@@ -234,10 +208,7 @@ id.{{ domain }} {
 {% if "pingvin_share" in services %}
 
 share.{{ hostname }}.{{ domain }} {
-    reverse_proxy pingvin-share:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
+    reverse_proxy pingvin-share:3000
 {% if crowdsec_enabled %}
     route {
         crowdsec

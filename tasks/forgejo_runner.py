@@ -165,7 +165,7 @@ User={r_uid}
 Group={r_gid}""",
 )
 add_host = f"AddHost=git.{host.data.domain_name}:host-gateway"
-if "forgejo" not in host.data.configured_services:
+if "forgejo" not in host.data.host_services:
     add_host = ""
 
 run_c = deploy_quadlet(

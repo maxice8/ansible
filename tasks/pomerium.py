@@ -1,7 +1,26 @@
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
+from inventory import POMERIUM_HOST_IPV4_GATEWAY, POMERIUM_HOST_IPV4_SUBNET
 from utils import deploy_quadlet, deploy_template, ensure_secret
+
+pomerium_network_changed = deploy_quadlet(
+    "pomerium.network",
+    f"""[Unit]
+Description=Isolated Dual-Stack Network for Pomerium
+
+[Network]
+IPv6=True
+Subnet={POMERIUM_HOST_IPV4_SUBNET}
+Gateway={POMERIUM_HOST_IPV4_GATEWAY}""",
+)
+
+systemd.service(
+    name="Ensure the Pomerium network exists",
+    service="pomerium-network.service",
+    running=True,
+    daemon_reload=pomerium_network_changed,
+)
 
 files.directory(
     name="Ensure Pomerium config directory exists",
@@ -26,9 +45,9 @@ config_changed = deploy_template(
     group="root",
     mode="0600",
     domain=host.data.domain_name,
+    host_gateway=POMERIUM_HOST_IPV4_GATEWAY,
     hostname=host.name,
-    port=host.data.pomerium_port,
-    services=host.data.configured_services,
+    services=host.data.host_services,
 )
 
 quadlet_changed = deploy_quadlet(
@@ -37,12 +56,17 @@ quadlet_changed = deploy_quadlet(
 [Unit]
 Description=Pomerium Identity-Aware Proxy
 After=network-online.target
+Requires=pomerium-network.service
+After=pomerium-network.service
 
 [Container]
 Image=docker.io/pomerium/pomerium:latest
 AutoUpdate=registry
 ContainerName=pomerium
-Network=host
+Network=pomerium.network
+{"Network=syncthing.network" if "syncthing" in host.data.host_services else ""}
+{"Network=asf.network" if "asf" in host.data.host_services else ""}
+{"Network=backrest.network" if "restic" in host.data.host_services else ""}
 Volume=/etc/pomerium/config.yaml:/pomerium/config.yaml:ro,z
 
 Environment=IDP_CLIENT_ID={host.data.pomerium_client_id}

@@ -38,8 +38,8 @@ cf_changed = files.put(
 ).changed
 
 api_key = host.data.get("caddy_crowdsec_api_key", "")
-svcs = host.data.configured_services
-pomerium_upstream = f"host.containers.internal:{host.data.pomerium_port}"
+svcs = host.data.host_services
+pomerium_upstream = "pomerium:30006"
 caddyfile_changed = deploy_template(
     name="Template Caddyfile",
     src="templates/caddy/Caddyfile.j2",
@@ -94,6 +94,7 @@ Image=localhost/caddy-custom:latest
 ContainerName=caddy
 AutoUpdate=local
 {"Secret=caddy_crowdsec_api_key,type=env,target=CADDY_CROWDSEC_API_KEY" if api_key else ""}
+Network=pomerium.network
 {"Network=crowdsec.network" if api_key else ""}
 {"Network=forgejo.network" if "forgejo" in svcs else ""}
 {"Network=whoami.network" if "whoami" in svcs else ""}

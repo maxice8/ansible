@@ -56,9 +56,28 @@ all_vars = {**plain_group_vars, **sops_group_vars, **sops_host_vars}
 for key, value in all_vars.items():
     setattr(host.data, key, value)
 
-configured_services = host.data.get("host_services", [])
+host_services = host.data.host_services
+pomerium_dependents = ("cockpit", "netdata")
+configured_pomerium_dependents = [
+    service for service in pomerium_dependents if service in host_services
+]
 
-host.data.configured_services = configured_services
+# Cockpit and Netdata use the private Pomerium network.
+# Run these services after Pomerium creates the network.
+if configured_pomerium_dependents and "pomerium" not in host_services:
+    dependent_names = ", ".join(configured_pomerium_dependents)
+    raise ValueError(f"The following services require Pomerium: {dependent_names}")
+
+if "pomerium" in host_services:
+    pomerium_index = host_services.index("pomerium")
+    incorrectly_ordered_dependents = [
+        service
+        for service in configured_pomerium_dependents
+        if host_services.index(service) < pomerium_index
+    ]
+    if incorrectly_ordered_dependents:
+        dependent_names = ", ".join(incorrectly_ordered_dependents)
+        raise ValueError(f"These services must run after Pomerium: {dependent_names}")
 
 only_tasks_env = os.environ.get("TASKS")
 targeted_tasks = (
@@ -81,9 +100,6 @@ if should_run("netbird"):
 if should_run("podman"):
     local.include("tasks/podman.py")
 
-if should_run("cockpit"):
-    local.include("tasks/cockpit.py")
-
-for service in configured_services:
+for service in host_services:
     if should_run(service):
         local.include(f"tasks/{service}.py")

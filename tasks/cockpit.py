@@ -3,6 +3,8 @@ import io
 from pyinfra import host
 from pyinfra.operations import files, systemd
 
+from inventory import POMERIUM_HOST_IPV4_GATEWAY
+
 config_changed = files.put(
     name="Configure Cockpit Origins and Proxy Headers",
     src=io.StringIO(
@@ -26,11 +28,15 @@ files.directory(
 )
 
 socket_changed = files.put(
-    name="Restrict Cockpit to listen only on localhost",
+    name="Restrict Cockpit to private host addresses",
     src=io.StringIO(
-        """[Socket]
+        f"""[Unit]
+Requires=pomerium-network.service
+After=pomerium-network.service
+
+[Socket]
 ListenStream=
-ListenStream=127.0.0.1:9090
+ListenStream={POMERIUM_HOST_IPV4_GATEWAY}:9090
 """
     ),
     dest="/etc/systemd/system/cockpit.socket.d/listen.conf",
@@ -39,7 +45,13 @@ ListenStream=127.0.0.1:9090
     mode="0644",
 ).changed
 
-if config_changed or socket_changed:
+if socket_changed:
+    systemd.service(
+        name="Stop Cockpit before its socket changes",
+        service="cockpit",
+        running=False,
+    )
+elif config_changed:
     systemd.service(name="Restart Cockpit", service="cockpit", restarted=True)
 
 systemd.service(
@@ -47,5 +59,6 @@ systemd.service(
     service="cockpit.socket",
     running=True,
     enabled=True,
+    restarted=socket_changed,
     daemon_reload=socket_changed,
 )
