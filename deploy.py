@@ -56,9 +56,7 @@ all_vars = {**plain_group_vars, **sops_group_vars, **sops_host_vars}
 for key, value in all_vars.items():
     setattr(host.data, key, value)
 
-host_services = host.data.get("host_services", [])
-group_services = host.data.get("group_services", [])
-configured_services = host_services + group_services
+configured_services = host.data.get("host_services", [])
 
 host.data.configured_services = configured_services
 
