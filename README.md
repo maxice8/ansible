@@ -1,6 +1,7 @@
 # Pyinfra Deployment Stack
 
-This repository manages the orchestration, configuration, and deployment of containerized services on infrastructure running Fedora CoreOS using pure Python with [Pyinfra](https://github.com/pyinfra-dev/pyinfra).
+This repository uses [Pyinfra](https://github.com/pyinfra-dev/pyinfra) to manage
+the Mashu Ubuntu host. Legacy Fedora CoreOS files remain while Ryuu is retired.
 
 ## Requirements
 
@@ -73,7 +74,7 @@ sops host_vars/ryuu.sops.env
 
 ## Deploying
 
-Deployments are split into `butane` (for initial OS provisioning) and `pyinfra` (for state orchestration).
+Use Pyinfra for Mashu. The Butane files apply only to the legacy Ryuu host.
 
 ### Butane
 
@@ -85,14 +86,10 @@ make ryuu
 
 ### Pyinfra
 
-Use pyinfra to deploy the services.
-
-`tasks/00_common.py` always runs, including when `TASKS` limits a deployment. It
-maintains the directories and SSH access that other tasks require.
+Use Pyinfra to deploy the Mashu host state.
 
 ```bash
-# Execute deployment against host target (e.g., ryuu) with sudo elevation
-uv run pyinfra inventory.py deploy.py --sudo --limit ryuu
+uv run pyinfra inventory.py deploy.py --sudo
 ```
 
 ## Code Quality & Static Analysis

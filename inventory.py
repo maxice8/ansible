@@ -1,34 +1,21 @@
 plain_group_vars = {
     "domain_name": "maxice8.com",
+    "k3s_installer_sha256": "8598e002e61d658fed7b7542fc6d2c66d8da6eae69e088830105d2ee1ffb6d91",
+    "k3s_installer_url": "https://raw.githubusercontent.com/k3s-io/k3s/v1.35.5%2Bk3s1/install.sh",
+    "k3s_version": "v1.35.5+k3s1",
+    "ssh_public_key": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGGnv3RrnwshBYkxF88Z1Rd+OiQGG8esijpkL1RhLWH/fhMuFHQuUtv+qx9D5qcv722Yla12KcbGoefm2OxlQZc= max",
 }
 
-# Use a fixed subnet for the private Pomerium network.
-# Host services bind to the gateway of this subnet.
-POMERIUM_HOST_IPV4_SUBNET = "172.31.255.0/24"
-POMERIUM_HOST_IPV4_GATEWAY = "172.31.255.1"
-
-# Define your hosts and their specific data
-servers = [
-    (
-        "ryuu",
-        {
-            "ssh_user": "core",
-            # List services in deployment order.
-            "host_services": [
-                "pocket_id",
-                "forgejo",
-                "forgejo_runner",
-                "whoami",
-                "syncthing",
-                "asf",
-                "pingvin_share",
-                "netbird_server",
-                "restic",
-                "pomerium",
-                "cockpit",
-                "netdata",
-                "caddy",
-            ],
-        },
-    ),
-]
+servers = (
+    [
+        (
+            "mashu",
+            {
+                "netbird_ipv4": "100.119.192.118",
+                "ssh_hostname": "167.126.15.226",
+                "ssh_user": "ubuntu",
+            },
+        ),
+    ],
+    plain_group_vars,
+)

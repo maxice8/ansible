@@ -1,6 +1,44 @@
 import io
 
-from pyinfra.operations import files, systemd
+from pyinfra.operations import apt, files, systemd
+
+apt.packages(
+    name="Install NetBird dependencies",
+    packages=["ca-certificates", "curl", "ethtool"],
+)
+
+files.download(
+    name="Install the NetBird repository key",
+    src="https://pkgs.netbird.io/debian/public.key",
+    dest="/usr/share/keyrings/netbird-archive-keyring.asc",
+    user="root",
+    group="root",
+    mode="0644",
+)
+
+files.put(
+    name="Configure the NetBird APT repository",
+    src=io.StringIO(
+        "deb [signed-by=/usr/share/keyrings/netbird-archive-keyring.asc] "
+        "https://pkgs.netbird.io/debian stable main\n"
+    ),
+    dest="/etc/apt/sources.list.d/netbird.list",
+    user="root",
+    group="root",
+    mode="0644",
+)
+
+apt.packages(
+    name="Install the NetBird client",
+    packages=["netbird"],
+)
+
+systemd.service(
+    name="Enable the NetBird client",
+    service="netbird.service",
+    running=True,
+    enabled=True,
+)
 
 gro_changed = files.put(
     name="Deploy NetBird UDP GRO optimization service",
