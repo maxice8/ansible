@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pingvin-share
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://git.maxice8.com/max/ansible.git
+    targetRevision: master
+    path: kubernetes/apps/pingvin-share
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pingvin-share
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

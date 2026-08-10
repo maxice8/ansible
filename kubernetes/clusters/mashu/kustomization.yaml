@@ -16,3 +16,6 @@ resources:
   - backrest.yaml
   - rancher.yaml
   - platform-routes.yaml
+  - whoami.yaml
+  - pingvin-share.yaml
+  - asf.yaml
