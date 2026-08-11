@@ -3,10 +3,31 @@ import os
 from pyinfra import host, local
 from pyinfra.operations import server
 
+AVAILABLE_TASKS = (
+    "user",
+    "ssh",
+    "netbird",
+    "kernel",
+    "services",
+    "firewall",
+    "k3s",
+    "argocd",
+)
+
 only_tasks_env = os.environ.get("TASKS")
 targeted_tasks = (
-    [task.strip() for task in only_tasks_env.split(",")] if only_tasks_env else None
+    {task.strip() for task in only_tasks_env.split(",") if task.strip()}
+    if only_tasks_env
+    else None
 )
+
+if targeted_tasks is not None:
+    unknown_tasks = targeted_tasks.difference(AVAILABLE_TASKS)
+    if unknown_tasks:
+        raise ValueError(
+            f"Unknown TASKS: {', '.join(sorted(unknown_tasks))}. "
+            f"Available tasks: {', '.join(AVAILABLE_TASKS)}"
+        )
 
 
 def should_run(task_name: str) -> bool:
@@ -21,15 +42,6 @@ server.hostname(
     hostname=host.name,
 )
 
-for task in (
-    "user",
-    "ssh",
-    "netbird",
-    "kernel",
-    "services",
-    "firewall",
-    "k3s",
-    "argocd",
-):
+for task in AVAILABLE_TASKS:
     if should_run(task_name=task):
         local.include(f"tasks/{task}.py")
