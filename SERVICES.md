@@ -342,23 +342,6 @@ encrypted server and dashboard configuration. Keep the public server name at
 `https://netbird.${DOMAIN}`. Test dashboard sign-in, peer connections, relay,
 and STUN before you use the server for recovery access.
 
-### Enroll the host client
-
-Pyinfra installs the NetBird client but does not enroll it. Start enrollment:
-
-```bash
-ssh "$HOSTNAME"
-sudo netbird up --management-url "https://netbird.${DOMAIN}"
-netbird status
-ip -4 address show wt0
-```
-
-Approve or complete the enrollment in the NetBird interface. Set
-`netbird_ipv4` in `inventory.py` to the address on `wt0`.
-
-If the cluster hosts NetBird, rebuild K3s and Argo CD before you enroll the
-host. Restore NetBird, start it, and then enroll the host client.
-
 ## Forgejo and Forgejo Runner
 
 ### Required network access

@@ -118,12 +118,21 @@ Deploy the baseline before you install K3s:
 
 ```bash
 TASKS=user,ssh,netbird,kernel,services,firewall \
-  uv run pyinfra inventory.py deploy.py --sudo
+  uv run pyinfra inventory.py deploy.py --sudo --limit "$HOSTNAME"
 ```
 
 ### Enroll the NetBird client
 
-Use the NetBird enrollment procedure in [SERVICES.md](SERVICES.md). Set
+Pyinfra installs the NetBird client but does not enroll it. Start enrollment:
+
+```bash
+ssh "$HOSTNAME"
+sudo netbird up --management-url "https://netbird.${DOMAIN}"
+netbird status
+ip -4 address show wt0
+```
+
+Approve or complete the enrollment in the NetBird interface. Set
 `netbird_ipv4` in `inventory.py` to the address on `wt0`.
 
 If this cluster also hosts the NetBird server, the server can be unavailable
@@ -136,13 +145,13 @@ the full Pyinfra deployment again.
 Run the full deployment:
 
 ```bash
-uv run pyinfra inventory.py deploy.py --sudo
+uv run pyinfra inventory.py deploy.py --sudo --limit "$HOSTNAME"
 ```
 
 Run it again. The second run must report no changes:
 
 ```bash
-uv run pyinfra inventory.py deploy.py --sudo
+uv run pyinfra inventory.py deploy.py --sudo --limit "$HOSTNAME"
 ```
 
 Pyinfra installs the selected K3s version. It installs the latest stable Argo
@@ -255,14 +264,14 @@ changes.
 Run a Pyinfra dry run before you deploy a host change:
 
 ```bash
-uv run pyinfra inventory.py deploy.py --dry --sudo
+uv run pyinfra inventory.py deploy.py --dry --sudo --limit "$HOSTNAME"
 ```
 
 Use `TASKS` when you must limit the dry run to one or more tasks:
 
 ```bash
 TASKS=firewall \
-  uv run pyinfra inventory.py deploy.py --dry --sudo
+  uv run pyinfra inventory.py deploy.py --dry --sudo --limit "$HOSTNAME"
 ```
 
 A dry run does not prove that every remote command is safe. Review the
