@@ -1,4 +1,3 @@
-  config.yml: |
 settings:
   data:
     database_file: /app/data/argus.db
@@ -159,7 +158,7 @@ service:
       url: JustArchiNET/ArchiSteamFarm
       url_commands:
         - type: regex
-          regex: '^([0-9]+(?:\.[0-9]+){3})$'
+          regex: '^([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/asf/deployment.yaml
       regex: 'archisteamfarm:([0-9.]+)'
