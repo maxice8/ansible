@@ -13,6 +13,10 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: pomerium
+        - ipBlock:
+            cidr: 10.42.0.0/16
+        - ipBlock:
+            cidr: fd42:10:42::/56
       ports:
         - port: http
           protocol: TCP
