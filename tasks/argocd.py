@@ -6,13 +6,6 @@ from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import files, server
 
-k3s_state = host.get_fact(
-    Command,
-    command="systemctl is-active k3s.service 2>/dev/null || true",
-)
-if k3s_state != "active":
-    raise RuntimeError("Argo CD requires an active K3s server")
-
 release_url = host.get_fact(
     Command,
     command=(
