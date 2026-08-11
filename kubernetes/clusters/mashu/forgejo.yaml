@@ -173,7 +173,7 @@ spec:
     namespace: forgejo
   syncPolicy:
     automated:
-      enabled: false
+      enabled: true
       prune: true
       selfHeal: true
       allowEmpty: false
