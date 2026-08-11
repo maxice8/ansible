@@ -14,6 +14,7 @@ spec:
       values: |
         image:
           tag: v3.7.10
+          pullPolicy: IfNotPresent
 
         deployment:
           replicas: 1

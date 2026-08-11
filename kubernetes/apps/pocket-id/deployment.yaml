@@ -17,7 +17,7 @@ spec:
       containers:
         - name: pocket-id
           image: ghcr.io/pocket-id/pocket-id:v2.13.0
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: APP_URL
               value: https://id.maxice8.com

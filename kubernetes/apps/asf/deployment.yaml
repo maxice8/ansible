@@ -19,7 +19,7 @@ spec:
       containers:
         - name: asf
           image: docker.io/justarchi/archisteamfarm:6.3.8.4
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 1242

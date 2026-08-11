@@ -21,7 +21,7 @@ spec:
 
           image:
             tag: 16.0.2
-            pullPolicy: Always
+            pullPolicy: IfNotPresent
             rootless: true
 
           strategy:

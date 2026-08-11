@@ -17,7 +17,7 @@ spec:
       containers:
         - name: runner
           image: code.forgejo.org/forgejo/runner:13.0.0
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - /etc/forgejo-runner/entrypoint.sh
@@ -58,7 +58,7 @@ spec:
               type: RuntimeDefault
         - name: dind
           image: docker.io/library/docker:29.7.2-dind
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - dockerd
             - -H
