@@ -15,6 +15,7 @@ spec:
       securityContext:
         fsGroup: 976
         runAsGroup: 976
+        runAsNonRoot: true
         runAsUser: 976
       containers:
         - name: asf
