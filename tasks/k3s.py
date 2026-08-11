@@ -24,6 +24,31 @@ files.directory(
     mode="0700",
 )
 
+files.directory(
+    name="Create the K3s kubelet configuration directory",
+    path="/var/lib/rancher/k3s/agent/etc/kubelet.conf.d",
+    user="root",
+    group="root",
+    mode="0700",
+    recursive=True,
+)
+
+kubelet_config_changed = files.put(
+    name="Configure K3s image garbage collection",
+    src=io.StringIO(
+        """apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+imageGCHighThresholdPercent: 60
+imageGCLowThresholdPercent: 50
+imageMaximumGCAge: 24h
+"""
+    ),
+    dest="/var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-image-gc.conf",
+    user="root",
+    group="root",
+    mode="0600",
+).changed
+
 k3s_config_changed = files.put(
     name="Deploy the K3s server configuration",
     src=io.StringIO(
@@ -102,6 +127,6 @@ systemd.service(
     service="k3s.service",
     running=True,
     enabled=True,
-    restarted=k3s_config_changed or k3s_install_changed,
+    restarted=k3s_config_changed or kubelet_config_changed or k3s_install_changed,
     daemon_reload=k3s_install_changed or k3s_unit_reload_required,
 )
