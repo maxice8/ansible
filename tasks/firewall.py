@@ -1,9 +1,21 @@
 import io
+import re
 
 from pyinfra import host
 from pyinfra.facts.files import File
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
+
+public_interface = host.get_fact(
+    Command,
+    command=(
+        "ip -o -4 route show default | "
+        "awk 'NR == 1 {for (i = 1; i <= NF; i++) "
+        "if ($i == \"dev\") {print $(i + 1); exit}}'"
+    ),
+)
+if not re.fullmatch(r"[A-Za-z0-9_.:@-]+", public_interface):
+    raise RuntimeError("Cannot discover the public network interface")
 
 apt.packages(
     name="Install nftables",
@@ -42,8 +54,8 @@ table inet hostfilter {
     chain prerouting {
         type nat hook prerouting priority dstnat; policy accept;
 
-        iifname "enp0s6" tcp dport 80 counter redirect to :8000
-        iifname "enp0s6" tcp dport 443 counter redirect to :8443
+        iifname "__PUBLIC_INTERFACE__" tcp dport 80 counter redirect to :8000
+        iifname "__PUBLIC_INTERFACE__" tcp dport 443 counter redirect to :8443
     }
 
     chain output_nat {
@@ -77,7 +89,7 @@ table inet hostfilter {
 }
 
 include "/etc/nftables.d/*.conf"
-"""
+""".replace("__PUBLIC_INTERFACE__", public_interface)
     ),
     dest="/etc/nftables.conf",
     user="root",

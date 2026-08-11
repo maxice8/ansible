@@ -108,9 +108,8 @@ Create these core ingress rules:
 
 See [SERVICES.md](SERVICES.md) for service-specific ports.
 
-Point the required DNS records to the public IPv4 and IPv6 addresses. Update
-the interface names in the firewall task if the host does not use the expected
-public interface.
+Point the required DNS records to the public IPv4 and IPv6 addresses. Pyinfra
+discovers the public interface from the host's default IPv4 route.
 
 ### Deploy the host baseline
 
