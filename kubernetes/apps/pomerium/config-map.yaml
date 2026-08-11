@@ -5,7 +5,7 @@ metadata:
 data:
   config.yaml: |
     insecure_server: true
-    address: ":30006"
+    address: ":8080"
     grpc_address: "127.0.0.1:5443"
     idp_provider: "oidc"
     idp_provider_url: "https://id.maxice8.com"
