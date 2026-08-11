@@ -176,14 +176,6 @@ a different local port as the first argument if port 8000 is in use:
 scripts/serve-usg-reports 8080
 ```
 
-Check the timer or run an audit on demand with these commands:
-
-```bash
-ssh "$HOSTNAME" 'systemctl list-timers usg-audit.timer'
-ssh "$HOSTNAME" 'sudo systemctl start usg-audit.service'
-ssh "$HOSTNAME" 'sudo systemctl status usg-audit.service'
-```
-
 ## Updating component versions
 
 The Makefile updates every component tracked by Argus. List the available

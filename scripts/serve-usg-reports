@@ -18,7 +18,27 @@ fi
 
 printf 'Open http://127.0.0.1:%s and press Ctrl-C to stop.\n' "$port"
 
-exec ssh \
+cleanup() {
+    ssh \
+        -o BatchMode=yes \
+        mashu \
+        "sudo --non-interactive pkill -f '^python3 -m http[.]server ${remote_port} --bind 127[.]0[.]0[.]1 --directory /var/lib/usg\$' 2>/dev/null || true" \
+        >/dev/null 2>&1 || true
+}
+
+stop() {
+    trap - EXIT HUP INT TERM
+    cleanup
+    exit 130
+}
+
+trap cleanup EXIT
+trap stop HUP INT TERM
+
+# Remove a server left by an interrupted older helper.
+cleanup
+
+ssh -t \
     -o ExitOnForwardFailure=yes \
     -L "127.0.0.1:${port}:127.0.0.1:${remote_port}" \
     mashu \
