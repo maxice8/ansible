@@ -28,3 +28,11 @@ data:
           - allow:
               or:
                 - authenticated_user: true
+      - name: "Netdata"
+        description: "System Monitoring"
+        from: "https://netdata.mashu.maxice8.com"
+        to: "http://netdata.netdata.svc.cluster.local:19999"
+        policy:
+          - allow:
+              or:
+                - authenticated_user: true

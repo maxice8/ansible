@@ -1,0 +1,24 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: netdata-notifications
+spec:
+    secretTemplates:
+        - name: netdata-notifications
+          stringData:
+            NETDATA_DISCORD_WEBHOOK_URL: ENC[AES256_GCM,data:0sLwKPfHAu1dXpC2b6iaDuea7+mFRBK1Z5kWKMt/6MWA6mne6Y5bYqTpsW3QT4IUhn0L5ZRw6oCls9v3gWV2pSGroWIOt/POQaHsyBr+3OGkjnR8tmaAjxSQa2KIznbE5jnpgQUSzCCIdVmtXNYx/JFjuO5qfaoz4w==,iv:PsFV1DwzBVHnAgVYdvQtcyA8ZKYzNP9Korbms2jnZG8=,tag:nAX5MTvIu6rOxs1O6PGq9g==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtT1huVkJLcHFWYWxIeXhM
+            eC9taHdnQTdyd0UrcGI2T1haTkxXTVJwV1NrCll3ZFhXbzF5S3RuVEVPSE1iTEJ4
+            VUY1NmhxMTJldGptbGg4SWlndjBWa0kKLS0tIHdGbkU5a2hnYjFoN3FEWFpsMm90
+            WXVZN3RNVm01Sm5panJmRDhnbEVoY0kKKpJwostndJu2WIzMQfbmPJuL4e3sKbhi
+            GzmzruTwsiG/tNlSxwXCU71892fbbc0hYF8h5K/kzsviHbBzWGsmTg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-11T02:18:22Z"
+    mac: ENC[AES256_GCM,data:NauX7Q3EkTWdaBhDEw6pOPgzO+7WlOtbA5j3oDw7CfG9my/AtS/3EAFnMmNMuKhDcEn8C5yvEm07fA6IeSlk1KtjlUx+F4y+uw1M3AdD7igpnYv7WtWJNXoU/3MNFC7+iGKwDctEYrqJtry0dzGJ7j9sRhh6q7AiiMR599khv4s=,iv:qNA+4xPK9h4oIZPhpVYm+fJbSaDgZ4AbmqEv3fKflMk=,tag:yViomGW93v0Aue+2/hBhlQ==,type:str]
+    version: 3.13.3

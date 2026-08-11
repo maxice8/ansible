@@ -24,3 +24,4 @@ resources:
   - pocket-id.yaml
   - pomerium.yaml
   - netbird.yaml
+  - netdata.yaml

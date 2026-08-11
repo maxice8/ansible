@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netdata-parent-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: netdata
+      role: parent
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: netdata
+      ports:
+        - port: http
+          protocol: TCP
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: pomerium
+        - ipBlock:
+            cidr: 10.42.0.0/16
+        - ipBlock:
+            cidr: fd42:10:42::/56
+      ports:
+        - port: http
+          protocol: TCP
