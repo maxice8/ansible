@@ -36,3 +36,11 @@ data:
           - allow:
               or:
                 - authenticated_user: true
+      - name: "Backrest"
+        description: "Backup Management"
+        from: "https://backrest.mashu.maxice8.com"
+        to: "http://backrest.backrest.svc.cluster.local:9898"
+        policy:
+          - allow:
+              or:
+                - authenticated_user: true

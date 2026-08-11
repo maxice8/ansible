@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backrest-ingress
+  namespace: backrest
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: backrest
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: pomerium
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: pomerium
+      ports:
+        - port: http
+          protocol: TCP
