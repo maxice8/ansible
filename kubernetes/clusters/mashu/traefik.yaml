@@ -8,12 +8,12 @@ spec:
   source:
     repoURL: https://traefik.github.io/charts
     chart: traefik
-    targetRevision: 40.2.0
+    targetRevision: 41.2.0
     helm:
       releaseName: traefik
       values: |
         image:
-          tag: v3.7.1
+          tag: v3.7.10
 
         deployment:
           replicas: 1
@@ -57,11 +57,11 @@ spec:
           spec:
             type: ClusterIP
 
-        logs:
-          general:
-            level: INFO
-          access:
-            enabled: true
+        log:
+          level: INFO
+
+        accessLog:
+          enabled: true
 
         resources:
           requests:
