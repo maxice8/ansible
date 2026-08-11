@@ -1,7 +1,9 @@
 import io
+from ipaddress import IPv6Address
 from urllib.parse import quote
 
 from pyinfra import host
+from pyinfra.facts.hardware import Ipv4Addrs, Ipv6Addrs
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
 
@@ -10,6 +12,27 @@ K3S_INSTALLER_URL = (
     "https://raw.githubusercontent.com/k3s-io/k3s/"
     f"{quote(k3s['version'], safe='')}/install.sh"
 )
+
+primary_interface = host.get_fact(
+    Command,
+    command=(
+        "ip -o -4 route show default | "
+        "awk 'NR == 1 {for (i = 1; i <= NF; i++) "
+        'if ($i == "dev") {print $(i + 1); exit}}\''
+    ),
+)
+ipv4_addresses = host.get_fact(Ipv4Addrs)
+ipv6_addresses = host.get_fact(Ipv6Addrs)
+
+try:
+    primary_ipv4 = ipv4_addresses[primary_interface][0]
+    primary_ipv6 = next(
+        address
+        for address in ipv6_addresses[primary_interface]
+        if IPv6Address(address).is_global
+    )
+except (KeyError, StopIteration):
+    raise RuntimeError("Cannot discover the primary IPv4 and IPv6 addresses")
 
 apt.packages(
     name="Install the K3s installer dependencies",
@@ -53,13 +76,9 @@ k3s_config_changed = files.put(
     name="Deploy the K3s server configuration",
     src=io.StringIO(
         f'''node-name: "{host.name}"
-node-ip: "{host.data.private_ipv4},{host.data.public_ipv6}"
+node-ip: "{primary_ipv4},{primary_ipv6}"
 tls-san:
   - "{host.name}"
-  - "{host.data.private_ipv4}"
-  - "{host.data.public_ipv4}"
-  - "{host.data.public_ipv6}"
-  - "{host.data.netbird_ipv4}"
 cluster-cidr: "10.42.0.0/16,fd42:10:42::/56"
 service-cidr: "10.43.0.0/16,fd42:10:43::/112"
 flannel-ipv6-masq: true

@@ -131,13 +131,12 @@ netbird status
 ip -4 address show wt0
 ```
 
-Approve or complete the enrollment in the NetBird interface. Set
-`netbird_ipv4` in `inventory.py` to the address on `wt0`.
+Approve or complete the enrollment in the NetBird interface. No inventory
+change is needed after enrollment.
 
 If this cluster also hosts the NetBird server, the server can be unavailable
 during a full rebuild. In this case, install K3s and Argo CD first. Restore and
-start the NetBird server. Then enroll the host, update `netbird_ipv4`, and run
-the full Pyinfra deployment again.
+start the NetBird server, then enroll the host.
 
 ### Install K3s and Argo CD
 
