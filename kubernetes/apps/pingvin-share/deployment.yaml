@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: pingvin-share
-          image: docker.io/smp46/pingvin-share-x:latest
+          image: docker.io/smp46/pingvin-share-x:v1.22.1
           imagePullPolicy: Always
           env:
             - name: TRUST_PROXY
