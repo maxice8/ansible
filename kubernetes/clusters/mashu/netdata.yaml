@@ -19,8 +19,6 @@ spec:
             enabled: false
 
           parent:
-            env:
-              DO_NOT_TRACK: "1"
             envFrom:
               - secretRef:
                   name: netdata-notifications
@@ -38,6 +36,10 @@ spec:
               storageclass: local-path
               volumesize: 1Gi
             configs:
+              anonymous-statistics:
+                enabled: true
+                path: /etc/netdata/.opt-out-from-anonymous-statistics
+                data: ""
               netdata:
                 data: |
                   [global]
@@ -72,8 +74,6 @@ spec:
                   DEFAULT_RECIPIENT_DISCORD="netdata-alerts"
 
           child:
-            env:
-              DO_NOT_TRACK: "1"
             resources:
               requests:
                 cpu: 100m
@@ -81,10 +81,13 @@ spec:
               limits:
                 cpu: "1"
                 memory: 768Mi
+            configs:
+              anonymous-statistics:
+                enabled: true
+                path: /etc/netdata/.opt-out-from-anonymous-statistics
+                data: ""
 
           k8sState:
-            env:
-              DO_NOT_TRACK: "1"
             resources:
               requests:
                 cpu: 50m
@@ -95,6 +98,11 @@ spec:
             persistence:
               storageclass: local-path
               volumesize: 1Gi
+            configs:
+              anonymous-statistics:
+                enabled: true
+                path: /etc/netdata/.opt-out-from-anonymous-statistics
+                data: ""
 
           netdataOpentelemetry:
             enabled: false
