@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-  - ../../platform/argocd
   - gateway-api.yaml
   - traefik.yaml
   - public-gateway.yaml

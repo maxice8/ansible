@@ -79,6 +79,62 @@ if argocd_install_changed:
         ],
     )
 
+tracking_state = host.get_fact(
+    Command,
+    command=(
+        "k3s kubectl get -n argocd -f /usr/local/src/argocd-install.yaml "
+        "-o jsonpath='{range .items[*]}"
+        "{.metadata.annotations.argocd\\.argoproj\\.io/tracking-id}"
+        "{\"\\n\"}{end}' 2>/dev/null | "
+        "grep -q '^mashu:' && printf tracked || printf released"
+    ),
+)
+if tracking_state == "tracked":
+    server.shell(
+        name="Release Argo CD resources from the root application",
+        commands=[
+            (
+                "k3s kubectl annotate -n argocd "
+                "-f /usr/local/src/argocd-install.yaml "
+                "argocd.argoproj.io/tracking-id-"
+            )
+        ],
+    )
+
+server_parameters_changed = files.put(
+    name="Configure the Argo CD server",
+    src=io.StringIO(
+        """apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  server.insecure: "true"
+"""
+    ),
+    dest="/usr/local/src/argocd-server-parameters.yaml",
+    user="root",
+    group="root",
+    mode="0644",
+).changed
+
+server_parameters_state = host.get_fact(
+    Command,
+    command=(
+        "k3s kubectl diff "
+        "-f /usr/local/src/argocd-server-parameters.yaml >/dev/null 2>&1; "
+        "case $? in 0) printf current;; *) printf drifted;; esac"
+    ),
+)
+if server_parameters_changed or server_parameters_state != "current":
+    server.shell(
+        name="Apply the Argo CD server configuration",
+        commands=[
+            "k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml"
+        ],
+    )
+
 root_application_changed = files.put(
     name="Deploy the Mashu root application",
     src=io.StringIO(
