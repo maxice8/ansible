@@ -65,10 +65,10 @@ service:
       web_url: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v{{ version }}
 
   rancher-chart:
-    comment: Stable Rancher Helm repository
+    comment: Latest Rancher Helm repository
     latest_version:
       type: url
-      url: https://releases.rancher.com/server-charts/stable/index.yaml
+      url: https://releases.rancher.com/server-charts/latest/index.yaml
       url_commands:
         - type: regex
           regex: '(?s)  rancher:\n.*?\n    version: ([^\n]+)'
