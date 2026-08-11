@@ -534,6 +534,7 @@ The encrypted Backrest resource contains these values:
 - The Storage Box SSH private and public keys
 - The pinned SSH `known_hosts` data
 - The Restic repository password
+- The Discord webhook URL
 
 They are in
 `kubernetes/platform/backrest/credentials.sops.yaml`. The repository address,
@@ -556,6 +557,17 @@ printf '%s' "$BACKREST_REPOSITORY_PASSWORD" | yq -o=json -I=0 '.' |
   kubernetes/platform/backrest/credentials.sops.yaml \
   '["spec"]["secretTemplates"][0]["stringData"]["repository-password"]'
 unset BACKREST_REPOSITORY_PASSWORD
+```
+
+Set or rotate the Discord webhook URL:
+
+```bash
+read -rsp 'Backrest Discord webhook URL: ' BACKREST_DISCORD_WEBHOOK_URL; printf '\n'
+printf '%s' "$BACKREST_DISCORD_WEBHOOK_URL" | yq -o=json -I=0 '.' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/platform/backrest/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["discord-webhook-url"]'
+unset BACKREST_DISCORD_WEBHOOK_URL
 ```
 
 Use the SOPS editor above for the multiline SSH keys and `known_hosts` value.

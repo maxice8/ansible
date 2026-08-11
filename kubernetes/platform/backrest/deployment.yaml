@@ -29,6 +29,8 @@ spec:
 
               export REPOSITORY_PASSWORD
               REPOSITORY_PASSWORD="$(cat /credentials/repository-password)"
+              export DISCORD_WEBHOOK_URL
+              DISCORD_WEBHOOK_URL="$(cat /credentials/discord-webhook-url)"
               yq -o=json -i '
                 .repos = ((.repos // []) | map(select(.id != "mashu-storage-box"))) + [{
                   "id": "mashu-storage-box",
@@ -77,7 +79,36 @@ spec:
                       "keepLastN": 10
                     }
                   },
-                  "hooks": []
+                  "hooks": [
+                    {
+                      "conditions": ["CONDITION_SNAPSHOT_START"],
+                      "actionDiscord": {
+                        "webhookUrl": strenv(DISCORD_WEBHOOK_URL),
+                        "template": "🔄 Backup started on Mashu...\n{{ .Summary }}"
+                      }
+                    },
+                    {
+                      "conditions": ["CONDITION_SNAPSHOT_SUCCESS"],
+                      "actionDiscord": {
+                        "webhookUrl": strenv(DISCORD_WEBHOOK_URL),
+                        "template": "✅ Backup finished successfully on Mashu!\n{{ .Summary }}"
+                      }
+                    },
+                    {
+                      "conditions": ["CONDITION_SNAPSHOT_ERROR"],
+                      "actionDiscord": {
+                        "webhookUrl": strenv(DISCORD_WEBHOOK_URL),
+                        "template": "❌ Backup FAILED on Mashu! Check the Backrest UI for logs.\n{{ .Summary }}"
+                      }
+                    },
+                    {
+                      "conditions": ["CONDITION_SNAPSHOT_WARNING"],
+                      "actionDiscord": {
+                        "webhookUrl": strenv(DISCORD_WEBHOOK_URL),
+                        "template": "⚠️ Backup warning on Mashu. The backup completed, but some files may have been skipped.\n{{ .Summary }}"
+                      }
+                    }
+                  ]
                 }]
               ' /data/config.json
 
