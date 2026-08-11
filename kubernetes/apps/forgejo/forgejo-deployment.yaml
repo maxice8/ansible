@@ -15,18 +15,18 @@ spec:
         app.kubernetes.io/name: forgejo
     spec:
       securityContext:
-        fsGroup: 975
-        runAsGroup: 975
-        runAsUser: 975
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
       containers:
         - name: forgejo
           image: codeberg.org/forgejo/forgejo:16-rootless
           imagePullPolicy: Always
           env:
             - name: USER_UID
-              value: "975"
+              value: "1000"
             - name: USER_GID
-              value: "975"
+              value: "1000"
             - name: USER
               value: forgejo
             - name: FORGEJO__service__ENABLE_BASIC_AUTHENTICATION
