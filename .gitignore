@@ -2,9 +2,5 @@
 *.local.yaml
 .vscode
 
-# Do not commit into git any of the generated ignition files
-*.bu
-*.ign
-
 # This file contains the Age identity that decrypts SOPS files.
 .age-key.txt

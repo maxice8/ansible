@@ -1,8 +1,0 @@
-name: {{ whitelist_name }}
-description: '{{ description }}'
-whitelist:
-  reason: '{{ reason }}'
-  {{ value_type }}:
-{% for value in values %}
-    - "{{ value }}"
-{% endfor %}
