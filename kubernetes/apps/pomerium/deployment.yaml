@@ -12,6 +12,10 @@ spec:
       labels:
         app.kubernetes.io/name: pomerium
     spec:
+      securityContext:
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
       containers:
         - name: pomerium
           image: docker.io/pomerium/pomerium:v0.33.0
