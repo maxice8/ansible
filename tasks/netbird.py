@@ -1,5 +1,7 @@
 import io
 
+from pyinfra import host
+from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, systemd
 
 apt.packages(
@@ -16,7 +18,7 @@ files.download(
     mode="0644",
 )
 
-files.put(
+repository_changed = files.put(
     name="Configure the NetBird APT repository",
     src=io.StringIO(
         "deb [signed-by=/usr/share/keyrings/netbird-archive-keyring.asc] "
@@ -26,11 +28,23 @@ files.put(
     user="root",
     group="root",
     mode="0644",
+).changed
+
+netbird_package_known = (
+    host.get_fact(
+        Command,
+        command=(
+            "apt-cache show netbird >/dev/null 2>&1 "
+            "&& printf present || printf absent"
+        ),
+    )
+    == "present"
 )
 
 apt.packages(
     name="Install the NetBird client",
     packages=["netbird"],
+    update=repository_changed or not netbird_package_known,
 )
 
 systemd.service(
