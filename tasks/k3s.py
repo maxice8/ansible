@@ -1,4 +1,5 @@
 import io
+from urllib.parse import quote
 
 from pyinfra import host
 from pyinfra.facts.server import Command
@@ -8,7 +9,8 @@ K3S_INSTALLER_SHA256 = (
     "46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad"
 )
 K3S_INSTALLER_URL = (
-    "https://raw.githubusercontent.com/k3s-io/k3s/v1.36.3%2Bk3s1/install.sh"
+    "https://raw.githubusercontent.com/k3s-io/k3s/"
+    f"{quote(host.data.k3s_version, safe='')}/install.sh"
 )
 
 apt.packages(
