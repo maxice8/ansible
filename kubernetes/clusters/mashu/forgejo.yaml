@@ -100,6 +100,10 @@ spec:
             admin:
               username: ""
 
+            additionalConfigFromEnvs:
+              - name: FORGEJO____WORK_PATH
+                value: /data
+
             config:
               repository:
                 ROOT: /data/git/repositories
@@ -119,6 +123,8 @@ spec:
                 PATH: /data/data/attachments
               lfs:
                 PATH: /data/git/lfs
+              log:
+                ROOT_PATH: /data/data/log
               service:
                 ENABLE_BASIC_AUTHENTICATION: false
                 SHOW_REGISTRATION_BUTTON: false
