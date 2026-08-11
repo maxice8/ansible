@@ -257,6 +257,41 @@ changes.
 Use Pyinfra for host changes. Use Kubernetes manifests and Argo CD for cluster
 changes.
 
+### ConfigMaps and generated ConfigMaps
+
+Use a regular ConfigMap when consumers reload its values themselves or when a
+change must not restart a workload:
+
+```yaml
+# kustomization.yaml
+resources:
+  - config-map.yaml
+```
+
+Use `configMapGenerator` for configuration read when a pod starts, especially
+files mounted with `subPath`. Kustomize adds a content hash to the ConfigMap
+name and updates the workload reference, which triggers a rollout whenever the
+file changes:
+
+```yaml
+# kustomization.yaml
+configMapGenerator:
+  - name: application-config
+    files:
+      - config.yaml
+```
+
+```yaml
+# deployment.yaml
+volumes:
+  - name: config
+    configMap:
+      name: application-config
+```
+
+Keep the unhashed base name in the Deployment and do not disable the generator
+name suffix when a configuration change should restart the pod.
+
 ### Check a host change
 
 Run a Pyinfra dry run before you deploy a host change:
