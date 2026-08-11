@@ -158,8 +158,13 @@ data:
           web_url: https://github.com/release-argus/Argus/releases/tag/{{ version }}
 
       archisteamfarm:
+        options:
+          semantic_versioning: false
         latest_version:
           url: JustArchiNET/ArchiSteamFarm
+          url_commands:
+            - type: regex
+              regex: '^([0-9]+(?:\.[0-9]+){3})$'
         deployed_version:
           url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/asf/deployment.yaml
           regex: 'archisteamfarm:([0-9.]+)'
