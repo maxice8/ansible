@@ -121,6 +121,9 @@ spec:
                 PATH: /data/data/gitea.db
               attachment:
                 PATH: /data/data/attachments
+              picture:
+                AVATAR_UPLOAD_PATH: /data/data/avatars
+                REPOSITORY_AVATAR_UPLOAD_PATH: /data/data/repo-avatars
               lfs:
                 PATH: /data/git/lfs
               log:
