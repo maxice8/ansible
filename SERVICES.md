@@ -502,6 +502,31 @@ ssh "$HOSTNAME" \
 Set a permanent administrator password. Store the password in a password
 manager. Keep one local administrator account for recovery.
 
+### Rancher Compliance
+
+Rancher Compliance adds a **Compliance** tab to the local cluster in Rancher.
+The tab can run a manual scan or schedule recurring scans. Use
+`k3s-cis-1.12-profile` for Mashu and schedule it at midnight each day with
+`0 0 * * *`. Set a report retention count for the schedule.
+
+Available profiles:
+
+- `aks-profile-1.7`
+- `cis-1.9-profile`
+- `cis-1.10-profile`
+- `cis-1.11-profile`
+- `cis-1.12-profile`
+- `eks-profile-1.5.0`
+- `gke-profile-1.6.0`
+- `k3s-cis-1.9-profile`
+- `k3s-cis-1.10-profile`
+- `k3s-cis-1.11-profile`
+- `k3s-cis-1.12-profile`
+- `rke2-cis-1.9-profile`
+- `rke2-cis-1.10-profile`
+- `rke2-cis-1.11-profile`
+- `rke2-cis-1.12-profile`
+
 ## Backrest
 
 The encrypted Backrest resource contains these values:
