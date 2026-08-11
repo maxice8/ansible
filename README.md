@@ -111,6 +111,21 @@ TASKS=user,ssh,netbird,kernel,services,firewall \
   uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
 ```
 
+### Attach Ubuntu Pro
+
+USG requires Ubuntu Pro. Attach Mashu before the full deployment. The free
+personal subscription is sufficient.
+
+```bash
+ssh "$HOSTNAME"
+sudo pro attach
+exit
+```
+
+Pyinfra enables USG, installs it, and enables `usg-audit.timer`. The timer runs
+each day at 00:00. It keeps 90 days of HTML and XML reports in `/var/lib/usg`.
+The deployment does not start an audit outside the timer schedule.
+
 ### Enroll the NetBird client
 
 Pyinfra installs the NetBird client but does not enroll it. Start enrollment:
@@ -144,6 +159,30 @@ uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
 ```
 
 Pyinfra installs the selected K3s and Argo CD versions.
+
+### View the Ubuntu CIS reports
+
+Run the local helper. It starts a report server on Mashu, binds the server to
+the remote loopback interface, and forwards it through SSH:
+
+```bash
+scripts/serve-usg-reports
+```
+
+Open `http://127.0.0.1:8000`. Press Ctrl-C to stop the server and tunnel. Pass
+a different local port as the first argument if port 8000 is in use:
+
+```bash
+scripts/serve-usg-reports 8080
+```
+
+Check the timer or run an audit on demand with these commands:
+
+```bash
+ssh "$HOSTNAME" 'systemctl list-timers usg-audit.timer'
+ssh "$HOSTNAME" 'sudo systemctl start usg-audit.service'
+ssh "$HOSTNAME" 'sudo systemctl status usg-audit.service'
+```
 
 ## Updating component versions
 

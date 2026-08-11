@@ -9,6 +9,7 @@ AVAILABLE_TASKS = (
     "netbird",
     "kernel",
     "services",
+    "usg",
     "firewall",
     "k3s",
     "argocd",

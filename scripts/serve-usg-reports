@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+port="${1:-8000}"
+remote_port=18080
+
+case "$port" in
+    ''|*[!0-9]*)
+        printf 'usage: %s [local-port]\n' "$0" >&2
+        exit 2
+        ;;
+esac
+
+if [ "$port" -lt 1024 ] || [ "$port" -gt 65535 ]; then
+    printf 'port must be between 1024 and 65535\n' >&2
+    exit 2
+fi
+
+printf 'Open http://127.0.0.1:%s and press Ctrl-C to stop.\n' "$port"
+
+exec ssh \
+    -o ExitOnForwardFailure=yes \
+    -L "127.0.0.1:${port}:127.0.0.1:${remote_port}" \
+    mashu \
+    "sudo --non-interactive python3 -m http.server ${remote_port} --bind 127.0.0.1 --directory /var/lib/usg"
