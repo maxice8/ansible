@@ -20,3 +20,11 @@ data:
           - allow:
               or:
                 - authenticated_user: true
+      - name: "Syncthing"
+        description: "File Synchronization"
+        from: "https://syncthing.mashu.maxice8.com"
+        to: "http://syncthing.syncthing.svc.cluster.local:8384"
+        policy:
+          - allow:
+              or:
+                - authenticated_user: true

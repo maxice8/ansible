@@ -10,6 +10,7 @@ resources:
   - public-gateway.yaml
   - cert-manager.yaml
   - sops-secrets-operator.yaml
+  - syncthing.yaml
   - certificate-issuers.yaml
   - forgejo.yaml
   - staging-certificate.yaml

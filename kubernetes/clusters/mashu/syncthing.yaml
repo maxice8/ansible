@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: syncthing
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/maxice8/ansible.git
+    targetRevision: master
+    path: kubernetes/apps/syncthing
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: syncthing
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
