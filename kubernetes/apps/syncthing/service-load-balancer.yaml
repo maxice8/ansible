@@ -4,6 +4,7 @@ metadata:
   name: syncthing-sync
 spec:
   type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
   selector:
     app.kubernetes.io/name: syncthing
   ports:
