@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: forgejo-runner
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -71,12 +71,20 @@ spec:
             - name: docker
               containerPort: 2375
           readinessProbe:
-            tcpSocket:
-              port: docker
+            exec:
+              command:
+                - docker
+                - -H
+                - tcp://127.0.0.1:2375
+                - info
             periodSeconds: 5
           startupProbe:
-            tcpSocket:
-              port: docker
+            exec:
+              command:
+                - docker
+                - -H
+                - tcp://127.0.0.1:2375
+                - info
             failureThreshold: 60
             periodSeconds: 2
           volumeMounts:
