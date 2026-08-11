@@ -71,6 +71,7 @@ table inet hostfilter {
         iifname "lo" counter accept
         iifname "wt0" counter accept
         ct state established,related counter accept
+        udp sport 547 udp dport 546 counter accept
         ct state invalid counter drop
         meta l4proto { icmp, ipv6-icmp } counter accept
         iifname { "cni0", "flannel.1" } counter accept
@@ -134,6 +135,8 @@ firewall_revision = host.get_fact(
         "grep -F 'redirect to :8443' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
         "grep -F 'udp dport { 3478, 21027, 22000 }' >/dev/null && "
+        "nft list table inet hostfilter 2>/dev/null | "
+        "grep -F 'udp sport 547 udp dport 546' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
         "grep -F 'tcp dport { 22, 23, 22000 }' >/dev/null "
         "&& printf current || printf stale"
