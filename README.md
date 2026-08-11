@@ -54,19 +54,10 @@ export HOSTNAME="host"
 export DOMAIN="example.com"
 ```
 
-Set shared values in `plain_group_vars` in `inventory.py`. Set network and SSH
-values in the host entry. Keep host-specific values in the host entry.
-
-For a new host, update these items:
-
-- The host name and SSH settings
-- The private, public, and NetBird addresses
-- The domain name
-- The Argo CD repository URL
-- The repository URLs in the child Application manifests
-- The K3s version
-- The cluster path in `tasks/argocd.py`
-- Host names and addresses in the Kubernetes manifests
+`inventory.py` contains the host-managed component versions and SSH settings.
+The Kubernetes manifests contain the Argo CD-managed chart and image versions.
+This repository intentionally describes Mashu directly rather than providing a
+generic multi-host framework.
 
 The current K3s configuration uses the private IPv4 address and the public
 IPv6 address as node addresses. Do not use the NetBird address as a node
@@ -153,6 +144,33 @@ uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
 ```
 
 Pyinfra installs the selected K3s and Argo CD versions.
+
+## Updating component versions
+
+The Makefile updates every component tracked by Argus. List the available
+targets with:
+
+```bash
+make help
+```
+
+Pass versions with or without their usual leading `v`:
+
+```bash
+make argocd version=3.5.1
+make k3s version=v1.36.4+k3s1
+make pomerium version=v0.33.1
+```
+
+The Argo CD and K3s targets download the versioned upstream file and update its
+SHA-256 pin automatically. Preview any update without writing files with:
+
+```bash
+make pomerium version=v0.33.1 dry_run=1
+```
+
+These targets only edit the source files. Review the diff, perform the checks
+in [SERVICES.md](SERVICES.md), and commit the update normally.
 
 ## Argo CD
 

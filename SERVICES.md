@@ -233,24 +233,21 @@ unset ARGUS_GITHUB_TOKEN
 ```
 
 No commands or webhooks are configured. Approving a release records the
-decision in Argus but does not change Git or the cluster. Update the relevant
-manifest manually, render and review it, then commit and push it. Argus clears
-the version difference after the GitHub mirror receives the new revision.
+decision in Argus but does not change Git or the cluster. Use the matching
+Makefile target, review its diff, then commit and push it. Argus clears the
+version difference after the GitHub mirror receives the new revision.
 
 ### Update applications
 
 Applications are the workloads under `kubernetes/apps` and application-like
 platform workloads such as Backrest. Argo CD owns their live Kubernetes
-resources. Change the pinned image tag in the applicable Deployment; do not
-run a direct, non-dry-run `kubectl apply`.
+resources. Update the pinned image with its Makefile target; do not run a
+direct, non-dry-run `kubectl apply`.
 
 For example:
 
-```yaml
-# kubernetes/apps/<application>/deployment.yaml
-containers:
-  - name: <application>
-    image: <registry>/<image>:<new-version>
+```bash
+make pomerium version=v0.33.1
 ```
 
 Validate the YAML, render both the application and cluster, and ask the live
@@ -298,6 +295,11 @@ application. Update and verify one system application per commit.
 
 For a Helm-backed system application, change `targetRevision` and any
 explicit image tag or values that must move with the chart:
+
+```bash
+make traefik-chart version=<new-chart-version>
+make traefik-image version=<compatible-image-version>
+```
 
 ```yaml
 # kubernetes/clusters/<host>/<application>.yaml
@@ -397,15 +399,17 @@ ssh "$HOSTNAME" \
 
 ### Update Argo CD
 
-Pyinfra bootstraps and upgrades Argo CD. Change these two values together:
+Pyinfra bootstraps and upgrades Argo CD. Update its version and manifest
+checksum together, then run an Argo CD-only Pyinfra dry run. The Makefile
+downloads the exact tagged manifest and calculates its checksum:
 
-- `argocd["version"]` in `inventory.py`
-- `argocd["manifest_sha256"]` in `inventory.py`
+```bash
+make argocd version=<new-version>
+```
 
-Calculate the checksum from the exact tagged manifest, then run an Argo
-CD-only Pyinfra dry run. Commit the values before the maintenance window; the
-Git commit does not upgrade Argo CD. Apply it explicitly and run the same dry
-run again to confirm idempotency:
+Commit the values before the maintenance window; the Git commit does not
+upgrade Argo CD. Apply it explicitly and run the same dry run again to confirm
+idempotency:
 
 ```bash
 TASKS=argocd \
@@ -415,9 +419,13 @@ TASKS=argocd \
 
 ### Update K3s system components
 
-Pyinfra owns K3s. Change `k3s["version"]` and
-`k3s["installer_sha256"]` together in `inventory.py`. The installer URL is
-derived from the version.
+Pyinfra owns K3s. The Makefile updates `k3s["version"]` and
+`k3s["installer_sha256"]` together and derives the installer URL from the
+version:
+
+```bash
+make k3s version=v<new-kubernetes-version>+k3s<revision>
+```
 
 Before changing the Kubernetes minor version, check the Rancher and K3s
 support matrices and the release notes for Rancher, K3s, Traefik, cert-manager,
@@ -425,27 +433,12 @@ and Gateway API. If Rancher needs a newer version for the target Kubernetes
 minor, update Rancher first and wait for it to become `Synced` and `Healthy`
 before applying the K3s update.
 
-```python
-# inventory.py
-"k3s": {
-    "installer_sha256": "<sha256-of-versioned-install-script>",
-    "version": "v<new-kubernetes-version>+k3s<revision>",
-},
-```
-
-Confirm that the tagged installer and binary exist, calculate the installer
-checksum independently, and run the static checks:
+Confirm that the tagged binary exists and run the static checks:
 
 ```bash
 K3S_VERSION='v<new-kubernetes-version>+k3s<revision>'
-K3S_URL_VERSION='v<new-kubernetes-version>%2Bk3s<revision>'
-
-curl -fsSL \
-  "https://raw.githubusercontent.com/k3s-io/k3s/${K3S_URL_VERSION}/install.sh" |
-  sha256sum
-
 curl -fsSIL \
-  "https://github.com/k3s-io/k3s/releases/download/${K3S_URL_VERSION}/k3s" \
+  "https://github.com/k3s-io/k3s/releases/download/${K3S_VERSION}/k3s" \
   >/dev/null
 
 ruff check inventory.py tasks/k3s.py
