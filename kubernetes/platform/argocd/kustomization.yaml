@@ -5,4 +5,5 @@ resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 patches:
+  - path: server-deployment.yaml
   - path: server-parameters.yaml
