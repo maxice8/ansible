@@ -3,8 +3,12 @@ kind: Kustomization
 
 resources:
   - credentials.sops.yaml
-  - config-map.yaml
   - deployment.yaml
   - service.yaml
   - routes.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: pomerium-config
+    files:
+      - config.yaml
