@@ -80,28 +80,6 @@ if argocd_install_changed:
         ],
     )
 
-tracking_state = host.get_fact(
-    Command,
-    command=(
-        "k3s kubectl get -n argocd -f /usr/local/src/argocd-install.yaml "
-        "-o jsonpath='{range .items[*]}"
-        "{.metadata.annotations.argocd\\.argoproj\\.io/tracking-id}"
-        "{\"\\n\"}{end}' 2>/dev/null | "
-        "grep -q '^mashu:' && printf tracked || printf released"
-    ),
-)
-if tracking_state == "tracked":
-    server.shell(
-        name="Release Argo CD resources from the root application",
-        commands=[
-            (
-                "k3s kubectl annotate -n argocd "
-                "-f /usr/local/src/argocd-install.yaml "
-                "argocd.argoproj.io/tracking-id-"
-            )
-        ],
-    )
-
 server_parameters_changed = files.put(
     name="Configure the Argo CD server",
     src=io.StringIO(
