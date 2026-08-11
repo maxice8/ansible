@@ -9,15 +9,11 @@ spec:
       kind: Deployment
       jsonPointers:
         - /spec/replicas
-    - group: apps
-      kind: StatefulSet
-      jsonPointers:
-        - /spec/replicas
   project: default
   sources:
     - repoURL: code.forgejo.org/forgejo-helm
       chart: forgejo
-      targetRevision: 17.1.3
+      targetRevision: 17.1.4
       helm:
         releaseName: forgejo
         values: |
