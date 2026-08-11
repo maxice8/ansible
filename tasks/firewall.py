@@ -11,7 +11,7 @@ public_interface = host.get_fact(
     command=(
         "ip -o -4 route show default | "
         "awk 'NR == 1 {for (i = 1; i <= NF; i++) "
-        "if ($i == \"dev\") {print $(i + 1); exit}}'"
+        'if ($i == "dev") {print $(i + 1); exit}}\''
     ),
 )
 if not re.fullmatch(r"[A-Za-z0-9_.:@-]+", public_interface):

@@ -34,8 +34,7 @@ netbird_package_known = (
     host.get_fact(
         Command,
         command=(
-            "apt-cache show netbird >/dev/null 2>&1 "
-            "&& printf present || printf absent"
+            "apt-cache show netbird >/dev/null 2>&1 && printf present || printf absent"
         ),
     )
     == "present"
