@@ -17,6 +17,32 @@ spec:
         runAsGroup: 976
         runAsNonRoot: true
         runAsUser: 976
+      initContainers:
+        - name: prepare-log-file
+          image: docker.io/justarchi/archisteamfarm:6.3.8.4
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - touch /logs/log.txt
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: logs
+              mountPath: /logs
       containers:
         - name: asf
           image: docker.io/justarchi/archisteamfarm:6.3.8.4
@@ -29,6 +55,9 @@ spec:
               mountPath: /app/config
             - name: logs
               mountPath: /app/logs
+            - name: logs
+              mountPath: /app/log.txt
+              subPath: log.txt
             - name: tmp
               mountPath: /tmp
           readinessProbe:
