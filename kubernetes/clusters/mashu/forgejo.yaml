@@ -14,10 +14,151 @@ spec:
       jsonPointers:
         - /spec/replicas
   project: default
-  source:
-    repoURL: https://github.com/maxice8/ansible.git
-    targetRevision: master
-    path: kubernetes/apps/forgejo
+  sources:
+    - repoURL: code.forgejo.org/forgejo-helm
+      chart: forgejo
+      targetRevision: 17.1.3
+      helm:
+        releaseName: forgejo
+        values: |
+          fullnameOverride: forgejo
+
+          image:
+            tag: 16.0.2
+            pullPolicy: Always
+            rootless: true
+
+          strategy:
+            type: Recreate
+
+          podSecurityContext:
+            fsGroup: 1000
+
+          containerSecurityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+
+          service:
+            http:
+              port: 3000
+            ssh:
+              port: 23
+              hostPort: 23
+
+          httpRoute:
+            enabled: true
+            parentRefs:
+              - name: public
+                namespace: gateway-system
+                sectionName: https
+            hostnames:
+              - git.maxice8.com
+            port: 3000
+            terminate: true
+
+          persistence:
+            enabled: true
+            create: false
+            mount: true
+            claimName: forgejo-data-v2
+
+          deployment:
+            env:
+              - name: USER_UID
+                value: "1000"
+              - name: USER_GID
+                value: "1000"
+              - name: USER
+                value: forgejo
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+          initContainers:
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 500m
+                memory: 256Mi
+
+          gitea:
+            admin:
+              username: ""
+
+            config:
+              repository:
+                ROOT: /data/git/repositories
+              server:
+                APP_DATA_PATH: /data
+                DOMAIN: git.maxice8.com
+                ROOT_URL: https://git.maxice8.com
+                SSH_DOMAIN: git.maxice8.com
+                SSH_LISTEN_PORT: 2222
+                SSH_PORT: 23
+                START_SSH_SERVER: true
+                BUILTIN_SSH_SERVER_USER: git
+              database:
+                DB_TYPE: sqlite3
+                PATH: /data/data/gitea.db
+              attachment:
+                PATH: /data/data/attachments
+              lfs:
+                PATH: /data/git/lfs
+              service:
+                ENABLE_BASIC_AUTHENTICATION: false
+                SHOW_REGISTRATION_BUTTON: false
+                DISABLE_REGISTRATION: false
+                ALLOW_ONLY_EXTERNAL_REGISTRATION: true
+                REQUIRE_SIGNIN_VIEW: false
+              openid:
+                ENABLE_OPENID_SIGNIN: false
+                ENABLE_OPENID_SIGNUP: false
+
+            livenessProbe:
+              enabled: true
+              tcpSocket:
+                port: http
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              failureThreshold: 10
+
+            readinessProbe:
+              enabled: true
+              httpGet:
+                path: /api/healthz
+                port: http
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              failureThreshold: 3
+
+            startupProbe:
+              enabled: true
+              tcpSocket:
+                port: http
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              failureThreshold: 60
+
+          test:
+            enabled: false
+    - repoURL: https://github.com/maxice8/ansible.git
+      targetRevision: master
+      path: kubernetes/apps/forgejo
   destination:
     server: https://kubernetes.default.svc
     namespace: forgejo

@@ -4,11 +4,8 @@ kind: Kustomization
 resources:
   - credentials.sops.yaml
   - forgejo-chart-persistent-volume-claim.yaml
-  - forgejo-deployment.yaml
   - forgejo-persistent-volume-claim.yaml
-  - forgejo-service.yaml
   - network-policy.yaml
-  - route.yaml
   - runner-deployment.yaml
   - runner-persistent-volume-claim.yaml
 
