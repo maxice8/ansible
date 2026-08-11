@@ -17,6 +17,7 @@ resources:
   - production-certificate.yaml
   - backrest.yaml
   - rancher.yaml
+  - rancher-compliance.yaml
   - platform-routes.yaml
   - whoami.yaml
   - pingvin-share.yaml

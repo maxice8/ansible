@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher-compliance
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.rancher.io
+      chart: rancher-compliance-crd
+      targetRevision: 110.0.0+up1.5.0
+      helm:
+        releaseName: rancher-compliance-crd
+    - repoURL: https://charts.rancher.io
+      chart: rancher-compliance
+      targetRevision: 110.0.0+up1.5.0
+      helm:
+        releaseName: rancher-compliance
+        valuesObject:
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: compliance-operator-system
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true

@@ -5,6 +5,7 @@ COMPONENTS := \
 	k3s \
 	gateway-api \
 	rancher-chart \
+	rancher-compliance-chart \
 	traefik-chart \
 	traefik-image \
 	cert-manager-chart \

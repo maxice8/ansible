@@ -76,6 +76,20 @@ COMPONENTS = {
             ),
         )
     ),
+    "rancher-compliance-chart": Component(
+        (
+            chart(
+                "kubernetes/clusters/mashu/rancher-compliance.yaml",
+                "https://charts.rancher.io",
+                "rancher-compliance-crd",
+            ),
+            chart(
+                "kubernetes/clusters/mashu/rancher-compliance.yaml",
+                "https://charts.rancher.io",
+                "rancher-compliance",
+            ),
+        )
+    ),
     "traefik-chart": Component(
         (
             chart(

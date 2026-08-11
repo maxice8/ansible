@@ -78,6 +78,20 @@ service:
     dashboard:
       web_url: https://github.com/rancher/rancher/releases/tag/v{{ version }}
 
+  rancher-compliance-chart:
+    comment: Official Rancher Compliance Helm chart
+    latest_version:
+      type: url
+      url: https://charts.rancher.io/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  rancher-compliance:\n.*?\n    version: ([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/rancher-compliance.yaml
+      regex: 'targetRevision: ([^\n ]+)'
+    dashboard:
+      web_url: https://ranchermanager.docs.rancher.com/integrations-in-rancher/compliance-scans
+
   traefik-chart:
     latest_version:
       type: url
