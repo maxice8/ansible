@@ -1,269 +1,204 @@
-# Pyinfra Deployment Stack
+# Homelab Deployment Stack
 
-This repository uses [Pyinfra](https://github.com/pyinfra-dev/pyinfra) to manage
-the Mashu Ubuntu host. Legacy Fedora CoreOS files remain while Ryuu is retired.
+This repository manages one Ubuntu host and its K3s cluster.
+
+Pyinfra manages the host, K3s, and the Argo CD bootstrap. Argo CD manages the
+platform components and applications in Kubernetes.
 
 ## Requirements
 
-### Python & Pyinfra
+### Python and Pyinfra
 
-Use our `requirements.txt` to install the required python packages. I recommend [uv](https://github.com/astral-sh/uv).
+Use [uv](https://github.com/astral-sh/uv) to install the Python packages from
+`requirements.txt`.
 
 ```bash
 uv pip sync requirements.txt
 ```
 
-### Podman (if using Butane)
+### SSH
 
-Podman is required to configure the Ignition file with Butane.
+Install an SSH client. Add a local SSH configuration entry for the target
+host. The entry must use the administrator and SSH key from `inventory.py`.
+Pyinfra uses the local SSH configuration. Configure the host alias, user, key,
+and host-key policy before you run Pyinfra. The connection must not require
+interactive input.
 
-### Age + SOPS
-
-[age](https://github.com/filosottile/age) and [sops](https://github.com/getsops/sops) are used to manage encrypted secrets files securely. To install using pacman in Arch Linux:
-
-```bash
-pacman -S age sops
-```
-
-### Configuration
-
-Sops-encrypted `.env` files are used to store variables and secrets. Pyinfra automatically decrypts and processes these natively on execution.
-
-- `group_vars/servers.sops.env` for cluster-wide or group configuration (see `group_vars/example.sops.env`)
-- `host_vars/$HOSTNAME.sops.env` for node-specific configuration (see `host_vars/example.sops.env`)
-- `$HOSTNAME.env` for initial Butane/Ignition provisioning configuration (see `example.env`)
-
-To bootstrap a new machine target from templates:
-```bash
-cp group_vars/example.sops.env group_vars/servers.sops.env
-cp host_vars/example.sops.env host_vars/ryuu.sops.env
-cp example.env ryuu.env
-```
-
-### Encrypting Secrets
-
-Both Pyinfra and Butane read from encrypted configuration files. Use `age` to encrypt/decrypt configuration keys via `sops`.
-
-#### 1. Generate Key
-
-Generate an age key file. **NEVER** commit this file to git. Store it securely in a password manager. If cloning this repository onto a new machine, copy the file over manually to restore decryption capabilities.
+This command must connect without a password prompt:
 
 ```bash
-age-keygen -o .age-key.txt
+ssh "$HOSTNAME"
 ```
 
-#### 2. Configure .sops.yaml
+### Age and SOPS
 
-Extract the public key by running `grep "public key:" .age-key.txt` and replace the `age` identity key string inside `.sops.yaml` so rules map flawlessly to your key.
-
-#### 3. Encrypt the Configuration
-
-With rules defined, encrypt your staging configuration files in place:
+Install [Age](https://github.com/FiloSottile/age) and
+[SOPS](https://github.com/getsops/sops). For example, use this command on Arch
+Linux:
 
 ```bash
-sops -e -i group_vars/servers.sops.env
-sops -e -i host_vars/ryuu.sops.env
-sops -e -i ryuu.env
+sudo pacman -S age sops
 ```
 
-*Note: To safely view or modify an encrypted file without leaking secrets to shell histories, always use the native SOPS wraparound instead of native editors like `nano` or `cat`:*
-```bash
-sops group_vars/servers.sops.env
-sops host_vars/ryuu.sops.env
-```
+### Kubernetes tools
 
-## Deploying
+Install `kubectl` and `yq` on the local system. The `kubectl kustomize` command
+renders Kustomize resources. The `yq` command validates and selects YAML data.
 
-Use Pyinfra for Mashu. The Butane files apply only to the legacy Ryuu host.
+## Configuration
 
-### Butane
-
- A `Makefile` is provided to generate a Fedora CoreOS system ignition file. It dynamically decrypts your environment secrets, passes them into the Butane blueprint, and outputs a ready-to-flash `.ign` file compatible with `coreos-installer`.
+Set these shell variables before you use the commands in this document:
 
 ```bash
-make ryuu
+export HOSTNAME="host"
+export DOMAIN="example.com"
 ```
 
-### Pyinfra
+Set shared values in `plain_group_vars` in `inventory.py`. Set network and SSH
+values in the host entry. Keep host-specific values in the host entry.
 
-Use Pyinfra to deploy the Mashu host state.
+For a new host, update these items:
 
-```bash
-uv run pyinfra inventory.py deploy.py --sudo
-```
+- The host name and SSH settings
+- The private, public, and NetBird addresses
+- The domain name
+- The Argo CD repository URL
+- The repository URLs in the child Application manifests
+- The K3s version
+- The cluster path in `tasks/argocd.py`
+- Host names and addresses in the Kubernetes manifests
 
-## K3s
+The current K3s configuration uses the private IPv4 address and the public
+IPv6 address as node addresses. Do not use the NetBird address as a node
+address.
 
-Use this procedure to rebuild the Mashu cluster. The current code is specific
-to Mashu. Change the inventory, domain names, network interface, cluster path,
-and backup repository before you use it for a different cluster.
+## Secret Management
 
-### Store the recovery material
+SOPS encrypts secret values in files that have the `.sops.yaml` suffix. The
+file structure, resource names, and field names remain visible.
 
-Store these secrets in Bitwarden:
+The SOPS Secrets Operator decrypts Kubernetes secrets in the cluster. Pyinfra
+installs the Age identity that the operator uses.
 
-- The `.age-key.txt` age identity
-- The private SSH key for the Ubuntu administrator
-- The Backrest administrator password
-- The Restic repository password
-- The Hetzner Storage Box password
-- The OCI, Cloudflare, Forgejo, NetBird, and Pocket ID credentials
-- The recovery codes for accounts that use multifactor authentication
+See [SERVICES.md](SERVICES.md) for the Age identity procedure, each encrypted
+secret, and each manual service setup action. Do not create plain-text secret
+files in the repository.
 
-Keep an offline copy of the repository. The repository contains these
-SOPS-encrypted secrets:
-
-- The Cloudflare DNS API token
-- The Backrest SSH private key
-- The Restic repository password
-- The Hetzner Storage Box credentials
-
-Do not store the K3s token, generated certificates, kubeconfig, Argo CD initial
-password, Backrest JWT secret, or Backrest synchronization identity as recovery
-requirements. Recreate these items with the cluster.
-
-Confirm that the age identity can decrypt the files:
-
-```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --decrypt kubernetes/platform/backrest/credentials.sops.yaml >/dev/null
-
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --decrypt kubernetes/platform/certificate-issuers/cloudflare-api-token.sops.yaml >/dev/null
-```
+## Host Deployment
 
 ### Prepare the host
 
-Create an Ubuntu ARM64 host. Add OCI ingress rules for TCP ports 22, 80, and
-443 for IPv4 and IPv6. Do not add a public rule for port 6443.
+Create an Ubuntu ARM64 host. Permit public TCP traffic on ports 22, 80, and
+443. Permit public UDP traffic on port 3478 for NetBird STUN. Apply these
+rules to IPv4 and IPv6. Do not permit public traffic on K3s port 6443.
 
-Point the Mashu DNS records to the new public IPv4 and IPv6 addresses. Confirm
-that the public interface name is `enp0s6`.
+Point the required DNS records to the public IPv4 and IPv6 addresses. Update
+the interface names in the firewall task if the host does not use the expected
+public interface.
 
-Set the new SSH address and user in `inventory.py`. Configure the local SSH
-client so this command works:
+### Deploy the host baseline
 
-```bash
-ssh mashu
-```
-
-Install the local Python requirements:
-
-```bash
-uv pip sync requirements.txt
-```
-
-Deploy the host baseline:
+Deploy the baseline before you install K3s:
 
 ```bash
 TASKS=user,ssh,netbird,kernel,services,firewall \
   uv run pyinfra inventory.py deploy.py --sudo
 ```
 
-### Enroll NetBird
+### Enroll the NetBird client
 
-Start enrollment on Mashu:
+Use the NetBird enrollment procedure in [SERVICES.md](SERVICES.md). Set
+`netbird_ipv4` in `inventory.py` to the address on `wt0`.
 
-```bash
-ssh mashu
-sudo netbird up --management-url https://netbird.maxice8.com
-netbird status
-ip -4 address show wt0
-```
-
-Complete the enrollment in the NetBird interface. Set `netbird_ipv4` in
-`inventory.py` to the address on `wt0`.
+If this cluster also hosts the NetBird server, the server can be unavailable
+during a full rebuild. In this case, install K3s and Argo CD first. Restore and
+start the NetBird server. Then enroll the host, update `netbird_ipv4`, and run
+the full Pyinfra deployment again.
 
 ### Install K3s and Argo CD
 
-Run the complete deployment twice:
+Run the full deployment:
 
 ```bash
 uv run pyinfra inventory.py deploy.py --sudo
+```
+
+Run it again. The second run must report no changes:
+
+```bash
 uv run pyinfra inventory.py deploy.py --sudo
 ```
 
-The second deployment must report no changes.
+Pyinfra installs the selected K3s version. It installs the latest stable Argo
+CD version during each deployment.
 
-Create an Argo CD tunnel:
+## Argo CD
 
-```bash
-ssh -L 8080:127.0.0.1:8080 mashu \
-  'sudo k3s kubectl -n argocd port-forward service/argocd-server 8080:443 --address 127.0.0.1'
+### Open the user interface
+
+Use the initial sign-in procedure in [SERVICES.md](SERVICES.md). After the
+public route is healthy, use this address:
+
+```text
+https://argocd.$HOSTNAME.$DOMAIN
 ```
 
-Get the initial Argo CD password:
+### Automatic synchronization
+
+The root Application and all child Applications use automatic sync. Argo CD
+also uses pruning and self-healing. Do not sync the applications in a manual
+order.
+
+Monitor the applications during the first deployment:
 
 ```bash
-ssh mashu \
-  "sudo k3s kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath='{.data.password}' | base64 -d; echo"
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argocd get applications --watch'
 ```
 
-Open `https://localhost:8080`. Sign in as `admin`. Sync `mashu`, and then sync
-these applications in order:
+Some applications can show `Progressing` while a required controller or CRD
+starts. Wait for Argo CD to retry. Use a hard refresh if an Application does
+not detect the current Git revision.
 
-1. `gateway-api`
-2. `traefik`
-3. `public-gateway`
-4. `cert-manager`
-5. `sops-secrets-operator`
-6. `certificate-issuers`
-7. `staging-certificate`
-8. `production-certificate`
-9. `backrest`
-10. `platform-routes`
+Automatic pruning deletes live resources that Git no longer defines.
+Self-healing restores live changes to the values in Git. Review each change
+before you push it.
 
-Wait for each application to become healthy before you sync the next
-application.
+Argo CD does not restore manual replica changes for these applications:
 
-Restart the Argo CD server after the root application sets HTTP mode:
+- ASF
+- Forgejo
+- NetBird
+- Pingvin Share
+- Pocket ID
+- Syncthing
 
-```bash
-ssh mashu \
-  'sudo k3s kubectl -n argocd rollout restart deployment/argocd-server'
+Argo CD restores manual replica changes for system services and stateless
+applications.
 
-ssh mashu \
-  'sudo k3s kubectl -n argocd rollout status deployment/argocd-server'
-```
+## Backrest
 
-Open `https://argocd.mashu.maxice8.com` and confirm that it works.
+Use the credential and initial setup procedures in
+[SERVICES.md](SERVICES.md). Confirm that Backrest can open the repository and
+list its snapshots.
 
-### Initialize Backrest
+## Restore Application Data
 
-Open `https://backrest.mashu.maxice8.com`. Create the `mashu` instance and the
-administrator account. Store the password in Bitwarden.
+Treat the K3s control plane as disposable. Pyinfra, Git, Argo CD, and SOPS
+recreate it. Restore only the application volumes that contain required data.
 
-Restart Backrest so its init container adds the repository and backup plan:
+Scale one stateful application to zero replicas. Confirm that its PVC and PV
+exist:
 
 ```bash
-ssh mashu \
-  'sudo k3s kubectl -n backrest rollout restart deployment/backrest'
-
-ssh mashu \
-  'sudo k3s kubectl -n backrest rollout status deployment/backrest'
-```
-
-Confirm that Backrest can open `mashu-restic` and list its snapshots.
-
-### Restore application data
-
-Do not restore the K3s control plane. Pyinfra, Git, Argo CD, and SOPS recreate
-it.
-
-For each stateful application, declare zero replicas and sync it. Create its
-PersistentVolumeClaim before you restore data. Keep the workload at zero
-replicas during the restore.
-
-```bash
-ssh mashu
+ssh "$HOSTNAME"
 sudo k3s kubectl -n <namespace> scale deployment/<application> --replicas=0
-sudo k3s kubectl get pvc -n <namespace>
+sudo k3s kubectl -n <namespace> get pvc
 sudo k3s kubectl get pv
 ```
 
-Restore the application files from Backrest or Restic. Set the required owner
-and mode. Start the application only after the restore is complete.
+Restore the volume from Backrest or Restic. Set the required owner and mode.
+Keep the workload at zero replicas during the restore.
 
 ```bash
 sudo chown -R <user>:<group> <volume-path>
@@ -272,58 +207,209 @@ sudo k3s kubectl -n <namespace> scale deployment/<application> --replicas=1
 sudo k3s kubectl -n <namespace> rollout status deployment/<application>
 ```
 
-Restore and verify one application at a time.
+Restore and verify one application before you restore the next application.
 
-### Verify the cluster
+## Verification
+
+Check the cluster and the host firewall:
 
 ```bash
-ssh mashu 'sudo k3s kubectl get pods -A'
-ssh mashu 'sudo k3s kubectl -n argocd get applications'
-ssh mashu 'sudo nft list table inet hostfilter'
-curl -4 --fail https://whoami.mashu.maxice8.com/
-curl -6 --fail https://whoami.mashu.maxice8.com/
-curl -4 --fail https://backrest.mashu.maxice8.com/
-curl -6 --fail https://backrest.mashu.maxice8.com/
+ssh "$HOSTNAME" 'sudo k3s kubectl get pods -A'
+ssh "$HOSTNAME" 'sudo k3s kubectl -n argocd get applications'
+ssh "$HOSTNAME" 'sudo nft list table inet hostfilter'
 ```
 
-Reboot the host. Run Pyinfra again and require an idempotent result.
+Test one public service with IPv4 and IPv6:
 
-### Public repository security
+```bash
+curl -4 --fail "https://whoami.${HOSTNAME}.${DOMAIN}/"
+curl -6 --fail "https://whoami.${HOSTNAME}.${DOMAIN}/"
+```
 
-SOPS ciphertext can be public when the age identity stays private. SOPS
-encrypts the secret values and authenticates the file contents. The age
+Reboot the host. Run the full Pyinfra deployment again. It must report no
+changes.
+
+## Routine Changes
+
+Use Pyinfra for host changes. Use Kubernetes manifests and Argo CD for cluster
+changes.
+
+### Check a host change
+
+Run a Pyinfra dry run before you deploy a host change:
+
+```bash
+uv run pyinfra inventory.py deploy.py --dry --sudo
+```
+
+Use `TASKS` when you must limit the dry run to one or more tasks:
+
+```bash
+TASKS=firewall \
+  uv run pyinfra inventory.py deploy.py --dry --sudo
+```
+
+A dry run does not prove that every remote command is safe. Review the
+generated operations before you run the deployment without `--dry`.
+
+### Render Kubernetes resources
+
+Render one application with Kustomize:
+
+```bash
+kubectl kustomize kubernetes/apps/<application>
+```
+
+Render the complete cluster configuration:
+
+```bash
+kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
+```
+
+The cluster render validates the root Kustomization. It does not render the
+source of each child Argo CD Application. Render a changed application path
+separately.
+
+### Run a server-side dry run
+
+Send the rendered resources to the Kubernetes API without changing the
+cluster:
+
+```bash
+kubectl kustomize kubernetes/apps/<application> |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl apply --dry-run=server -f -'
+```
+
+This command checks the live API schema, installed CRDs, and admission rules.
+It does not save the resources.
+
+Validate a child Argo CD Application definition in the same way:
+
+```bash
+yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl apply --dry-run=server -f -'
+```
+
+Use `kubectl diff` to compare rendered resources with live resources:
+
+```bash
+kubectl kustomize kubernetes/apps/<application> |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl diff --server-side -f -'
+```
+
+`kubectl diff` returns status 1 when it finds a difference. This status does
+not mean that the command failed.
+
+### Check a secret
+
+Confirm that SOPS can decrypt each changed secret. Do not show the plain value:
+
+```bash
+SOPS_AGE_KEY_FILE=.age-key.txt \
+  sops --decrypt <secret-file>.sops.yaml >/dev/null
+```
+
+### Review and deploy
+
+Use this sequence for a cluster change:
+
+1. Edit the manifest or the encrypted secret.
+2. Run `git diff --check`.
+3. Render each changed Kustomization.
+4. Run a server-side dry run.
+5. Review `git diff`.
+6. Stage the required files.
+7. Review `git diff --cached`.
+8. Commit and push the change.
+9. Wait for the repository mirror.
+10. Confirm that Argo CD reports `Synced` and `Healthy`.
+
+Check Argo CD and the changed workload after the push:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argocd get applications'
+
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl get pods -A'
+```
+
+Check recent warning events if a workload is not healthy:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl get events -A \
+  --field-selector type=Warning --sort-by=.lastTimestamp'
+```
+
+Do not push a change that must not reach the live cluster. Automatic sync can
+apply it after the mirror updates.
+
+## Public Repository Security
+
+SOPS ciphertext can be public if the Age identity stays private. The Age
 recipient in `.sops.yaml` is public information.
 
-The repository still exposes hostnames, public addresses, user names, service
-versions, repository paths, firewall rules, and the names of secret fields.
-This information can help an attacker identify targets.
+The repository exposes host names, public addresses, user names, service
+versions, paths, firewall rules, and secret field names. This information can
+help an attacker.
 
-Git history keeps old ciphertext and any plain secret that enters a commit. If
-the age identity is compromised, an attacker can decrypt current and saved
-ciphertext. Change the age identity, re-encrypt the files, and rotate every
-affected service credential after such a compromise.
+Git keeps old ciphertext and any plain secret that enters its history. If an
+attacker gets the Age identity, the attacker can decrypt current and saved
+ciphertext. Create a new Age identity, encrypt the files again, and rotate all
+affected credentials.
 
-Use SOPS to edit secrets. Inspect staged changes before each push:
+### Enable pre-commit
+
+This repository uses [pre-commit](https://pre-commit.com/) to manage its Git
+hooks. `requirements.txt` installs the framework. Enable it after each clone:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt sops kubernetes/platform/backrest/credentials.sops.yaml
-git diff --cached
-git grep -n 'AGE-SECRET-KEY'
-git grep -n 'BEGIN OPENSSH PRIVATE KEY'
+uv run pre-commit install --install-hooks
 ```
 
-The last two commands must not find a plain private key. Keep the Cloudflare
-token limited to the required DNS zones. Keep Argo CD in manual-sync mode and
-review changes before each sync.
-
-## Code Quality & Static Analysis
-
-We utilize **Ruff** for fast Python linting and code style formatting enforcement.
+Run the hooks for all tracked files:
 
 ```bash
-# Check for bugs, syntax errors, and unused components
-uvx ruff check .
+uv run pre-commit run --all-files
+```
 
-# Automatically apply standard format styling
+The configured hooks block these items:
+
+- The Age identity file
+- Private keys
+- Secrets that Gitleaks detects in staged changes
+
+The Gitleaks pre-commit hook scans staged changes. It does not audit all Git
+history. Use a separate full-history scan in CI when you need that control.
+
+Run the checks against staged changes without a commit:
+
+```bash
+uv run pre-commit run
+```
+
+Do not use `git commit --no-verify`. Git hooks are local controls. A user can
+disable or bypass them. Add the same Gitleaks scan to CI if multiple users can
+push to the repository.
+
+Inspect staged changes before each commit:
+
+```bash
+git diff --cached
+uv run pre-commit run
+```
+
+Give each token only the permissions that it needs.
+
+## Code Quality and Static Analysis
+
+Use Ruff to check and format the Python code:
+
+```bash
+uvx ruff check .
 uvx ruff format .
 ```
