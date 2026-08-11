@@ -110,11 +110,8 @@ Change the manifests if you use different names.
 
 ### Network ingress
 
-Permit public TCP traffic on ports 22, 80, and 443 for IPv4 and IPv6. Permit
-public UDP traffic on port 3478 for NetBird STUN. Keep K3s port 6443 private.
-
-Syncthing also uses TCP and UDP port 22000 and UDP port 21027. Permit these
-ports only when external Syncthing peers need direct access.
+Open the core ports in [README.md](README.md). Open an additional port only
+when a service section below requires it.
 
 ## cert-manager and Cloudflare
 
@@ -321,6 +318,12 @@ sign-in returns the browser to the service.
 
 ## NetBird
 
+### Required network access
+
+| Protocol | Destination port | Purpose |
+| --- | ---: | --- |
+| UDP | 3478 | NetBird server STUN |
+
 The encrypted NetBird resource contains the complete server configuration and
 the dashboard OIDC settings. It is in
 `kubernetes/apps/netbird/credentials.sops.yaml`. The NetBird data volume
@@ -357,6 +360,12 @@ If the cluster hosts NetBird, rebuild K3s and Argo CD before you enroll the
 host. Restore NetBird, start it, and then enroll the host client.
 
 ## Forgejo and Forgejo Runner
+
+### Required network access
+
+| Protocol | Destination port | Purpose |
+| --- | ---: | --- |
+| TCP | 23 | Forgejo SSH |
 
 Forgejo stores its application data, users, and administrator credentials in
 its data volume. For a fresh install, create the administrator account and
@@ -426,6 +435,13 @@ the first administrator account. Store the administrator password in a
 password manager. Back up both volumes.
 
 ## Syncthing
+
+### Required network access
+
+| Protocol | Destination port | Purpose |
+| --- | ---: | --- |
+| TCP | 22000 | Syncthing TCP transfers |
+| UDP | 22000 | Syncthing QUIC transfers |
 
 Syncthing stores its GUI credentials, device identity, peer configuration, and
 data in the `syncthing-data` volume. Open

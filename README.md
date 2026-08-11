@@ -88,9 +88,25 @@ files in the repository.
 
 ### Prepare the host
 
-Create an Ubuntu ARM64 host. Permit public TCP traffic on ports 22, 80, and
-443. Permit public UDP traffic on port 3478 for NetBird STUN. Apply these
-rules to IPv4 and IPv6. Do not permit public traffic on K3s port 6443.
+Create an Ubuntu ARM64 host. In the OCI security list, keep each rule stateful
+and set **Source Port Range** to **All**.
+
+Create each required port rule twice:
+
+| IP version | Source CIDR |
+| --- | --- |
+| IPv4 | `0.0.0.0/0` |
+| IPv6 | `::/0` |
+
+Create these core ingress rules:
+
+| Protocol | Destination port | Purpose |
+| --- | ---: | --- |
+| TCP | 22 | Public SSH |
+| TCP | 80 | HTTP and HTTPS redirects |
+| TCP | 443 | Public HTTPS services |
+
+See [SERVICES.md](SERVICES.md) for service-specific ports.
 
 Point the required DNS records to the public IPv4 and IPv6 addresses. Update
 the interface names in the firewall task if the host does not use the expected
