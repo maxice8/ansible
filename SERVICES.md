@@ -397,17 +397,15 @@ ssh "$HOSTNAME" \
 
 ### Update Argo CD
 
-Pyinfra bootstraps and upgrades Argo CD. Change these three pins together:
+Pyinfra bootstraps and upgrades Argo CD. Change these two values together:
 
-- `argocd_version` in `inventory.py`
-- `argocd_manifest_sha256` in `inventory.py`
-- The versioned manifest URL in
-  `kubernetes/platform/argocd/kustomization.yaml`
+- `argocd["version"]` in `inventory.py`
+- `argocd["manifest_sha256"]` in `inventory.py`
 
-Calculate the checksum from the exact tagged manifest. Render the Argo CD and
-cluster Kustomizations, then run an Argo CD-only Pyinfra dry run. Commit the
-pins before the maintenance window; the Git commit does not upgrade Argo CD.
-Apply it explicitly and run the same dry run again to confirm idempotency:
+Calculate the checksum from the exact tagged manifest, then run an Argo
+CD-only Pyinfra dry run. Commit the values before the maintenance window; the
+Git commit does not upgrade Argo CD. Apply it explicitly and run the same dry
+run again to confirm idempotency:
 
 ```bash
 TASKS=argocd \
@@ -417,9 +415,9 @@ TASKS=argocd \
 
 ### Update K3s system components
 
-Pyinfra owns K3s. Change all three pins together: `k3s_version` in
-`inventory.py`, plus `K3S_INSTALLER_URL` and `K3S_INSTALLER_SHA256` in
-`tasks/k3s.py`.
+Pyinfra owns K3s. Change `k3s["version"]` and
+`k3s["installer_sha256"]` together in `inventory.py`. The installer URL is
+derived from the version.
 
 Before changing the Kubernetes minor version, check the Rancher and K3s
 support matrices and the release notes for Rancher, K3s, Traefik, cert-manager,
@@ -429,14 +427,10 @@ before applying the K3s update.
 
 ```python
 # inventory.py
-"k3s_version": "v<new-kubernetes-version>+k3s<revision>",
-
-# tasks/k3s.py
-K3S_INSTALLER_SHA256 = "<sha256-of-versioned-install-script>"
-K3S_INSTALLER_URL = (
-    "https://raw.githubusercontent.com/k3s-io/k3s/"
-    "v<new-kubernetes-version>%2Bk3s<revision>/install.sh"
-)
+"k3s": {
+    "installer_sha256": "<sha256-of-versioned-install-script>",
+    "version": "v<new-kubernetes-version>+k3s<revision>",
+},
 ```
 
 Confirm that the tagged installer and binary exist, calculate the installer

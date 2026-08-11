@@ -5,9 +5,10 @@ from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
 
+k3s = host.data.k3s
 K3S_INSTALLER_URL = (
     "https://raw.githubusercontent.com/k3s-io/k3s/"
-    f"{quote(host.data.k3s_version, safe='')}/install.sh"
+    f"{quote(k3s['version'], safe='')}/install.sh"
 )
 
 apt.packages(
@@ -87,7 +88,7 @@ files.download(
     name="Download the pinned K3s installer",
     src=K3S_INSTALLER_URL,
     dest="/usr/local/src/install-k3s.sh",
-    sha256sum=host.data.k3s_installer_sha256,
+    sha256sum=k3s["installer_sha256"],
     user="root",
     group="root",
     mode="0755",
@@ -97,7 +98,7 @@ installed_version = host.get_fact(
     Command,
     command="k3s --version 2>/dev/null | awk 'NR == 1 {print $3}'",
 )
-k3s_install_changed = installed_version != host.data.k3s_version
+k3s_install_changed = installed_version != k3s["version"]
 k3s_unit_reload_required = (
     host.get_fact(
         Command,
@@ -111,13 +112,13 @@ k3s_unit_reload_required = (
 
 if k3s_install_changed:
     install_command = (
-        f"INSTALL_K3S_VERSION='{host.data.k3s_version}' "
+        f"INSTALL_K3S_VERSION='{k3s['version']}' "
         "INSTALL_K3S_EXEC=server "
         "INSTALL_K3S_SKIP_START=true "
         "/usr/local/src/install-k3s.sh"
     )
     server.shell(
-        name=f"Install K3s {host.data.k3s_version}",
+        name=f"Install K3s {k3s['version']}",
         commands=[install_command],
     )
 

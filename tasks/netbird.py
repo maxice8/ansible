@@ -4,6 +4,8 @@ from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, systemd
 
+netbird = host.data.netbird
+
 apt.packages(
     name="Install NetBird dependencies",
     packages=["ca-certificates", "curl", "ethtool"],
@@ -34,7 +36,7 @@ netbird_package_known = (
     host.get_fact(
         Command,
         command=(
-            f"apt-cache show 'netbird={host.data.netbird_version}' >/dev/null 2>&1 "
+            f"apt-cache show 'netbird={netbird['version']}' >/dev/null 2>&1 "
             "&& printf present || printf absent"
         ),
     )
@@ -42,8 +44,8 @@ netbird_package_known = (
 )
 
 apt.packages(
-    name=f"Install the NetBird client {host.data.netbird_version}",
-    packages=[f"netbird={host.data.netbird_version}"],
+    name=f"Install the NetBird client {netbird['version']}",
+    packages=[f"netbird={netbird['version']}"],
     update=repository_changed or not netbird_package_known,
 )
 
