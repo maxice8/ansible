@@ -5,9 +5,6 @@ from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
 
-K3S_INSTALLER_SHA256 = (
-    "46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad"
-)
 K3S_INSTALLER_URL = (
     "https://raw.githubusercontent.com/k3s-io/k3s/"
     f"{quote(host.data.k3s_version, safe='')}/install.sh"
@@ -90,7 +87,7 @@ files.download(
     name="Download the pinned K3s installer",
     src=K3S_INSTALLER_URL,
     dest="/usr/local/src/install-k3s.sh",
-    sha256sum=K3S_INSTALLER_SHA256,
+    sha256sum=host.data.k3s_installer_sha256,
     user="root",
     group="root",
     mode="0755",
