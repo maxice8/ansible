@@ -9,6 +9,8 @@ cffi==2.1.1 ; platform_python_implementation != 'PyPy'
     #   cryptography
     #   gevent
     #   pynacl
+cfgv==3.5.0
+    # via pre-commit
 click==8.4.2
     # via pyinfra
 colorama==0.4.6 ; sys_platform == 'win32'
@@ -17,22 +19,36 @@ cryptography==50.0.0
     # via
     #   paramiko
     #   types-paramiko
+distlib==0.4.3
+    # via virtualenv
 distro==1.9.0
     # via pyinfra
+filelock==3.32.2
+    # via
+    #   python-discovery
+    #   virtualenv
 gevent==26.7.0
     # via pyinfra
 greenlet==3.5.4 ; platform_python_implementation == 'CPython'
     # via gevent
+identify==2.6.19
+    # via pre-commit
 invoke==3.0.3
     # via paramiko
 jinja2==3.1.6
     # via pyinfra
 markupsafe==3.0.3
     # via jinja2
+nodeenv==1.10.0
+    # via pre-commit
 packaging==26.3
     # via pyinfra
 paramiko==4.0.0
     # via pyinfra
+platformdirs==4.11.2
+    # via virtualenv
+pre-commit==4.6.2
+    # via -r requirements.in
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 pydantic==2.13.4
@@ -45,6 +61,10 @@ pynacl==1.6.2
     # via paramiko
 python-dateutil==2.9.0.post0
     # via pyinfra
+python-discovery==1.5.1
+    # via virtualenv
+pyyaml==6.0.3
+    # via pre-commit
 six==1.17.0
     # via python-dateutil
 typeguard==4.6.0
@@ -59,6 +79,8 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
+virtualenv==21.7.4
+    # via pre-commit
 zope-event==6.2
     # via gevent
 zope-interface==8.5

@@ -1,0 +1,20 @@
+minimum_pre_commit_version: 4.0.0
+
+repos:
+  - repo: local
+    hooks:
+      - id: forbid-local-secret-files
+        name: Block local secret files
+        entry: Commit blocked. Do not commit a local secret file.
+        language: fail
+        files: '(^|/)\.age-key\.txt$'
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks

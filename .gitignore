@@ -6,6 +6,5 @@
 *.bu
 *.ign
 
-# This file should be present to decrypt stuff
+# This file contains the Age identity that decrypts SOPS files.
 .age-key.txt
-.cloudflare-api-token
