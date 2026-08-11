@@ -201,6 +201,22 @@ The public GitHub mirror does not require a repository credential. If the
 repository becomes private, create a read-only repository credential and
 store it as a SOPS-encrypted Kubernetes secret.
 
+## Argus
+
+Open `https://argus.${HOSTNAME}.${DOMAIN}` after the Argus and Pomerium
+Applications are healthy. Pocket ID protects the route through Pomerium.
+
+Argus compares upstream releases with the versions in the public GitHub
+mirror. Its inventory is in `kubernetes/apps/argus/config-map.yaml`. Add or
+remove services there and let Argo CD reconcile the ConfigMap. The inventory
+is read-only in the web interface, while approval and skipped-release state is
+stored in the `argus-data` volume.
+
+No commands or webhooks are configured. Approving a release records the
+decision in Argus but does not change Git or the cluster. Update the relevant
+manifest manually, render and review it, then commit and push it. Argus clears
+the version difference after the GitHub mirror receives the new revision.
+
 ## Rancher
 
 Open `https://rancher.${DOMAIN}` after Argo CD reports that Rancher is healthy.

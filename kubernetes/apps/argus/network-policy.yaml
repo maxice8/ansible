@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argus-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: argus
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: pomerium
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: pomerium
+      ports:
+        - port: http
+          protocol: TCP

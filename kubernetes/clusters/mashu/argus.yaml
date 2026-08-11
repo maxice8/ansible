@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argus
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/maxice8/ansible.git
+    targetRevision: master
+    path: kubernetes/apps/argus
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argus
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true

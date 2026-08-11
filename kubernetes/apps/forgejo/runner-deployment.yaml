@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: runner
-          image: code.forgejo.org/forgejo/runner:13
+          image: code.forgejo.org/forgejo/runner:13.0.0
           imagePullPolicy: Always
           command:
             - /bin/sh
@@ -57,7 +57,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: dind
-          image: docker.io/library/docker:dind
+          image: docker.io/library/docker:29.7.2-dind
           imagePullPolicy: Always
           args:
             - dockerd

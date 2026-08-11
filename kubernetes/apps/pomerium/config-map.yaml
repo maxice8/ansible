@@ -44,3 +44,11 @@ data:
           - allow:
               or:
                 - authenticated_user: true
+      - name: "Argus"
+        description: "Release Monitoring"
+        from: "https://argus.mashu.maxice8.com"
+        to: "http://argus.argus.svc.cluster.local:8080"
+        policy:
+          - allow:
+              or:
+                - authenticated_user: true

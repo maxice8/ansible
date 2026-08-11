@@ -20,7 +20,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: forgejo
-          image: codeberg.org/forgejo/forgejo:16-rootless
+          image: codeberg.org/forgejo/forgejo:16.0.2-rootless
           imagePullPolicy: Always
           env:
             - name: USER_UID
