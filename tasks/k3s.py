@@ -2,13 +2,18 @@ import io
 
 from pyinfra import host
 from pyinfra.facts.server import Command
-from pyinfra.operations import files, server, systemd
+from pyinfra.operations import apt, files, server, systemd
 
 K3S_INSTALLER_SHA256 = (
     "8598e002e61d658fed7b7542fc6d2c66d8da6eae69e088830105d2ee1ffb6d91"
 )
 K3S_INSTALLER_URL = (
     "https://raw.githubusercontent.com/k3s-io/k3s/v1.35.5%2Bk3s1/install.sh"
+)
+
+apt.packages(
+    name="Install the K3s installer dependencies",
+    packages=["ca-certificates", "curl"],
 )
 
 files.directory(
