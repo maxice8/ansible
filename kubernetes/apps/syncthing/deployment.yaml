@@ -28,15 +28,12 @@ spec:
               containerPort: 8384
             - name: sync-tcp
               containerPort: 22000
-              hostPort: 22000
               protocol: TCP
             - name: sync-quic
               containerPort: 22000
-              hostPort: 22000
               protocol: UDP
             - name: discovery
               containerPort: 21027
-              hostPort: 21027
               protocol: UDP
           volumeMounts:
             - name: data
