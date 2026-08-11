@@ -1,3 +1,4 @@
+import hashlib
 import io
 from pathlib import Path
 
@@ -115,11 +116,12 @@ spec:
 root_application_state = host.get_fact(
     Command,
     command=(
-        "k3s kubectl get application mashu -n argocd >/dev/null 2>&1 "
-        "&& printf present || printf absent"
+        "k3s kubectl diff "
+        "-f /usr/local/src/argocd-root-application.yaml >/dev/null 2>&1; "
+        "case $? in 0) printf current;; *) printf drifted;; esac"
     ),
 )
-if root_application_changed or root_application_state != "present":
+if root_application_changed or root_application_state != "current":
     server.shell(
         name="Apply the Mashu root application",
         commands=["k3s kubectl apply -f /usr/local/src/argocd-root-application.yaml"],
@@ -128,6 +130,7 @@ if root_application_changed or root_application_state != "present":
 age_identity_source = Path(".age-key.txt")
 if not age_identity_source.is_file():
     raise RuntimeError("Argo CD requires .age-key.txt to bootstrap SOPS")
+age_identity_sha256 = hashlib.sha256(age_identity_source.read_bytes()).hexdigest()
 
 files.directory(
     name="Create the SOPS age identity directory",
@@ -166,7 +169,19 @@ age_secret_state = host.get_fact(
         "&& printf present || printf absent"
     ),
 )
-if age_identity_changed or age_secret_state != "present":
+age_secret_sha256 = host.get_fact(
+    Command,
+    command=(
+        "k3s kubectl get secret sops-age-identity "
+        "-n sops-secrets-operator -o jsonpath='{.data.keys\\.txt}' "
+        "2>/dev/null | base64 --decode | sha256sum | cut -d' ' -f1"
+    ),
+)
+if (
+    age_identity_changed
+    or age_secret_state != "present"
+    or age_secret_sha256 != age_identity_sha256
+):
     server.shell(
         name="Apply the SOPS age identity Secret",
         commands=[
