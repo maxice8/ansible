@@ -16,8 +16,6 @@ servers = [
                 "version": "0.76.3",
             },
             # Access
-            "ssh_hostname": "167.126.15.226",
-            "ssh_public_key": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGGnv3RrnwshBYkxF88Z1Rd+OiQGG8esijpkL1RhLWH/fhMuFHQuUtv+qx9D5qcv722Yla12KcbGoefm2OxlQZc= max",
             "ssh_user": "ubuntu",
         },
     ),
