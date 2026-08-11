@@ -34,15 +34,16 @@ netbird_package_known = (
     host.get_fact(
         Command,
         command=(
-            "apt-cache show netbird >/dev/null 2>&1 && printf present || printf absent"
+            f"apt-cache show 'netbird={host.data.netbird_version}' >/dev/null 2>&1 "
+            "&& printf present || printf absent"
         ),
     )
     == "present"
 )
 
 apt.packages(
-    name="Install the NetBird client",
-    packages=["netbird"],
+    name=f"Install the NetBird client {host.data.netbird_version}",
+    packages=[f"netbird={host.data.netbird_version}"],
     update=repository_changed or not netbird_package_known,
 )
 
