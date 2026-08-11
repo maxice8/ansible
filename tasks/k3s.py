@@ -69,6 +69,16 @@ installed_version = host.get_fact(
     command="k3s --version 2>/dev/null | awk 'NR == 1 {print $3}'",
 )
 k3s_install_changed = installed_version != host.data.k3s_version
+k3s_unit_reload_required = (
+    host.get_fact(
+        Command,
+        command=(
+            "systemctl show k3s.service --property=NeedDaemonReload "
+            "--value 2>/dev/null || true"
+        ),
+    )
+    == "yes"
+)
 
 if k3s_install_changed:
     install_command = (
@@ -88,5 +98,5 @@ systemd.service(
     running=True,
     enabled=True,
     restarted=k3s_config_changed or k3s_install_changed,
-    daemon_reload=k3s_install_changed,
+    daemon_reload=k3s_install_changed or k3s_unit_reload_required,
 )
