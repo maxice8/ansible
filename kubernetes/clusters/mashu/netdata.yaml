@@ -86,6 +86,8 @@ spec:
                 enabled: true
                 path: /etc/netdata/.opt-out-from-anonymous-statistics
                 data: ""
+              kubeproxy:
+                enabled: false
 
           k8sState:
             resources:
