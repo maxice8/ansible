@@ -3,7 +3,7 @@ plain_group_vars = {
     "argocd_repository_url": "https://github.com/maxice8/ansible.git",
     "argocd_version": "v3.5.0",
     "domain_name": "maxice8.com",
-    "k3s_version": "v1.35.5+k3s1",
+    "k3s_version": "v1.36.3+k3s1",
     "ssh_public_key": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGGnv3RrnwshBYkxF88Z1Rd+OiQGG8esijpkL1RhLWH/fhMuFHQuUtv+qx9D5qcv722Yla12KcbGoefm2OxlQZc= max",
 }
 

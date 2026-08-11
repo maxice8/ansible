@@ -5,10 +5,10 @@ from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
 
 K3S_INSTALLER_SHA256 = (
-    "8598e002e61d658fed7b7542fc6d2c66d8da6eae69e088830105d2ee1ffb6d91"
+    "46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad"
 )
 K3S_INSTALLER_URL = (
-    "https://raw.githubusercontent.com/k3s-io/k3s/v1.35.5%2Bk3s1/install.sh"
+    "https://raw.githubusercontent.com/k3s-io/k3s/v1.36.3%2Bk3s1/install.sh"
 )
 
 apt.packages(
