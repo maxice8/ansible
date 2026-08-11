@@ -82,5 +82,6 @@ systemd.service(
     service="netbird-gro.service",
     running=True,
     enabled=True,
+    restarted=gro_changed,
     daemon_reload=gro_changed,
 )
