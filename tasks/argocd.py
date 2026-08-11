@@ -1,42 +1,20 @@
 import io
-import re
 from pathlib import Path
 
 from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import files, server
 
-release_url = host.get_fact(
-    Command,
-    command=(
-        "curl -fsSL --connect-timeout 10 --max-time 30 -o /dev/null "
-        "-w '%{url_effective}' "
-        "https://github.com/argoproj/argo-cd/releases/latest"
-    ),
-)
-argocd_version = release_url.rsplit("/", maxsplit=1)[-1]
-if not re.fullmatch(r"v\d+\.\d+\.\d+", argocd_version):
-    raise RuntimeError("Cannot resolve the latest stable Argo CD version")
-
 manifest_url = (
     "https://raw.githubusercontent.com/argoproj/argo-cd/"
-    f"{argocd_version}/manifests/install.yaml"
+    f"{host.data.argocd_version}/manifests/install.yaml"
 )
-manifest_sha256 = host.get_fact(
-    Command,
-    command=(
-        f"curl -fsSL --connect-timeout 10 --max-time 30 '{manifest_url}' "
-        "| sha256sum | cut -d' ' -f1"
-    ),
-)
-if not re.fullmatch(r"[0-9a-f]{64}", manifest_sha256):
-    raise RuntimeError("Cannot verify the latest stable Argo CD manifest")
 
 files.download(
-    name=f"Download the Argo CD {argocd_version} manifest",
+    name=f"Download the Argo CD {host.data.argocd_version} manifest",
     src=manifest_url,
     dest="/usr/local/src/argocd-install.yaml",
-    sha256sum=manifest_sha256,
+    sha256sum=host.data.argocd_manifest_sha256,
     user="root",
     group="root",
     mode="0644",
@@ -63,7 +41,7 @@ installed_image = host.get_fact(
         "|| true"
     ),
 )
-expected_image = f"quay.io/argoproj/argocd:{argocd_version}"
+expected_image = f"quay.io/argoproj/argocd:{host.data.argocd_version}"
 workload_state = host.get_fact(
     Command,
     command=(
@@ -82,7 +60,7 @@ argocd_install_changed = (
 
 if argocd_install_changed:
     server.shell(
-        name=f"Install Argo CD {argocd_version}",
+        name=f"Install Argo CD {host.data.argocd_version}",
         commands=[
             (
                 "k3s kubectl apply --server-side --force-conflicts "

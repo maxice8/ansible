@@ -154,8 +154,7 @@ Run it again. The second run must report no changes:
 uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
 ```
 
-Pyinfra installs the selected K3s version. It installs the latest stable Argo
-CD version during each deployment.
+Pyinfra installs the selected K3s and Argo CD versions.
 
 ## Argo CD
 
