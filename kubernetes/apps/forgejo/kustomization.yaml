@@ -8,6 +8,12 @@ resources:
   - forgejo-service.yaml
   - network-policy.yaml
   - route.yaml
-  - runner-config-map.yaml
   - runner-deployment.yaml
   - runner-persistent-volume-claim.yaml
+
+configMapGenerator:
+  - name: forgejo-runner-config
+    files:
+      - config.yml
+      - daemon.json
+      - entrypoint.sh

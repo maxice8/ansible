@@ -1,0 +1,33 @@
+log:
+  level: info
+
+runner:
+  file: .runner
+  name: "mashu-runner"
+  capacity: 1
+  envs:
+  timeout: 3h
+  shutdown_timeout: 3h
+  fetch_interval: 2s
+  labels:
+    - "alpine:docker://alpine:latest"
+    - "docker:docker://docker:dind"
+    - "ubuntu-latest:docker://node:20-bookworm"
+
+cache:
+  enabled: true
+  dir: ""
+
+container:
+  network: ""
+  enable_ipv6: true
+  privileged: false
+  options:
+  workdir_parent:
+  valid_volumes:
+    - '**'
+  docker_host: ""
+  force_pull: false
+
+host:
+  workdir_parent:

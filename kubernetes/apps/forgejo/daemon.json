@@ -1,0 +1,16 @@
+{
+  "ipv6": true,
+  "experimental": true,
+  "ip6tables": true,
+  "fixed-cidr-v6": "fd7a:115c:a1e0:1::/64",
+  "default-address-pools": [
+    {
+      "base": "172.30.0.0/16",
+      "size": 24
+    },
+    {
+      "base": "fd7a:115c:a1e0:100::/56",
+      "size": 64
+    }
+  ]
+}
