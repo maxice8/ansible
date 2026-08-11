@@ -217,6 +217,224 @@ decision in Argus but does not change Git or the cluster. Update the relevant
 manifest manually, render and review it, then commit and push it. Argus clears
 the version difference after the GitHub mirror receives the new revision.
 
+### Update applications
+
+Applications are the workloads under `kubernetes/apps` and application-like
+platform workloads such as Backrest. Argo CD owns their live Kubernetes
+resources. Change the pinned image tag in the applicable Deployment; do not
+run a direct, non-dry-run `kubectl apply`.
+
+For example:
+
+```yaml
+# kubernetes/apps/<application>/deployment.yaml
+containers:
+  - name: <application>
+    image: <registry>/<image>:<new-version>
+```
+
+Validate the YAML, render both the application and cluster, and ask the live
+API server to validate the rendered resources without saving them:
+
+```bash
+yq '.' kubernetes/apps/<application>/deployment.yaml >/dev/null
+
+kubectl kustomize kubernetes/apps/<application> >/dev/null
+kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
+
+kubectl kustomize kubernetes/apps/<application> |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl apply --dry-run=server \
+    -n <namespace> -f -'
+
+git diff --check
+pre-commit run --all-files
+git diff
+```
+
+Commit and push after reviewing the diff. Argo CD deploys the commit. Monitor
+the child Application and workload rather than applying the render manually:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argocd get application <application> --watch'
+
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n <namespace> rollout status \
+  deployment/<application> --timeout=300s'
+```
+
+### Update system applications
+
+System applications include Gateway API, Traefik, cert-manager, Rancher, and
+the other child Applications under `kubernetes/clusters/$HOSTNAME`. Argo CD
+owns them, but changes to CRDs, controllers, and charts can affect every
+application. Update and verify one system application per commit.
+
+For a Helm-backed system application, change `targetRevision` and any
+explicit image tag or values that must move with the chart:
+
+```yaml
+# kubernetes/clusters/<host>/<application>.yaml
+spec:
+  source:
+    repoURL: <official-chart-repository>
+    chart: <chart>
+    targetRevision: <new-chart-version>
+    helm:
+      values: |
+        image:
+          tag: <compatible-image-version>
+```
+
+First validate the child Application object itself:
+
+```bash
+yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" >/dev/null
+
+yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl apply --dry-run=server -n argocd -f -'
+```
+
+That check does not render the remote chart. Render the chart with the exact
+repository, version, Kubernetes version, and values. This Traefik example
+shows the pattern for an Application whose values are stored as a YAML block:
+
+```bash
+NEW_CHART_VERSION='<new-chart-version>'
+
+helm show chart traefik \
+  --repo https://traefik.github.io/charts \
+  --version "$NEW_CHART_VERSION"
+
+yq -r '.spec.source.helm.values' \
+  "kubernetes/clusters/${HOSTNAME}/traefik.yaml" |
+  helm template traefik traefik \
+    --repo https://traefik.github.io/charts \
+    --version "$NEW_CHART_VERSION" \
+    --namespace traefik \
+    --kube-version '<current-kubernetes-version>' \
+    --values - >/dev/null
+```
+
+For a Kustomize-backed system application such as Gateway API, render its
+actual resources. Use Argo CD's field manager when testing server-side CRD
+updates so the dry run follows the live ownership model:
+
+```bash
+kubectl kustomize kubernetes/platform/gateway-api >/dev/null
+
+kubectl kustomize kubernetes/platform/gateway-api |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl apply --server-side --dry-run=server \
+    --field-manager=argocd-controller -f -'
+```
+
+Finally render the root configuration, run the repository checks, and review
+the change:
+
+```bash
+kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
+git diff --check
+pre-commit run --all-files
+git diff
+```
+
+After pushing, wait for the changed system Application to become `Synced` and
+`Healthy`. Check dependent resources before starting the next system update:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argocd get applications'
+
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl get gateway,httproute -A'
+
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl get certificate,certificaterequest -A'
+```
+
+### Update K3s system components
+
+Pyinfra owns K3s. Change all three pins together: `k3s_version` in
+`inventory.py`, plus `K3S_INSTALLER_URL` and `K3S_INSTALLER_SHA256` in
+`tasks/k3s.py`.
+
+```python
+# inventory.py
+"k3s_version": "v<new-kubernetes-version>+k3s<revision>",
+
+# tasks/k3s.py
+K3S_INSTALLER_SHA256 = "<sha256-of-versioned-install-script>"
+K3S_INSTALLER_URL = (
+    "https://raw.githubusercontent.com/k3s-io/k3s/"
+    "v<new-kubernetes-version>%2Bk3s<revision>/install.sh"
+)
+```
+
+Confirm that the tagged installer and binary exist, calculate the installer
+checksum independently, and run the static checks:
+
+```bash
+K3S_VERSION='v<new-kubernetes-version>+k3s<revision>'
+K3S_URL_VERSION='v<new-kubernetes-version>%2Bk3s<revision>'
+
+curl -fsSL \
+  "https://raw.githubusercontent.com/k3s-io/k3s/${K3S_URL_VERSION}/install.sh" |
+  sha256sum
+
+curl -fsSIL \
+  "https://github.com/k3s-io/k3s/releases/download/${K3S_URL_VERSION}/k3s" \
+  >/dev/null
+
+ruff check inventory.py tasks/k3s.py
+git diff --check
+pre-commit run --all-files
+git diff
+```
+
+Inspect cluster health, save an etcd snapshot, and run a K3s-only Pyinfra dry
+run before applying the update:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl get nodes -o wide && \
+  sudo k3s kubectl get pods -A'
+
+ssh "$HOSTNAME" \
+  'sudo k3s etcd-snapshot save --name pre-k3s-update && \
+  sudo k3s etcd-snapshot list'
+
+TASKS=k3s \
+  uv run pyinfra inventory.py deploy.py \
+  --diff --dry --sudo --limit "$HOSTNAME"
+```
+
+Review the Pyinfra operations and commit the pins. The Git commit does not
+upgrade K3s; run the following only during the maintenance window:
+
+```bash
+TASKS=k3s \
+  uv run pyinfra inventory.py deploy.py \
+  --diff --sudo --limit "$HOSTNAME"
+```
+
+Afterward, verify the node, system pods, and Argo CD applications. Run the
+same Pyinfra command again with `--dry`; it should report no K3s changes.
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s --version && \
+  sudo k3s kubectl get nodes -o wide && \
+  sudo k3s kubectl get pods -A && \
+  sudo k3s kubectl -n argocd get applications'
+
+TASKS=k3s \
+  uv run pyinfra inventory.py deploy.py \
+  --diff --dry --sudo --limit "$HOSTNAME"
+```
+
 ## Rancher
 
 Open `https://rancher.${DOMAIN}` after Argo CD reports that Rancher is healthy.
