@@ -1,0 +1,318 @@
+  config.yml: |
+settings:
+  data:
+    database_file: /app/data/argus.db
+    readonly: true
+  web:
+    listen_host: 0.0.0.0
+    listen_port: 8080
+    disabled_routes:
+      - order_edit
+      - service_create
+      - service_update
+      - service_delete
+
+defaults:
+  service:
+    options:
+      interval: 6h
+      semantic_versioning: true
+    latest_version:
+      type: github
+      github:
+        use_prerelease: false
+    deployed_version:
+      type: url
+    dashboard:
+      auto_approve: false
+
+service:
+  argocd:
+    comment: Argo CD installed by Pyinfra
+    latest_version:
+      url: argoproj/argo-cd
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/inventory.py
+      regex: '"argocd_version": "v([0-9.]+)"'
+    dashboard:
+      web_url: https://github.com/argoproj/argo-cd/releases/tag/v{{ version }}
+
+  k3s:
+    comment: K3s server installed by Pyinfra
+    latest_version:
+      url: k3s-io/k3s
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+\+k3s[0-9]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/inventory.py
+      regex: '"k3s_version": "v([^" ]+)"'
+    dashboard:
+      web_url: https://github.com/k3s-io/k3s/releases/tag/v{{ version }}
+
+  gateway-api:
+    latest_version:
+      url: kubernetes-sigs/gateway-api
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/platform/gateway-api/kustomization.yaml
+      regex: '/download/v([0-9.]+)/standard-install.yaml'
+    dashboard:
+      web_url: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v{{ version }}
+
+  rancher-chart:
+    comment: Stable Rancher Helm repository
+    latest_version:
+      type: url
+      url: https://releases.rancher.com/server-charts/stable/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  rancher:\n.*?\n    version: ([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/rancher.yaml
+      regex: 'targetRevision: ([^\n ]+)'
+    dashboard:
+      web_url: https://github.com/rancher/rancher/releases/tag/v{{ version }}
+
+  traefik-chart:
+    latest_version:
+      type: url
+      url: https://traefik.github.io/charts/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  traefik:\n.*?\n    version: ([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/traefik.yaml
+      regex: 'targetRevision: ([^\n ]+)'
+    dashboard:
+      web_url: https://github.com/traefik/traefik-helm-chart/releases/tag/v{{ version }}
+
+  traefik-image:
+    latest_version:
+      url: traefik/traefik
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/traefik.yaml
+      regex: 'tag: v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/traefik/traefik/releases/tag/v{{ version }}
+
+  cert-manager-chart:
+    latest_version:
+      type: url
+      url: https://charts.jetstack.io/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  cert-manager:\n.*?\n    version: v?([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/cert-manager.yaml
+      regex: 'targetRevision: v?([^\n ]+)'
+    dashboard:
+      web_url: https://github.com/cert-manager/cert-manager/releases/tag/v{{ version }}
+
+  sops-secrets-operator-chart:
+    latest_version:
+      type: url
+      url: https://isindir.github.io/sops-secrets-operator/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  sops-secrets-operator:\n.*?\n    version: ([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/sops-secrets-operator.yaml
+      regex: 'targetRevision: ([^\n ]+)'
+    dashboard:
+      web_url: https://github.com/isindir/sops-secrets-operator/releases
+
+  netdata-chart:
+    latest_version:
+      type: url
+      url: https://netdata.github.io/helmchart/index.yaml
+      url_commands:
+        - type: regex
+          regex: '(?s)  netdata:\n.*?\n    version: ([^\n]+)'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/netdata.yaml
+      regex: 'targetRevision: ([^\n ]+)'
+    dashboard:
+      web_url: https://github.com/netdata/helmchart/releases/tag/netdata-{{ version }}
+
+  argus:
+    latest_version:
+      url: release-argus/Argus
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/argus/deployment.yaml
+      regex: 'releaseargus/argus:([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/release-argus/Argus/releases/tag/{{ version }}
+
+  archisteamfarm:
+    options:
+      semantic_versioning: false
+    latest_version:
+      url: JustArchiNET/ArchiSteamFarm
+      url_commands:
+        - type: regex
+          regex: '^([0-9]+(?:\.[0-9]+){3})$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/asf/deployment.yaml
+      regex: 'archisteamfarm:([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/JustArchiNET/ArchiSteamFarm/releases/tag/{{ version }}
+
+  backrest:
+    latest_version:
+      url: garethgeorge/backrest
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/platform/backrest/deployment.yaml
+      regex: 'backrest:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/garethgeorge/backrest/releases/tag/v{{ version }}
+
+  forgejo:
+    latest_version:
+      type: url
+      url: https://codeberg.org/api/v1/repos/forgejo/forgejo/releases/latest
+      url_commands:
+        - type: regex
+          regex: '"tag_name":"v([0-9.]+)"'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/forgejo-deployment.yaml
+      regex: 'forgejo:([0-9.]+)-rootless'
+    dashboard:
+      web_url: https://codeberg.org/forgejo/forgejo/releases/tag/v{{ version }}
+
+  forgejo-runner:
+    latest_version:
+      type: url
+      url: https://code.forgejo.org/api/v1/repos/forgejo/runner/releases/latest
+      url_commands:
+        - type: regex
+          regex: '"tag_name":"v([0-9.]+)"'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/runner-deployment.yaml
+      regex: 'forgejo/runner:([0-9.]+)'
+    dashboard:
+      web_url: https://code.forgejo.org/forgejo/runner/releases/tag/v{{ version }}
+
+  docker-dind:
+    latest_version:
+      url: docker/cli
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: library/docker
+          tag: '{{ version }}-dind'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/runner-deployment.yaml
+      regex: 'library/docker:([0-9.]+)-dind'
+    dashboard:
+      web_url: https://github.com/docker/cli/releases/tag/v{{ version }}
+
+  netbird-server:
+    latest_version:
+      url: netbirdio/netbird
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird/deployments.yaml
+      regex: 'netbird-server:([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/netbirdio/netbird/releases/tag/v{{ version }}
+
+  netbird-dashboard:
+    latest_version:
+      url: netbirdio/dashboard
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird/deployments.yaml
+      regex: 'dashboard:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/netbirdio/dashboard/releases/tag/v{{ version }}
+
+  pingvin-share:
+    latest_version:
+      url: smp46/pingvin-share-x
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pingvin-share/deployment.yaml
+      regex: 'pingvin-share-x:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/smp46/pingvin-share-x/releases/tag/v{{ version }}
+
+  pocket-id:
+    latest_version:
+      url: pocket-id/pocket-id
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pocket-id/deployment.yaml
+      regex: 'pocket-id:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/pocket-id/pocket-id/releases/tag/v{{ version }}
+
+  pomerium:
+    latest_version:
+      url: pomerium/pomerium
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pomerium/deployment.yaml
+      regex: 'pomerium:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/pomerium/pomerium/releases/tag/v{{ version }}
+
+  syncthing:
+    latest_version:
+      url: syncthing/syncthing
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/syncthing/deployment.yaml
+      regex: 'syncthing:([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/syncthing/syncthing/releases/tag/v{{ version }}
+
+  whoami:
+    latest_version:
+      url: traefik/whoami
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/whoami/deployment.yaml
+      regex: 'whoami:v([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/traefik/whoami/releases/tag/v{{ version }}
+
+  yq:
+    latest_version:
+      url: mikefarah/yq
+      url_commands:
+        - type: regex
+          regex: '^v([0-9.]+)$'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/platform/backrest/deployment.yaml
+      regex: 'mikefarah/yq:([0-9.]+)'
+    dashboard:
+      web_url: https://github.com/mikefarah/yq/releases/tag/v{{ version }}
