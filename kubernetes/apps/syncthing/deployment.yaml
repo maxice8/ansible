@@ -68,13 +68,10 @@ spec:
             capabilities:
               drop:
                 - ALL
-              add:
-                - CHOWN
-                - DAC_OVERRIDE
-                - FOWNER
-                - SETGID
-                - SETUID
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 977
+            runAsGroup: 977
             seccompProfile:
               type: RuntimeDefault
       volumes:
