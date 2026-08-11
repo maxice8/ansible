@@ -177,6 +177,20 @@ service:
     dashboard:
       web_url: https://github.com/garethgeorge/backrest/releases/tag/v{{ version }}
 
+  forgejo-chart:
+    comment: Official Forgejo Helm chart
+    latest_version:
+      type: url
+      url: https://code.forgejo.org/api/v1/repos/forgejo-helm/forgejo-helm/releases/latest
+      url_commands:
+        - type: regex
+          regex: '"tag_name":"v([0-9.]+)"'
+    deployed_version:
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/forgejo.yaml
+      regex: 'targetRevision: ([0-9.]+)'
+    dashboard:
+      web_url: https://code.forgejo.org/forgejo-helm/forgejo-helm/releases/tag/v{{ version }}
+
   forgejo:
     latest_version:
       type: url
@@ -185,8 +199,8 @@ service:
         - type: regex
           regex: '"tag_name":"v([0-9.]+)"'
     deployed_version:
-      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/forgejo-deployment.yaml
-      regex: 'forgejo:([0-9.]+)-rootless'
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/forgejo.yaml
+      regex: 'tag: ([0-9.]+)'
     dashboard:
       web_url: https://codeberg.org/forgejo/forgejo/releases/tag/v{{ version }}
 
