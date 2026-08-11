@@ -207,8 +207,8 @@ Open `https://argus.${HOSTNAME}.${DOMAIN}` after the Argus and Pomerium
 Applications are healthy. Pocket ID protects the route through Pomerium.
 
 Argus compares upstream releases with the versions in the public GitHub
-mirror. Its inventory is in `kubernetes/apps/argus/config-map.yaml`. Add or
-remove services there and let Argo CD reconcile the ConfigMap. The inventory
+mirror. Its inventory is in `kubernetes/apps/argus/config.yml`. Add or remove
+services there and let Argo CD reconcile the ConfigMap. The inventory
 is read-only in the web interface, while approval and skipped-release state is
 stored in the `argus-data` volume.
 
