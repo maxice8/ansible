@@ -14,6 +14,12 @@ spec:
       labels:
         app.kubernetes.io/name: pocket-id
     spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: pocket-id
           image: ghcr.io/pocket-id/pocket-id:v2.13.0
@@ -65,12 +71,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-              add:
-                - CHOWN
-                - DAC_OVERRIDE
-                - FOWNER
-                - SETGID
-                - SETUID
             seccompProfile:
               type: RuntimeDefault
       volumes:
