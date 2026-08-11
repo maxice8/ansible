@@ -109,9 +109,7 @@ server_parameters_state = host.get_fact(
 if server_parameters_changed or server_parameters_state != "current":
     server.shell(
         name="Apply the Argo CD server configuration",
-        commands=[
-            "k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml"
-        ],
+        commands=["k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml"],
     )
 
 root_application_changed = files.put(
@@ -125,7 +123,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "{argocd['repository_url']}"
+    repoURL: "{argocd["repository_url"]}"
     targetRevision: master
     path: kubernetes/clusters/mashu
   destination:
