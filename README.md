@@ -262,6 +262,10 @@ changes.
 Use a regular ConfigMap when consumers reload its values themselves or when a
 change must not restart a workload:
 
+- Feature flags read through the Kubernetes API on every request.
+- Settings watched and reloaded by the application.
+- Shared values whose update should be independent from a pod rollout.
+
 ```yaml
 # kustomization.yaml
 resources:
@@ -272,6 +276,10 @@ Use `configMapGenerator` for configuration read when a pod starts, especially
 files mounted with `subPath`. Kustomize adds a content hash to the ConfigMap
 name and updates the workload reference, which triggers a rollout whenever the
 file changes:
+
+- Web server, proxy, or application configuration loaded only at startup.
+- Startup scripts mounted into a container.
+- Configuration files mounted with `subPath`.
 
 ```yaml
 # kustomization.yaml
