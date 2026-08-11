@@ -63,7 +63,7 @@ table inet hostfilter {
         meta l4proto { icmp, ipv6-icmp } counter accept
         iifname { "cni0", "flannel.1" } counter accept
         ct original proto-dst { 80, 443 } counter accept
-        tcp dport 22 counter accept
+        tcp dport { 22, 23 } counter accept
         udp dport 3478 counter accept
     }
 
@@ -121,7 +121,10 @@ firewall_revision = host.get_fact(
         "nft list table inet hostfilter 2>/dev/null | "
         "grep -F 'redirect to :8443' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'udp dport 3478' >/dev/null && printf current || printf stale"
+        "grep -F 'udp dport 3478' >/dev/null && "
+        "nft list table inet hostfilter 2>/dev/null | "
+        "grep -F 'tcp dport { 22, 23 }' >/dev/null "
+        "&& printf current || printf stale"
     ),
 )
 firewall_changed = (

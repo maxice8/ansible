@@ -13,6 +13,7 @@ spec:
     - mashu.maxice8.com
     - "*.mashu.maxice8.com"
     - rancher.maxice8.com
+    - git.maxice8.com
     - id.maxice8.com
     - pomerium.maxice8.com
     - netbird.maxice8.com

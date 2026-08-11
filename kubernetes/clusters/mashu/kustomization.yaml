@@ -11,6 +11,7 @@ resources:
   - cert-manager.yaml
   - sops-secrets-operator.yaml
   - certificate-issuers.yaml
+  - forgejo.yaml
   - staging-certificate.yaml
   - production-certificate.yaml
   - backrest.yaml

@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+    spec:
+      containers:
+        - name: runner
+          image: code.forgejo.org/forgejo/runner:13
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - /etc/forgejo-runner/entrypoint.sh
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
+            - name: FORGEJO_INSTANCE_URL
+              value: https://git.maxice8.com
+            - name: FORGEJO_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-credentials
+                  key: FORGEJO_RUNNER_TOKEN
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: config
+              mountPath: /etc/forgejo-runner
+              readOnly: true
+            - name: runner-tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 974
+            runAsUser: 974
+            seccompProfile:
+              type: RuntimeDefault
+        - name: dind
+          image: docker.io/library/docker:dind
+          imagePullPolicy: Always
+          args:
+            - dockerd
+            - -H
+            - tcp://127.0.0.1:2375
+            - --tls=false
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          ports:
+            - name: docker
+              containerPort: 2375
+          readinessProbe:
+            tcpSocket:
+              port: docker
+            periodSeconds: 5
+          startupProbe:
+            tcpSocket:
+              port: docker
+            failureThreshold: 60
+            periodSeconds: 2
+          volumeMounts:
+            - name: docker-data
+              mountPath: /var/lib/docker
+            - name: daemon-config
+              mountPath: /etc/docker/daemon.json
+              subPath: daemon.json
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            privileged: true
+      volumes:
+        - name: runner-data
+          persistentVolumeClaim:
+            claimName: forgejo-runner-data
+        - name: config
+          configMap:
+            name: forgejo-runner-config
+            defaultMode: 0555
+        - name: daemon-config
+          configMap:
+            name: forgejo-runner-config
+        - name: docker-data
+          emptyDir: {}
+        - name: runner-tmp
+          emptyDir: {}
