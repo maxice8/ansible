@@ -26,6 +26,12 @@ spec:
             - /usr/bin/argus
           args:
             - -config.file=/app/config.yml
+          env:
+            - name: ARGUS_SERVICE_LATEST_VERSION_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: argus-credentials
+                  key: GITHUB_TOKEN
           ports:
             - name: http
               containerPort: 8080

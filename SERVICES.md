@@ -212,6 +212,26 @@ services there and let Argo CD reconcile the ConfigMap. The inventory
 is read-only in the web interface, while approval and skipped-release state is
 stored in the `argus-data` volume.
 
+### Configure the GitHub token
+
+Argus reads the GitHub token from the SOPS-managed `argus-credentials` Secret
+through `ARGUS_SERVICE_LATEST_VERSION_ACCESS_TOKEN`. For this public inventory,
+use a GitHub personal access token with read-only public access, an expiration
+date, and no write scopes. Store it with `sops set`; never place it in
+`config.yml` or another plain file. A token rotation requires recreating the
+Argus pod after the Secret reconciles because environment variables are read
+only when the container starts. See the repository's standard SOPS procedure
+above.
+
+```bash
+read -rsp 'GitHub token for Argus: ' ARGUS_GITHUB_TOKEN; printf '\n'
+printf '%s' "$ARGUS_GITHUB_TOKEN" | yq -o=json -I=0 '.' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/apps/argus/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["GITHUB_TOKEN"]'
+unset ARGUS_GITHUB_TOKEN
+```
+
 No commands or webhooks are configured. Approving a release records the
 decision in Argus but does not change Git or the cluster. Update the relevant
 manifest manually, render and review it, then commit and push it. Argus clears
@@ -245,6 +265,11 @@ kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
 kubectl kustomize kubernetes/apps/<application> |
   ssh "$HOSTNAME" \
     'sudo k3s kubectl apply --dry-run=server \
+    -n <namespace> -f -'
+
+kubectl kustomize kubernetes/apps/<application> |
+  ssh "$HOSTNAME" \
+    'sudo k3s kubectl diff --server-side \
     -n <namespace> -f -'
 
 git diff --check
@@ -285,6 +310,21 @@ spec:
       values: |
         image:
           tag: <compatible-image-version>
+```
+
+Forgejo and Netdata are multi-source Applications. For those, update the Helm
+entry in `spec.sources[]`, not a nonexistent `spec.source`. Select the entry by
+its chart name when extracting its values; do not rely on its array position:
+
+```bash
+yq -r '.spec.sources[] | select(.chart == "forgejo") | .helm.values' \
+  "kubernetes/clusters/${HOSTNAME}/forgejo.yaml" |
+  helm template forgejo forgejo \
+    --repo https://code.forgejo.org/forgejo-helm \
+    --version '<new-chart-version>' \
+    --namespace forgejo \
+    --kube-version '<current-kubernetes-version>' \
+    --values - >/dev/null
 ```
 
 First validate the child Application object itself:
@@ -355,11 +395,37 @@ ssh "$HOSTNAME" \
   'sudo k3s kubectl get certificate,certificaterequest -A'
 ```
 
+### Update Argo CD
+
+Pyinfra bootstraps and upgrades Argo CD. Change these three pins together:
+
+- `argocd_version` in `inventory.py`
+- `argocd_manifest_sha256` in `inventory.py`
+- The versioned manifest URL in
+  `kubernetes/platform/argocd/kustomization.yaml`
+
+Calculate the checksum from the exact tagged manifest. Render the Argo CD and
+cluster Kustomizations, then run an Argo CD-only Pyinfra dry run. Commit the
+pins before the maintenance window; the Git commit does not upgrade Argo CD.
+Apply it explicitly and run the same dry run again to confirm idempotency:
+
+```bash
+TASKS=argocd \
+  uv run pyinfra inventory.py deploy.py \
+  --diff --dry --sudo --limit "$HOSTNAME"
+```
+
 ### Update K3s system components
 
 Pyinfra owns K3s. Change all three pins together: `k3s_version` in
 `inventory.py`, plus `K3S_INSTALLER_URL` and `K3S_INSTALLER_SHA256` in
 `tasks/k3s.py`.
+
+Before changing the Kubernetes minor version, check the Rancher and K3s
+support matrices and the release notes for Rancher, K3s, Traefik, cert-manager,
+and Gateway API. If Rancher needs a newer version for the target Kubernetes
+minor, update Rancher first and wait for it to become `Synced` and `Healthy`
+before applying the K3s update.
 
 ```python
 # inventory.py
@@ -469,6 +535,19 @@ SOPS_AGE_KEY_FILE=.age-key.txt \
   sops kubernetes/platform/backrest/credentials.sops.yaml
 ```
 
+Set the repository password directly when creating or rotating it:
+
+```bash
+read -rsp 'Backrest repository password: ' BACKREST_REPOSITORY_PASSWORD; printf '\n'
+printf '%s' "$BACKREST_REPOSITORY_PASSWORD" | yq -o=json -I=0 '.' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/platform/backrest/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["repository-password"]'
+unset BACKREST_REPOSITORY_PASSWORD
+```
+
+Use the SOPS editor above for the multiline SSH keys and `known_hosts` value.
+
 Add the Backrest public key to the Storage Box account. Confirm that the
 repository path is unique to `$HOSTNAME`. Store the Storage Box credentials
 and the Restic repository password in a password manager.
@@ -502,6 +581,15 @@ SOPS_AGE_KEY_FILE=.age-key.txt \
   sops kubernetes/apps/pocket-id/credentials.sops.yaml
 ```
 
+Generate and store a new encryption key without printing it:
+
+```bash
+openssl rand -base64 32 | tr -d '\n' | yq -o=json -I=0 '.' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/apps/pocket-id/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["ENCRYPTION_KEY"]'
+```
+
 For a new instance, complete the initial administrator setup at
 `https://id.${DOMAIN}`. Register a passkey and store the recovery information
 in a password manager.
@@ -525,6 +613,19 @@ Edit the OIDC values with SOPS:
 ```bash
 SOPS_AGE_KEY_FILE=.age-key.txt \
   sops kubernetes/apps/pomerium/credentials.sops.yaml
+```
+
+Set the Pocket ID client values directly:
+
+```bash
+for KEY in IDP_CLIENT_ID IDP_CLIENT_SECRET; do
+  read -rsp "Pomerium ${KEY}: " POMERIUM_VALUE; printf '\n'
+  printf '%s' "$POMERIUM_VALUE" | yq -o=json -I=0 '.' |
+    SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+    kubernetes/apps/pomerium/credentials.sops.yaml \
+    "[\"spec\"][\"secretTemplates\"][0][\"stringData\"][\"${KEY}\"]"
+done
+unset KEY POMERIUM_VALUE
 ```
 
 Generate and store a new 32-byte cookie secret without printing it:
@@ -570,6 +671,21 @@ Edit the NetBird server and dashboard settings with SOPS:
 SOPS_AGE_KEY_FILE=.age-key.txt \
   sops kubernetes/apps/netbird/credentials.sops.yaml
 ```
+
+Set the dashboard's Pocket ID client values directly:
+
+```bash
+for KEY in AUTH_CLIENT_ID AUTH_CLIENT_SECRET; do
+  read -rsp "NetBird ${KEY}: " NETBIRD_VALUE; printf '\n'
+  printf '%s' "$NETBIRD_VALUE" | yq -o=json -I=0 '.' |
+    SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+    kubernetes/apps/netbird/credentials.sops.yaml \
+    "[\"spec\"][\"secretTemplates\"][1][\"stringData\"][\"${KEY}\"]"
+done
+unset KEY NETBIRD_VALUE
+```
+
+Use the SOPS editor above for the complete multiline server `config.yaml`.
 
 For a new NetBird server, create its Pocket ID OIDC client and update the
 encrypted server and dashboard configuration. Keep the public server name at

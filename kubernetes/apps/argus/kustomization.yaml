@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - persistent-volume-claim.yaml
+  - credentials.sops.yaml
   - deployment.yaml
   - service.yaml
   - network-policy.yaml
