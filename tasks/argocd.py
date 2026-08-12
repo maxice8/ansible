@@ -22,17 +22,39 @@ files.download(
     mode="0644",
 )
 
+namespace_changed = files.put(
+    name="Configure the Argo CD namespace",
+    src=io.StringIO(
+        """apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: v1.36
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: v1.36
+"""
+    ),
+    dest="/usr/local/src/argocd-namespace.yaml",
+    user="root",
+    group="root",
+    mode="0644",
+).changed
+
 namespace_state = host.get_fact(
     Command,
     command=(
-        "k3s kubectl get namespace argocd >/dev/null 2>&1 "
-        "&& printf present || printf absent"
+        "k3s kubectl diff -f /usr/local/src/argocd-namespace.yaml >/dev/null 2>&1; "
+        "case $? in 0) printf current;; *) printf drifted;; esac"
     ),
 )
-if namespace_state != "present":
+if namespace_changed or namespace_state != "current":
     server.shell(
-        name="Create the Argo CD namespace",
-        commands=["k3s kubectl create namespace argocd"],
+        name="Apply the Argo CD namespace",
+        commands=["k3s kubectl apply -f /usr/local/src/argocd-namespace.yaml"],
     )
 
 installed_image = host.get_fact(
