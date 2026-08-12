@@ -46,8 +46,9 @@ spec:
             http:
               port: 3000
             ssh:
+              type: LoadBalancer
               port: 23
-              hostPort: 23
+              ipFamilyPolicy: PreferDualStack
 
           httpRoute:
             enabled: true
