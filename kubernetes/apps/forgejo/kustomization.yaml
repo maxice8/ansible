@@ -2,15 +2,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - credentials.sops.yaml
   - forgejo-chart-persistent-volume-claim.yaml
   - network-policy.yaml
-  - runner-deployment.yaml
-  - runner-persistent-volume-claim.yaml
-
-configMapGenerator:
-  - name: forgejo-runner-config
-    files:
-      - config.yml
-      - daemon.json
-      - entrypoint.sh

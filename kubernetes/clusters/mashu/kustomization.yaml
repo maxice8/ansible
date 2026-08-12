@@ -13,6 +13,7 @@ resources:
   - syncthing.yaml
   - certificate-issuers.yaml
   - forgejo.yaml
+  - forgejo-runner.yaml
   - staging-certificate.yaml
   - production-certificate.yaml
   - backrest.yaml

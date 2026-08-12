@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: forgejo-runner
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/maxice8/ansible.git
+    targetRevision: master
+    path: kubernetes/apps/forgejo-runner
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: forgejo-runner
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
