@@ -72,6 +72,79 @@ imageMaximumGCAge: 24h
     mode="0600",
 ).changed
 
+psa_config_changed = files.put(
+    name="Configure K3s Pod Security admission",
+    src=io.StringIO(
+        """apiVersion: apiserver.config.k8s.io/v1
+kind: AdmissionConfiguration
+plugins:
+  - name: PodSecurity
+    configuration:
+      apiVersion: pod-security.admission.config.k8s.io/v1
+      kind: PodSecurityConfiguration
+      defaults:
+        enforce: restricted
+        enforce-version: v1.36
+        audit: restricted
+        audit-version: v1.36
+        warn: restricted
+        warn-version: v1.36
+      exemptions:
+        usernames: []
+        runtimeClasses: []
+        namespaces:
+          - calico-apiserver
+          - calico-system
+          - cattle-alerting
+          - cattle-capi-system
+          - cattle-csp-adapter-system
+          - cattle-elemental-system
+          - cattle-epinio-system
+          - cattle-externalip-system
+          - cattle-fleet-local-system
+          - cattle-fleet-system
+          - cattle-gatekeeper-system
+          - cattle-global-data
+          - cattle-global-nt
+          - cattle-impersonation-system
+          - cattle-istio
+          - cattle-istio-system
+          - cattle-logging
+          - cattle-logging-system
+          - cattle-monitoring-system
+          - cattle-neuvector-system
+          - cattle-prometheus
+          - cattle-provisioning-capi-system
+          - cattle-resources-system
+          - cattle-sriov-system
+          - cattle-system
+          - cattle-turtles-system
+          - cattle-ui-plugin-system
+          - cattle-windows-gmsa-system
+          - cert-manager
+          - cis-operator-system
+          - compliance-operator-system
+          - fleet-default
+          - fleet-local
+          - istio-system
+          - kube-node-lease
+          - kube-public
+          - kube-system
+          - longhorn-system
+          - rancher-alerting-drivers
+          - rancher-compliance-system
+          - security-scan
+          - sr-operator-system
+          - tigera-operator
+          - traefik
+"""
+    ),
+    dest="/etc/rancher/k3s/psa.yaml",
+    user="root",
+    group="root",
+    mode="0600",
+).changed
+
 k3s_config_changed = files.put(
     name="Deploy the K3s server configuration",
     src=io.StringIO(
@@ -84,6 +157,9 @@ service-cidr: "10.43.0.0/16,fd42:10:43::/112"
 flannel-ipv6-masq: true
 secrets-encryption: true
 write-kubeconfig-mode: "0600"
+kube-apiserver-arg:
+  - "admission-control-config-file=/etc/rancher/k3s/psa.yaml"
+  - "service-account-extend-token-expiration=false"
 disable:
   - traefik
 cluster-init: true
@@ -146,6 +222,11 @@ systemd.service(
     service="k3s.service",
     running=True,
     enabled=True,
-    restarted=k3s_config_changed or kubelet_config_changed or k3s_install_changed,
+    restarted=(
+        k3s_config_changed
+        or kubelet_config_changed
+        or psa_config_changed
+        or k3s_install_changed
+    ),
     daemon_reload=k3s_install_changed or k3s_unit_reload_required,
 )
