@@ -45,31 +45,21 @@ SOPS Secrets Operator can use it.
 
 ### Edit an encrypted secret
 
-Use `sops` to edit an existing encrypted file:
+Use the Makefile helper for a supported service. It uses hidden, shell-neutral
+prompts and leaves a value unchanged when you submit an empty response:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops kubernetes/apps/<application>/credentials.sops.yaml
+make secret service=<service>
 ```
 
-Save and close the editor. SOPS encrypts the protected values before it writes
-the file.
-
-For one scalar value, use `sops set --value-stdin`. The input must be a JSON
-value. Use `yq` to encode the value before SOPS receives it:
+List the supported services with:
 
 ```bash
-read -rsp 'Secret value: ' SECRET_VALUE
-printf '\n'
-printf '%s' "$SECRET_VALUE" |
-  yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt \
-    sops set --value-stdin <secret-file>.sops.yaml '<SOPS-index>'
-unset SECRET_VALUE
+make help
 ```
 
-This command changes the encrypted file in place. Do not use a shell redirect
-to create a plain-text secret file.
+Backrest and NetBird contain multiline values, so their targets open the SOPS
+editor. Save and close the editor to encrypt the changes.
 
 Confirm that SOPS can decrypt the file. Discard the plain output:
 
@@ -139,19 +129,10 @@ Do not save the token in `.cloudflare-api-token` or another plain-text file.
 
 ### Store the API token
 
-Read the token without terminal echo. Store it directly in the existing
-encrypted resource:
+Store it directly in the existing encrypted resource:
 
 ```bash
-read -rsp 'Cloudflare API token: ' CLOUDFLARE_API_TOKEN
-printf '\n'
-printf '%s' "$CLOUDFLARE_API_TOKEN" |
-  yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt \
-    sops set --value-stdin \
-    kubernetes/platform/certificate-issuers/cloudflare-api-token.sops.yaml \
-    '["spec"]["secretTemplates"][0]["stringData"]["api-token"]'
-unset CLOUDFLARE_API_TOKEN
+make secret service=cert-manager
 ```
 
 Commit only the encrypted `.sops.yaml` file.
@@ -217,43 +198,23 @@ stored in the `argus-data` volume.
 Argus reads the GitHub token from the SOPS-managed `argus-credentials` Secret
 through `ARGUS_SERVICE_LATEST_VERSION_ACCESS_TOKEN`. For this public inventory,
 use a GitHub personal access token with read-only public access, an expiration
-date, and no write scopes. Store it with `sops set`; never place it in
-`config.yml` or another plain file. A token rotation requires recreating the
+date, and no write scopes. Never place it in `config.yml` or another plain
+file. A token rotation requires recreating the
 Argus pod after the Secret reconciles because environment variables are read
-only when the container starts. See the repository's standard SOPS procedure
-above.
+only when the container starts.
 
 ```bash
-read -rsp 'GitHub token for Argus: ' ARGUS_GITHUB_TOKEN; printf '\n'
-printf '%s' "$ARGUS_GITHUB_TOKEN" | yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/apps/argus/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["GITHUB_TOKEN"]'
-unset ARGUS_GITHUB_TOKEN
+make secret service=argus
 ```
 
 ### Configure Discord notifications
 
 Create a Discord webhook and copy its URL. Argus sends a notification when it
-finds a new release for any tracked component. Store the webhook ID and token
-from the URL in the SOPS-managed `argus-credentials` Secret:
+finds a new release for any tracked component. The same Argus secret target
+accepts the complete webhook URL and stores its ID and token separately:
 
 ```bash
-read -rsp 'Argus Discord webhook URL: ' ARGUS_DISCORD_WEBHOOK_URL; printf '\n'
-ARGUS_DISCORD_WEBHOOK_ID=${ARGUS_DISCORD_WEBHOOK_URL%/*}
-ARGUS_DISCORD_WEBHOOK_ID=${ARGUS_DISCORD_WEBHOOK_ID##*/}
-ARGUS_DISCORD_TOKEN=${ARGUS_DISCORD_WEBHOOK_URL##*/}
-ARGUS_DISCORD_WEBHOOK_ID="$ARGUS_DISCORD_WEBHOOK_ID" \
-  yq -n -o=json -I=0 'strenv(ARGUS_DISCORD_WEBHOOK_ID)' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/apps/argus/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["DISCORD_WEBHOOK_ID"]'
-ARGUS_DISCORD_TOKEN="$ARGUS_DISCORD_TOKEN" \
-  yq -n -o=json -I=0 'strenv(ARGUS_DISCORD_TOKEN)' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/apps/argus/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["DISCORD_TOKEN"]'
-unset ARGUS_DISCORD_WEBHOOK_URL ARGUS_DISCORD_WEBHOOK_ID ARGUS_DISCORD_TOKEN
+make secret service=argus
 ```
 
 After Argo CD deploys the Secret, restart Argus and test the notifier:
@@ -282,7 +243,7 @@ direct, non-dry-run `kubectl apply`.
 For example:
 
 ```bash
-make pomerium version=v0.33.1
+make update service=pomerium version=v0.33.1
 ```
 
 Validate the YAML, render both the application and cluster, and ask the live
@@ -332,8 +293,8 @@ For a Helm-backed system application, change `targetRevision` and any
 explicit image tag or values that must move with the chart:
 
 ```bash
-make traefik-chart version=<new-chart-version>
-make traefik-image version=<compatible-image-version>
+make update service=traefik-chart version=<new-chart-version>
+make update service=traefik-image version=<compatible-image-version>
 ```
 
 ```yaml
@@ -439,7 +400,7 @@ checksum together, then run an Argo CD-only Pyinfra dry run. The Makefile
 downloads the exact tagged manifest and calculates its checksum:
 
 ```bash
-make argocd version=<new-version>
+make update service=argocd version=<new-version>
 ```
 
 Commit the values before the maintenance window; the Git commit does not
@@ -459,7 +420,7 @@ Pyinfra owns K3s. The Makefile updates `k3s["version"]` and
 version:
 
 ```bash
-make k3s version=v<new-kubernetes-version>+k3s<revision>
+make update service=k3s version=v<new-kubernetes-version>+k3s<revision>
 ```
 
 Before changing the Kubernetes minor version, check the Rancher and K3s
@@ -579,33 +540,11 @@ path, plan, schedule, and retention policy are in
 Edit the Backrest secrets with SOPS:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops kubernetes/platform/backrest/credentials.sops.yaml
+make secret service=backrest
 ```
 
-Set the repository password directly when creating or rotating it:
-
-```bash
-read -rsp 'Backrest repository password: ' BACKREST_REPOSITORY_PASSWORD; printf '\n'
-printf '%s' "$BACKREST_REPOSITORY_PASSWORD" | yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/platform/backrest/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["repository-password"]'
-unset BACKREST_REPOSITORY_PASSWORD
-```
-
-Set or rotate the Discord webhook URL:
-
-```bash
-read -rsp 'Backrest Discord webhook URL: ' BACKREST_DISCORD_WEBHOOK_URL; printf '\n'
-printf '%s' "$BACKREST_DISCORD_WEBHOOK_URL" | yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/platform/backrest/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["discord-webhook-url"]'
-unset BACKREST_DISCORD_WEBHOOK_URL
-```
-
-Use the SOPS editor above for the multiline SSH keys and `known_hosts` value.
+The target opens the SOPS editor because this resource contains multiline SSH
+keys and `known_hosts` data.
 
 Add the Backrest public key to the Storage Box account. Confirm that the
 repository path is unique to `$HOSTNAME`. Store the Storage Box credentials
@@ -633,20 +572,10 @@ The Pocket ID encryption key is in
 `kubernetes/apps/pocket-id/credentials.sops.yaml`. Keep the encryption key and
 the Pocket ID data volume together during a restore.
 
-Edit the Pocket ID secret with SOPS:
+Update the Pocket ID secret with a hidden prompt:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops kubernetes/apps/pocket-id/credentials.sops.yaml
-```
-
-Generate and store a new encryption key without printing it:
-
-```bash
-openssl rand -base64 32 | tr -d '\n' | yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-  kubernetes/apps/pocket-id/credentials.sops.yaml \
-  '["spec"]["secretTemplates"][0]["stringData"]["ENCRYPTION_KEY"]'
+make secret service=pocket-id
 ```
 
 For a new instance, complete the initial administrator setup at
@@ -667,40 +596,11 @@ the Pocket ID sign-in before you remove another recovery method.
 The Pomerium OIDC client ID, OIDC client secret, and cookie secret are in
 `kubernetes/apps/pomerium/credentials.sops.yaml`.
 
-Edit the OIDC values with SOPS:
+Update the OIDC values and cookie secret with hidden prompts:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops kubernetes/apps/pomerium/credentials.sops.yaml
+make secret service=pomerium
 ```
-
-Set the Pocket ID client values directly:
-
-```bash
-for KEY in IDP_CLIENT_ID IDP_CLIENT_SECRET; do
-  read -rsp "Pomerium ${KEY}: " POMERIUM_VALUE; printf '\n'
-  printf '%s' "$POMERIUM_VALUE" | yq -o=json -I=0 '.' |
-    SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-    kubernetes/apps/pomerium/credentials.sops.yaml \
-    "[\"spec\"][\"secretTemplates\"][0][\"stringData\"][\"${KEY}\"]"
-done
-unset KEY POMERIUM_VALUE
-```
-
-Generate and store a new 32-byte cookie secret without printing it:
-
-```bash
-openssl rand -base64 32 |
-  tr -d '\n' |
-  yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt \
-    sops set --value-stdin \
-    kubernetes/apps/pomerium/credentials.sops.yaml \
-    '["spec"]["secretTemplates"][0]["stringData"]["COOKIE_SECRET"]'
-```
-
-Open the encrypted resource with SOPS. Set `IDP_CLIENT_ID` and
-`IDP_CLIENT_SECRET` to the Pocket ID client values.
 
 The routes and access policies are in
 `kubernetes/apps/pomerium/config-map.yaml`. Add a route there when a service
@@ -718,38 +618,25 @@ sign-in returns the browser to the service.
 | --- | ---: | --- |
 | UDP | 3478 | NetBird server STUN |
 
-The encrypted NetBird resource contains the complete server configuration and
-the dashboard OIDC settings. It is in
+The encrypted NetBird resource contains the complete server configuration. It
+is in
 `kubernetes/apps/netbird/credentials.sops.yaml`. The NetBird data volume
 contains the peers, users, policies, and server state. Back up and restore this
 volume.
 
-Edit the NetBird server and dashboard settings with SOPS:
+Edit the NetBird server settings with SOPS:
 
 ```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops kubernetes/apps/netbird/credentials.sops.yaml
+make secret service=netbird
 ```
 
-Set the dashboard's Pocket ID client values directly:
-
-```bash
-for KEY in AUTH_CLIENT_ID AUTH_CLIENT_SECRET; do
-  read -rsp "NetBird ${KEY}: " NETBIRD_VALUE; printf '\n'
-  printf '%s' "$NETBIRD_VALUE" | yq -o=json -I=0 '.' |
-    SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
-    kubernetes/apps/netbird/credentials.sops.yaml \
-    "[\"spec\"][\"secretTemplates\"][1][\"stringData\"][\"${KEY}\"]"
-done
-unset KEY NETBIRD_VALUE
-```
-
-Use the SOPS editor above for the complete multiline server `config.yaml`.
+The target opens the SOPS editor for the complete multiline server
+`config.yaml`.
 
 For a new NetBird server, create its Pocket ID OIDC client and update the
-encrypted server and dashboard configuration. Keep the public server name at
-`https://netbird.${DOMAIN}`. Test dashboard sign-in, peer connections, relay,
-and STUN before you use the server for recovery access.
+encrypted server configuration and the dashboard ConfigMap. Keep the public
+server name at `https://netbird.${DOMAIN}`. Test dashboard sign-in, peer
+connections, relay, and STUN before you use the server for recovery access.
 
 ## Forgejo and Forgejo Runner
 
@@ -770,15 +657,7 @@ its registration token.
 Store the token directly in the encrypted resource:
 
 ```bash
-read -rsp 'Forgejo runner token: ' FORGEJO_RUNNER_TOKEN
-printf '\n'
-printf '%s' "$FORGEJO_RUNNER_TOKEN" |
-  yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt \
-    sops set --value-stdin \
-    kubernetes/apps/forgejo/credentials.sops.yaml \
-    '["spec"]["secretTemplates"][0]["stringData"]["FORGEJO_RUNNER_TOKEN"]'
-unset FORGEJO_RUNNER_TOKEN
+make secret service=forgejo-runner
 ```
 
 The runner uses this token only when its persistent runner identity does not
@@ -796,15 +675,7 @@ copy its URL.
 Store the URL directly in the encrypted resource:
 
 ```bash
-read -rsp 'Discord webhook URL: ' NETDATA_DISCORD_WEBHOOK_URL
-printf '\n'
-printf '%s' "$NETDATA_DISCORD_WEBHOOK_URL" |
-  yq -o=json -I=0 '.' |
-  SOPS_AGE_KEY_FILE=.age-key.txt \
-    sops set --value-stdin \
-    kubernetes/apps/netdata/notifications.sops.yaml \
-    '["spec"]["secretTemplates"][0]["stringData"]["NETDATA_DISCORD_WEBHOOK_URL"]'
-unset NETDATA_DISCORD_WEBHOOK_URL
+make secret service=netdata
 ```
 
 Revoke the old webhook after Argo CD deploys the new value.

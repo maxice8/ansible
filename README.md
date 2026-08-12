@@ -185,23 +185,35 @@ targets with:
 make help
 ```
 
-Pass versions with or without their usual leading `v`:
+Pass the service and version explicitly. Versions can include or omit their
+usual leading `v`:
 
 ```bash
-make argocd version=3.5.1
-make k3s version=v1.36.4+k3s1
-make pomerium version=v0.33.1
+make update service=argocd version=3.5.1
+make update service=k3s version=v1.36.4+k3s1
+make update service=pomerium version=v0.33.1
 ```
 
 The Argo CD and K3s targets download the versioned upstream file and update its
 SHA-256 pin automatically. Preview any update without writing files with:
 
 ```bash
-make pomerium version=v0.33.1 dry_run=1
+make update service=pomerium version=v0.33.1 dry_run=1
 ```
 
 These targets only edit the source files. Review the diff, perform the checks
 in [SERVICES.md](SERVICES.md), and commit the update normally.
+
+Update a SOPS-managed service secret through hidden prompts that work in any
+shell:
+
+```bash
+make secret service=argus
+```
+
+Submit an empty response to keep the existing value. The Backrest and NetBird
+targets open the SOPS editor because they contain multiline values. Run
+`make help` to list all supported services.
 
 ## Argo CD
 

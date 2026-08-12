@@ -31,24 +31,35 @@ COMPONENTS := \
 
 DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
-.PHONY: help list update $(COMPONENTS)
+ifneq ($(filter update,$(MAKECMDGOALS)),)
+ifeq ($(filter $(service),$(COMPONENTS)),)
+$(error Unknown update service '$(service)'. Use one of: $(COMPONENTS))
+endif
+endif
+
+.PHONY: help list update secret
 
 help:
 	@printf '%s\n' \
 		'Update a component:' \
-		'  make <component> version=<version>' \
+		'  make update service=<component> version=<version>' \
 		'' \
 		'Preview without writing:' \
-		'  make <component> version=<version> dry_run=1' \
+		'  make update service=<component> version=<version> dry_run=1' \
+		'' \
+		'Update an encrypted service secret:' \
+		'  make secret service=<service>' \
 		'' \
 		'Available components:'
 	@$(PYTHON) scripts/update_component.py --list
+	@printf '%s\n' '' 'Available secret services:'
+	@$(PYTHON) scripts/update_secret.py --list
 
 list:
 	@$(PYTHON) scripts/update_component.py --list
 
 update:
-	@$(PYTHON) scripts/update_component.py $(DRY_RUN_FLAG) "$(component)" "$(version)"
+	@$(PYTHON) scripts/update_component.py $(DRY_RUN_FLAG) "$(service)" "$(version)"
 
-$(COMPONENTS):
-	@$(MAKE) --no-print-directory update component="$@" version="$(version)" dry_run="$(dry_run)"
+secret:
+	@$(PYTHON) scripts/update_secret.py "$(service)"
