@@ -28,6 +28,16 @@ spec:
           args:
             - -config.file=/app/config.yml
           env:
+            - name: ARGUS_DISCORD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: argus-credentials
+                  key: DISCORD_TOKEN
+            - name: ARGUS_DISCORD_WEBHOOK_ID
+              valueFrom:
+                secretKeyRef:
+                  name: argus-credentials
+                  key: DISCORD_WEBHOOK_ID
             - name: ARGUS_SERVICE_LATEST_VERSION_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:

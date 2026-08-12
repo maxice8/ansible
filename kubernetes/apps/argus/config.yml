@@ -25,8 +25,17 @@ defaults:
     dashboard:
       auto_approve: false
 
+notify:
+  discord:
+    type: discord
+    url_fields:
+      Token: ${ARGUS_DISCORD_TOKEN}
+      WebhookID: ${ARGUS_DISCORD_WEBHOOK_ID}
+
 service:
   argocd:
+    notify:
+      discord: {}
     comment: Argo CD installed by Pyinfra
     latest_version:
       url: argoproj/argo-cd
@@ -40,6 +49,8 @@ service:
       web_url: https://github.com/argoproj/argo-cd/releases/tag/v{{ version }}
 
   k3s:
+    notify:
+      discord: {}
     comment: K3s server installed by Pyinfra
     latest_version:
       url: k3s-io/k3s
@@ -53,6 +64,8 @@ service:
       web_url: https://github.com/k3s-io/k3s/releases/tag/v{{ version }}
 
   gateway-api:
+    notify:
+      discord: {}
     latest_version:
       url: kubernetes-sigs/gateway-api
       url_commands:
@@ -65,6 +78,8 @@ service:
       web_url: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v{{ version }}
 
   rancher-chart:
+    notify:
+      discord: {}
     comment: Latest Rancher Helm repository
     latest_version:
       type: url
@@ -79,6 +94,8 @@ service:
       web_url: https://github.com/rancher/rancher/releases/tag/v{{ version }}
 
   rancher-compliance-chart:
+    notify:
+      discord: {}
     comment: Official Rancher Compliance Helm chart
     latest_version:
       type: url
@@ -93,6 +110,8 @@ service:
       web_url: https://ranchermanager.docs.rancher.com/integrations-in-rancher/compliance-scans
 
   traefik-chart:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://traefik.github.io/charts/index.yaml
@@ -106,6 +125,8 @@ service:
       web_url: https://github.com/traefik/traefik-helm-chart/releases/tag/v{{ version }}
 
   traefik-image:
+    notify:
+      discord: {}
     latest_version:
       url: traefik/traefik
       url_commands:
@@ -118,6 +139,8 @@ service:
       web_url: https://github.com/traefik/traefik/releases/tag/v{{ version }}
 
   cert-manager-chart:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://charts.jetstack.io/index.yaml
@@ -131,6 +154,8 @@ service:
       web_url: https://github.com/cert-manager/cert-manager/releases/tag/v{{ version }}
 
   sops-secrets-operator-chart:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://isindir.github.io/sops-secrets-operator/index.yaml
@@ -144,6 +169,8 @@ service:
       web_url: https://github.com/isindir/sops-secrets-operator/releases
 
   netdata-chart:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://netdata.github.io/helmchart/index.yaml
@@ -157,6 +184,8 @@ service:
       web_url: https://github.com/netdata/helmchart/releases/tag/netdata-{{ version }}
 
   argus:
+    notify:
+      discord: {}
     latest_version:
       url: release-argus/Argus
     deployed_version:
@@ -166,6 +195,8 @@ service:
       web_url: https://github.com/release-argus/Argus/releases/tag/{{ version }}
 
   archisteamfarm:
+    notify:
+      discord: {}
     options:
       semantic_versioning: false
     latest_version:
@@ -180,6 +211,8 @@ service:
       web_url: https://github.com/JustArchiNET/ArchiSteamFarm/releases/tag/{{ version }}
 
   backrest:
+    notify:
+      discord: {}
     latest_version:
       url: garethgeorge/backrest
       url_commands:
@@ -192,6 +225,8 @@ service:
       web_url: https://github.com/garethgeorge/backrest/releases/tag/v{{ version }}
 
   forgejo-chart:
+    notify:
+      discord: {}
     comment: Official Forgejo Helm chart
     latest_version:
       type: url
@@ -206,6 +241,8 @@ service:
       web_url: https://code.forgejo.org/forgejo-helm/forgejo-helm/releases/tag/v{{ version }}
 
   forgejo:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://codeberg.org/api/v1/repos/forgejo/forgejo/releases/latest
@@ -219,6 +256,8 @@ service:
       web_url: https://codeberg.org/forgejo/forgejo/releases/tag/v{{ version }}
 
   forgejo-runner:
+    notify:
+      discord: {}
     latest_version:
       type: url
       url: https://code.forgejo.org/api/v1/repos/forgejo/runner/releases/latest
@@ -232,6 +271,8 @@ service:
       web_url: https://code.forgejo.org/forgejo/runner/releases/tag/v{{ version }}
 
   docker-dind:
+    notify:
+      discord: {}
     latest_version:
       url: docker/cli
       url_commands:
@@ -249,6 +290,8 @@ service:
       web_url: https://github.com/docker/cli/releases/tag/v{{ version }}
 
   netbird-server:
+    notify:
+      discord: {}
     latest_version:
       url: netbirdio/netbird
       url_commands:
@@ -261,6 +304,8 @@ service:
       web_url: https://github.com/netbirdio/netbird/releases/tag/v{{ version }}
 
   netbird-dashboard:
+    notify:
+      discord: {}
     latest_version:
       url: netbirdio/dashboard
       url_commands:
@@ -273,6 +318,8 @@ service:
       web_url: https://github.com/netbirdio/dashboard/releases/tag/v{{ version }}
 
   pingvin-share:
+    notify:
+      discord: {}
     latest_version:
       url: smp46/pingvin-share-x
       url_commands:
@@ -285,6 +332,8 @@ service:
       web_url: https://github.com/smp46/pingvin-share-x/releases/tag/v{{ version }}
 
   pocket-id:
+    notify:
+      discord: {}
     latest_version:
       url: pocket-id/pocket-id
       url_commands:
@@ -297,6 +346,8 @@ service:
       web_url: https://github.com/pocket-id/pocket-id/releases/tag/v{{ version }}
 
   pomerium:
+    notify:
+      discord: {}
     latest_version:
       url: pomerium/pomerium
       url_commands:
@@ -309,6 +360,8 @@ service:
       web_url: https://github.com/pomerium/pomerium/releases/tag/v{{ version }}
 
   syncthing:
+    notify:
+      discord: {}
     latest_version:
       url: syncthing/syncthing
       url_commands:
@@ -321,6 +374,8 @@ service:
       web_url: https://github.com/syncthing/syncthing/releases/tag/v{{ version }}
 
   whoami:
+    notify:
+      discord: {}
     latest_version:
       url: traefik/whoami
       url_commands:
@@ -333,6 +388,8 @@ service:
       web_url: https://github.com/traefik/whoami/releases/tag/v{{ version }}
 
   yq:
+    notify:
+      discord: {}
     latest_version:
       url: mikefarah/yq
       url_commands:

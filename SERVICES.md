@@ -232,7 +232,42 @@ printf '%s' "$ARGUS_GITHUB_TOKEN" | yq -o=json -I=0 '.' |
 unset ARGUS_GITHUB_TOKEN
 ```
 
-No commands or webhooks are configured. Approving a release records the
+### Configure Discord notifications
+
+Create a Discord webhook and copy its URL. Argus sends a notification when it
+finds a new release for any tracked component. Store the webhook ID and token
+from the URL in the SOPS-managed `argus-credentials` Secret:
+
+```bash
+read -rsp 'Argus Discord webhook URL: ' ARGUS_DISCORD_WEBHOOK_URL; printf '\n'
+ARGUS_DISCORD_WEBHOOK_ID=${ARGUS_DISCORD_WEBHOOK_URL%/*}
+ARGUS_DISCORD_WEBHOOK_ID=${ARGUS_DISCORD_WEBHOOK_ID##*/}
+ARGUS_DISCORD_TOKEN=${ARGUS_DISCORD_WEBHOOK_URL##*/}
+ARGUS_DISCORD_WEBHOOK_ID="$ARGUS_DISCORD_WEBHOOK_ID" \
+  yq -n -o=json -I=0 'strenv(ARGUS_DISCORD_WEBHOOK_ID)' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/apps/argus/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["DISCORD_WEBHOOK_ID"]'
+ARGUS_DISCORD_TOKEN="$ARGUS_DISCORD_TOKEN" \
+  yq -n -o=json -I=0 'strenv(ARGUS_DISCORD_TOKEN)' |
+  SOPS_AGE_KEY_FILE=.age-key.txt sops set --value-stdin \
+  kubernetes/apps/argus/credentials.sops.yaml \
+  '["spec"]["secretTemplates"][0]["stringData"]["DISCORD_TOKEN"]'
+unset ARGUS_DISCORD_WEBHOOK_URL ARGUS_DISCORD_WEBHOOK_ID ARGUS_DISCORD_TOKEN
+```
+
+After Argo CD deploys the Secret, restart Argus and test the notifier:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argus rollout restart deployment/argus && \
+  sudo k3s kubectl -n argus rollout status deployment/argus --timeout=120s'
+ssh "$HOSTNAME" \
+  'sudo k3s kubectl -n argus exec deployment/argus -- \
+  /usr/bin/argus -config.file=/app/config.yml -test.notify discord'
+```
+
+No commands or update webhooks are configured. Approving a release records the
 decision in Argus but does not change Git or the cluster. Use the matching
 Makefile target, review its diff, then commit and push it. Argus clears the
 version difference after the GitHub mirror receives the new revision.
