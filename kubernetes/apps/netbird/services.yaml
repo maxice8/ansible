@@ -22,15 +22,3 @@ spec:
       port: 80
       targetPort: http
       appProtocol: kubernetes.io/h2c
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: netbird-dashboard
-spec:
-  selector:
-    app.kubernetes.io/name: netbird-dashboard
-  ports:
-    - name: http
-      port: 80
-      targetPort: http

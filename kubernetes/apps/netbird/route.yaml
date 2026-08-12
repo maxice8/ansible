@@ -36,4 +36,5 @@ spec:
           port: 80
     - backendRefs:
         - name: netbird-dashboard
+          namespace: netbird-dashboard
           port: 80
