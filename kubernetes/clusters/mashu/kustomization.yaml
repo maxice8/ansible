@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - gateway-system-namespace.yaml
+  - netdata-namespace.yaml
   - gateway-api.yaml
   - traefik.yaml
   - public-gateway.yaml
