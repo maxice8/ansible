@@ -36,13 +36,13 @@ for module in kernel_modules:
 ipv6_netplan_changed = files.put(
     name="Enable IPv6 DHCP on the public interface",
     src=io.StringIO(
-        f'''network:
+        f"""network:
   version: 2
   ethernets:
     {public_interface}:
       accept-ra: true
       dhcp6: true
-'''
+"""
     ),
     dest="/etc/netplan/60-public-ipv6.yaml",
     user="root",
