@@ -1,9 +1,6 @@
 import io
 
-from pyinfra import host
 from pyinfra.operations import apt, files, systemd
-
-netbird = host.data.netbird
 
 apt.packages(
     name="Install NetBird dependencies",
