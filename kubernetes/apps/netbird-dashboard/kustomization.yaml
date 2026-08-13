@@ -3,8 +3,19 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - config-map.yaml
   - deployment.yaml
   - service.yaml
   - reference-grant.yaml
   - network-policy.yaml
+
+configMapGenerator:
+  - name: netbird-dashboard-config
+    literals:
+      - AUTH_AUTHORITY=https://netbird.maxice8.com/oauth2
+      - AUTH_CLIENT_ID=netbird-dashboard
+      - AUTH_AUDIENCE=netbird-dashboard
+      - AUTH_SUPPORTED_SCOPES=openid profile email groups
+      - AUTH_REDIRECT_URI=/#callback
+      - AUTH_SILENT_REDIRECT_URI=/#silent-callback
+      - USE_AUTH0=false
+      - NETBIRD_MGMT_API_ENDPOINT=https://netbird.maxice8.com
