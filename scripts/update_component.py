@@ -210,7 +210,7 @@ COMPONENTS = {
     "netbird-dashboard": Component(
         (
             image(
-                "kubernetes/apps/netbird/deployments.yaml",
+                "kubernetes/apps/netbird-dashboard/deployment.yaml",
                 "docker.io/netbirdio/dashboard",
             ),
         ),
