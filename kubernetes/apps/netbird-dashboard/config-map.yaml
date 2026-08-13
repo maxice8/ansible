@@ -7,5 +7,7 @@ data:
   AUTH_CLIENT_ID: netbird-dashboard
   AUTH_AUDIENCE: netbird-dashboard
   AUTH_SUPPORTED_SCOPES: openid profile email groups
+  AUTH_REDIRECT_URI: /nb-auth
+  AUTH_SILENT_REDIRECT_URI: /nb-silent-auth
   USE_AUTH0: "false"
   NETBIRD_MGMT_API_ENDPOINT: https://netbird.maxice8.com
