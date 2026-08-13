@@ -1,7 +1,6 @@
 import io
 
 from pyinfra import host
-from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, systemd
 
 netbird = host.data.netbird
@@ -32,21 +31,10 @@ repository_changed = files.put(
     mode="0644",
 ).changed
 
-netbird_package_known = (
-    host.get_fact(
-        Command,
-        command=(
-            f"apt-cache show 'netbird={netbird['version']}' >/dev/null 2>&1 "
-            "&& printf present || printf absent"
-        ),
-    )
-    == "present"
-)
-
 apt.packages(
-    name=f"Install the NetBird client {netbird['version']}",
-    packages=[f"netbird={netbird['version']}"],
-    update=repository_changed or not netbird_package_known,
+    name="Install the NetBird client",
+    packages=["netbird"],
+    update=repository_changed,
 )
 
 systemd.service(
