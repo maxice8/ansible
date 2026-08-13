@@ -9,6 +9,7 @@ AVAILABLE_TASKS = (
     "netbird",
     "kernel",
     "services",
+    "unattended_upgrades",
     "usg",
     "firewall",
     "k3s",
