@@ -14,7 +14,7 @@ settings:
 defaults:
   service:
     options:
-      interval: 6h
+      interval: 1h
       semantic_versioning: true
     latest_version:
       type: github
