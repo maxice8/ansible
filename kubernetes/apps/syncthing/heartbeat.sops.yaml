@@ -1,0 +1,24 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: syncthing-heartbeat
+spec:
+    secretTemplates:
+        - name: syncthing-heartbeat
+          stringData:
+            HETRIXTOOLS_HEARTBEAT_URL: ENC[AES256_GCM,data:FjHG8kwEjy5IgDiGRv5PWpiZ1YRUxlBVa3dsXpf7gTaNU7o1SuzxHcJrHT/yZTDhL94jYUiOJdlulIOxsH3iWIo=,iv:nfh0ABMRiSMWmSlV5HGKrHNW4MWQW/qvSOQqT7GxWIQ=,tag:JnJ0uL3g3oSRB9caPmNJlQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBucng2T3B4aXpQdFhiRWll
+            L0RwV0RkUXh0SC9EKzdVT1YzQk9pMUpOVWh3CktnZWdpY2doTTZraDUybXgwcmlm
+            Y202LytvcnZCeGd1ZndhRTMrV09FajgKLS0tIERkSndDN3VTcHRpem9yRHVUYTRs
+            bmtYSGNrZGtVekhNRFNwSVA3MVorQkEKBXZOPWhl4bDxRgm7sAraJn2L8LgtQj/o
+            Ja3EwaCi0snWbR/68+0bC03rXpU+7CLcuJ3XXUZWuFW3asD1ZOlA+A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-15T06:20:10Z"
+    mac: ENC[AES256_GCM,data:ffw04/ydo0cLvDlsLY+YN/RlX444pdfBGtVeFaS7h6qU5R34Td7Kcg2jrrunfr/XXOaXZCq2/F4a5U21J9bTpF6cKGvRGixFnqqvm7AmcwyrSgzJPOtiNUuvj0pT1xpo3ynV7lqGFsbXbUcVejWK7stCQuTLor/OFKfpcSc0N7s=,iv:lXWnbmxLPVrpG/GX3Dj7G/Q7doFzFDEESxJ8vFqyXWU=,tag:sQRoGUd9Kt6vi5I7z1OHtw==,type:str]
+    version: 3.13.3

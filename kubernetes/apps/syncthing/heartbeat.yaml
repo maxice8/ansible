@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: syncthing-heartbeat
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 30
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: syncthing-heartbeat
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: heartbeat
+              image: docker.io/curlimages/curl:8.20.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  curl --fail --silent --show-error --max-time 10 \
+                    http://syncthing:8384/rest/noauth/health >/dev/null
+                  curl --fail --silent --show-error --max-time 10 \
+                    "$HETRIXTOOLS_HEARTBEAT_URL" >/dev/null
+              env:
+                - name: HETRIXTOOLS_HEARTBEAT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: syncthing-heartbeat
+                      key: HETRIXTOOLS_HEARTBEAT_URL
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 8Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true

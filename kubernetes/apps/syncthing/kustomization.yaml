@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - heartbeat.sops.yaml
+  - heartbeat.yaml
   - deployment.yaml
   - network-policy.yaml
   - persistent-volume-claim.yaml

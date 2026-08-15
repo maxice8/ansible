@@ -10,6 +10,9 @@ spec:
     - Ingress
   ingress:
     - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: syncthing-heartbeat
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: pomerium

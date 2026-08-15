@@ -14,6 +14,9 @@ spec:
         - podSelector:
             matchLabels:
               app: netdata
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netdata-heartbeat
       ports:
         - port: http
           protocol: TCP

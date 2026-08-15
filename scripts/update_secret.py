@@ -44,6 +44,10 @@ SECRETS = {
         "file": "kubernetes/apps/netdata/notifications.sops.yaml",
         "fields": (("Discord webhook URL", "NETDATA_DISCORD_WEBHOOK_URL"),),
     },
+    "netdata-heartbeat": {
+        "file": "kubernetes/apps/netdata/heartbeat.sops.yaml",
+        "fields": (("HetrixTools heartbeat URL", "HETRIXTOOLS_HEARTBEAT_URL"),),
+    },
     "pocket-id": {
         "file": "kubernetes/apps/pocket-id/credentials.sops.yaml",
         "fields": (("Encryption key", "ENCRYPTION_KEY"),),
@@ -55,6 +59,10 @@ SECRETS = {
             ("Pocket ID client secret", "IDP_CLIENT_SECRET"),
             ("Cookie secret", "COOKIE_SECRET"),
         ),
+    },
+    "syncthing-heartbeat": {
+        "file": "kubernetes/apps/syncthing/heartbeat.sops.yaml",
+        "fields": (("HetrixTools heartbeat URL", "HETRIXTOOLS_HEARTBEAT_URL"),),
     },
 }
 
