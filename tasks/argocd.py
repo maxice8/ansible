@@ -183,25 +183,7 @@ if root_application_changed or root_application_state != "current":
     )
 
 age_identity_source = Path(".age-key.txt")
-if not age_identity_source.is_file():
-    raise RuntimeError("Argo CD requires .age-key.txt to bootstrap SOPS")
-age_identity_sha256 = hashlib.sha256(age_identity_source.read_bytes()).hexdigest()
-
-files.directory(
-    name="Create the SOPS age identity directory",
-    path="/etc/sops/age",
-    user="root",
-    group="root",
-    mode="0700",
-)
-age_identity_changed = files.put(
-    name="Install the SOPS age identity",
-    src=str(age_identity_source),
-    dest="/etc/sops/age/keys.txt",
-    user="root",
-    group="root",
-    mode="0600",
-).changed
+age_identity_available = age_identity_source.is_file()
 
 sops_namespace_state = host.get_fact(
     Command,
@@ -220,8 +202,9 @@ age_secret_state = host.get_fact(
     Command,
     command=(
         "k3s kubectl get secret sops-age-identity "
-        "-n sops-secrets-operator >/dev/null 2>&1 "
-        "&& printf present || printf absent"
+        "-n sops-secrets-operator -o jsonpath='{.data.keys\\.txt}' "
+        "2>/dev/null | awk 'length { found=1 } END { "
+        'if (found) printf "present"; else printf "absent" }\''
     ),
 )
 age_secret_sha256 = host.get_fact(
@@ -232,19 +215,46 @@ age_secret_sha256 = host.get_fact(
         "2>/dev/null | base64 --decode | sha256sum | cut -d' ' -f1"
     ),
 )
-if (
-    age_identity_changed
-    or age_secret_state != "present"
-    or age_secret_sha256 != age_identity_sha256
-):
-    server.shell(
-        name="Apply the SOPS age identity Secret",
-        commands=[
-            (
-                "k3s kubectl create secret generic sops-age-identity "
-                "-n sops-secrets-operator "
-                "--from-file=keys.txt=/etc/sops/age/keys.txt "
-                "--dry-run=client -o yaml | k3s kubectl apply -f -"
-            )
-        ],
+age_secret_ready = age_secret_state == "present" and bool(age_secret_sha256)
+
+if not age_identity_available and not age_secret_ready:
+    raise RuntimeError(
+        "Argo CD requires .age-key.txt when the SOPS age identity Secret "
+        "is missing or incomplete"
     )
+
+if age_identity_available:
+    age_identity_sha256 = hashlib.sha256(age_identity_source.read_bytes()).hexdigest()
+
+    files.directory(
+        name="Create the SOPS age identity directory",
+        path="/etc/sops/age",
+        user="root",
+        group="root",
+        mode="0700",
+    )
+    age_identity_changed = files.put(
+        name="Install the SOPS age identity",
+        src=str(age_identity_source),
+        dest="/etc/sops/age/keys.txt",
+        user="root",
+        group="root",
+        mode="0600",
+    ).changed
+
+    if (
+        age_identity_changed
+        or not age_secret_ready
+        or age_secret_sha256 != age_identity_sha256
+    ):
+        server.shell(
+            name="Apply the SOPS age identity Secret",
+            commands=[
+                (
+                    "k3s kubectl create secret generic sops-age-identity "
+                    "-n sops-secrets-operator "
+                    "--from-file=keys.txt=/etc/sops/age/keys.txt "
+                    "--dry-run=client -o yaml | k3s kubectl apply -f -"
+                )
+            ],
+        )

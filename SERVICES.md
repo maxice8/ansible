@@ -43,6 +43,12 @@ Do not commit `.age-key.txt`. Store the file in a password manager and in a
 secure offline backup. Pyinfra copies this identity to the host so that the
 SOPS Secrets Operator can use it.
 
+After a successful bootstrap, you can remove the local `.age-key.txt` copy.
+Later Argo CD deployments proceed without it while the cluster contains the
+`sops-age-identity` Secret and its `keys.txt` entry. Restore the file from the
+password manager before editing encrypted secrets, rotating the identity, or
+recovering a cluster where that Secret is unavailable.
+
 ### Edit an encrypted secret
 
 Use the Makefile helper for a supported service. It uses hidden, shell-neutral
