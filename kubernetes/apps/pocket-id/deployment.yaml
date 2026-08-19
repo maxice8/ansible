@@ -22,7 +22,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: pocket-id
-          image: ghcr.io/pocket-id/pocket-id:v2.13.0
+          image: ghcr.io/pocket-id/pocket-id:v2.14.0
           imagePullPolicy: IfNotPresent
           env:
             - name: APP_URL
