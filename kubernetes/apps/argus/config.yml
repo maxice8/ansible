@@ -132,6 +132,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: library/traefik
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/traefik.yaml
       regex: 'tag: v([0-9.]+)'
@@ -188,6 +193,11 @@ service:
       discord: {}
     latest_version:
       url: release-argus/Argus
+      require:
+        docker:
+          type: hub
+          image: releaseargus/argus
+          tag: '{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/argus/deployment.yaml
       regex: 'releaseargus/argus:([0-9.]+)'
@@ -204,6 +214,11 @@ service:
       url_commands:
         - type: regex
           regex: '^([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$'
+      require:
+        docker:
+          type: hub
+          image: justarchi/archisteamfarm
+          tag: '{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/asf/deployment.yaml
       regex: 'archisteamfarm:([0-9.]+)'
@@ -218,6 +233,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: ghcr
+          image: garethgeorge/backrest
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/platform/backrest/deployment.yaml
       regex: 'backrest:v([0-9.]+)'
@@ -249,6 +269,16 @@ service:
       url_commands:
         - type: regex
           regex: '"tag_name":"v([0-9.]+)"'
+      require:
+        command:
+          - sh
+          - -ec
+          - >-
+            registry=https://codeberg.org;
+            image=forgejo/forgejo;
+            token=$(curl -fsS "$registry/v2/token?service=container_registry&scope=repository:$image:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p');
+            test -n "$token";
+            curl -fsSI -H "Authorization: Bearer $token" -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" "$registry/v2/$image/manifests/{{ version }}" >/dev/null
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/clusters/mashu/forgejo.yaml
       regex: 'tag: ([0-9.]+)'
@@ -264,8 +294,18 @@ service:
       url_commands:
         - type: regex
           regex: '"tag_name":"v([0-9.]+)"'
+      require:
+        command:
+          - sh
+          - -ec
+          - >-
+            registry=https://code.forgejo.org;
+            image=forgejo/runner;
+            token=$(curl -fsS "$registry/v2/token?service=container_registry&scope=repository:$image:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p');
+            test -n "$token";
+            curl -fsSI -H "Authorization: Bearer $token" -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" "$registry/v2/$image/manifests/{{ version }}" >/dev/null
     deployed_version:
-      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/runner-deployment.yaml
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo-runner/deployment.yaml
       regex: 'forgejo/runner:([0-9.]+)'
     dashboard:
       web_url: https://code.forgejo.org/forgejo/runner/releases/tag/v{{ version }}
@@ -284,7 +324,7 @@ service:
           image: library/docker
           tag: '{{ version }}-dind'
     deployed_version:
-      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo/runner-deployment.yaml
+      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/forgejo-runner/deployment.yaml
       regex: 'library/docker:([0-9.]+)-dind'
     dashboard:
       web_url: https://github.com/docker/cli/releases/tag/v{{ version }}
@@ -297,6 +337,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: netbirdio/netbird-server
+          tag: '{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird/deployments.yaml
       regex: 'netbird-server:([0-9.]+)'
@@ -311,6 +356,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: netbirdio/dashboard
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird-dashboard/deployment.yaml
       regex: 'dashboard:v([0-9.]+)'
@@ -325,6 +375,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: smp46/pingvin-share-x
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pingvin-share/deployment.yaml
       regex: 'pingvin-share-x:v([0-9.]+)'
@@ -339,6 +394,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: ghcr
+          image: pocket-id/pocket-id
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pocket-id/deployment.yaml
       regex: 'pocket-id:v([0-9.]+)'
@@ -353,6 +413,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: pomerium/pomerium
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/pomerium/deployment.yaml
       regex: 'pomerium:v([0-9.]+)'
@@ -367,6 +432,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: syncthing/syncthing
+          tag: '{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/syncthing/deployment.yaml
       regex: 'syncthing:([0-9.]+)'
@@ -381,6 +451,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: traefik/whoami
+          tag: 'v{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/whoami/deployment.yaml
       regex: 'whoami:v([0-9.]+)'
@@ -395,6 +470,11 @@ service:
       url_commands:
         - type: regex
           regex: '^v([0-9.]+)$'
+      require:
+        docker:
+          type: hub
+          image: mikefarah/yq
+          tag: '{{ version }}'
     deployed_version:
       url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/platform/backrest/deployment.yaml
       regex: 'mikefarah/yq:([0-9.]+)'
