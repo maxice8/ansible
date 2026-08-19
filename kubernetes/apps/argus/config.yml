@@ -211,12 +211,11 @@ service:
       semantic_versioning: false
     latest_version:
       url: JustArchiNET/ArchiSteamFarm
-      github:
-        use_prerelease: false
       url_commands:
         - type: regex
           regex: '^([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$'
       require:
+        regex_content: 'ASF-generic[.]zip$'
         docker:
           type: hub
           image: justarchi/archisteamfarm
