@@ -17,7 +17,7 @@ spec:
     spec:
       initContainers:
         - name: configure-backrest
-          image: docker.io/mikefarah/yq:4.53.3
+          image: docker.io/mikefarah/yq:4.53.4
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
