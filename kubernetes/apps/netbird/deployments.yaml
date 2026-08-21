@@ -18,7 +18,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: netbird-server
-          image: docker.io/netbirdio/netbird-server:0.77.0
+          image: docker.io/netbirdio/netbird-server:0.77.1
           imagePullPolicy: IfNotPresent
           args:
             - --config
