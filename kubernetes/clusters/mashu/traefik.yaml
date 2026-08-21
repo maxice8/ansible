@@ -13,7 +13,7 @@ spec:
       releaseName: traefik
       values: |
         image:
-          tag: v3.7.10
+          tag: v3.7.11
           pullPolicy: IfNotPresent
 
         deployment:
