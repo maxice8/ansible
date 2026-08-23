@@ -34,6 +34,10 @@ if targeted_tasks is not None:
 
 def should_run(task_name: str) -> bool:
     """Return true when the task is part of this deployment."""
+    # Disable 'usg' for mashu host as it is on Ubuntu 26.04 which
+    # is not yet supported
+    if task_name == "usg" and host.name == "mashu":
+        return False
     if targeted_tasks is None:
         return True
     return task_name in targeted_tasks
