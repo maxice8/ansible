@@ -149,11 +149,18 @@ firewall_changed = (
 systemd.service(
     name="Enable the Mashu firewall policy",
     service="homelab-firewall.service",
-    running=True,
+    running=None,
     enabled=True,
-    reloaded=firewall_changed,
     daemon_reload=firewall_unit_changed,
 )
+
+if firewall_changed:
+    systemd.service(
+        name="Apply the changed Mashu firewall policy",
+        service="homelab-firewall.service",
+        running=True,
+        reloaded=True,
+    )
 
 systemd.service(
     name="Disable the Oracle firewall loader",
