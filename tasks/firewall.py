@@ -77,7 +77,7 @@ table inet hostfilter {
         iifname { "cni0", "flannel.1" } counter accept
         ct original proto-dst { 80, 443 } counter accept
         tcp dport { 22, 23, 22000 } counter accept
-        udp dport { 3478, 51820, 21027, 22000 } counter accept
+        udp dport { 3478, 21027, 22000, 51820 } counter accept
     }
 
     chain forward {
@@ -134,7 +134,7 @@ firewall_revision = host.get_fact(
         "nft list table inet hostfilter 2>/dev/null | "
         "grep -F 'redirect to :8443' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'udp dport { 3478, 51820, 21027, 22000 }' >/dev/null && "
+        "grep -F 'udp dport { 3478, 21027, 22000, 51820 }' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
         "grep -F 'udp sport 547 udp dport 546' >/dev/null && "
         "nft list table inet hostfilter 2>/dev/null | "
