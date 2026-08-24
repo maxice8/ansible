@@ -7,69 +7,68 @@ from pyinfra.facts.server import Command
 from pyinfra.facts.systemd import SystemdStatus
 from pyinfra.operations import files, server, systemd
 
-from helpers.system_extensions import REGISTRY_DATA_KEY
+from helpers.configuration_extensions import REGISTRY_DATA_KEY
 
-sysext_service = "systemd-sysext.service"
+confext_service = "systemd-confext.service"
 registered_extensions = host.data.get(REGISTRY_DATA_KEY, {})
 registered_names = tuple(sorted(registered_extensions))
 
-sysext_service_was_active = host.get_fact(
+confext_service_was_active = host.get_fact(
     SystemdStatus,
-    services=[sysext_service],
-).get(sysext_service, False)
+    services=[confext_service],
+).get(confext_service, False)
 
 # Facts describe state before operations run and determine whether to refresh.
-sysext_status_json = host.get_fact(
+confext_status_json = host.get_fact(
     Command,
     command=(
-        "systemd-sysext status --json=short --no-pager 2>/dev/null || printf '[]'"
+        "systemd-confext status --json=short --no-pager 2>/dev/null || printf '[]'"
     ),
 )
 try:
-    sysext_status = json.loads(sysext_status_json)
+    confext_status = json.loads(confext_status_json)
 except (TypeError, json.JSONDecodeError):
-    sysext_status = []
+    confext_status = []
 
-active_usr_extensions = {
+active_etc_extensions = {
     extension
-    for hierarchy in sysext_status
-    if hierarchy.get("hierarchy") == "/usr"
+    for hierarchy in confext_status
+    if hierarchy.get("hierarchy") == "/etc"
     for extension in hierarchy.get("extensions", [])
 }
-missing_extensions = set(registered_names).difference(active_usr_extensions)
+missing_extensions = set(registered_names).difference(active_etc_extensions)
 
-# Auto mode makes only routed hierarchies mutable. This symlink writes through
-# to the host tree; /opt intentionally has no mutable route.
+# Auto mode keeps /etc writable by routing writes to the host tree.
 files.directory(
-    name="Create the extension write routing directory",
+    name="Create the extension write routing directory for confext",
     path="/var/lib/extensions.mutable",
     user="root",
     group="root",
     mode="0755",
 )
 
-usr_write_through_changed = files.link(
-    name="Route system extension writes to the host /usr",
-    path="/var/lib/extensions.mutable/usr",
-    target="/usr",
+etc_write_through_changed = files.link(
+    name="Route configuration extension writes to the host /etc",
+    path="/var/lib/extensions.mutable/etc",
+    target="/etc",
 ).changed
 
 files.directory(
-    name="Create the system extension configuration directory",
-    path="/etc/systemd/sysext.conf.d",
+    name="Create the configuration extension configuration directory",
+    path="/etc/systemd/confext.conf.d",
     user="root",
     group="root",
     mode="0755",
 )
 
-sysext_mutability_changed = files.put(
-    name="Keep selected system extension hierarchies mutable",
+confext_mutability_changed = files.put(
+    name="Keep the configuration extension hierarchy mutable",
     src=io.StringIO(
-        """[SysExt]
+        """[ConfExt]
 Mutable=auto
 """
     ),
-    dest="/etc/systemd/sysext.conf.d/80-mutable.conf",
+    dest="/etc/systemd/confext.conf.d/80-mutable.conf",
     user="root",
     group="root",
     mode="0644",
@@ -78,22 +77,22 @@ Mutable=auto
 extension_payload_changed = any(
     extension["changed"] for extension in registered_extensions.values()
 )
-sysext_refresh_required = (
+confext_refresh_required = (
     extension_payload_changed
     or bool(missing_extensions)
-    or usr_write_through_changed
-    or sysext_mutability_changed
+    or etc_write_through_changed
+    or confext_mutability_changed
 )
 
 systemd.service(
-    name="Enable system extension activation",
-    service=sysext_service,
+    name="Enable configuration extension activation",
+    service=confext_service,
     running=True,
     enabled=True,
-    reloaded=sysext_refresh_required and sysext_service_was_active,
+    reloaded=confext_refresh_required and confext_service_was_active,
 )
 
-extensions_applied = sysext_refresh_required or not sysext_service_was_active
+extensions_applied = confext_refresh_required or not confext_service_was_active
 
 if registered_names and extensions_applied:
     # Run remotely after refresh; Pyinfra facts still contain pre-refresh state.
@@ -105,40 +104,40 @@ active_extensions = next(
     (
         set(hierarchy.get("extensions", ()))
         for hierarchy in status
-        if hierarchy.get("hierarchy") == "/usr"
+        if hierarchy.get("hierarchy") == "/etc"
     ),
     set(),
 )
 missing_extensions = sorted(set(sys.argv[1:]) - active_extensions)
 if missing_extensions:
     raise SystemExit(
-        "Missing active system extensions: " + ", ".join(missing_extensions)
+        "Missing active configuration extensions: " + ", ".join(missing_extensions)
     )
 """
     expected_extensions = " ".join(map(shlex.quote, registered_names))
     server.shell(
-        name="Validate registered system extensions",
+        name="Validate registered configuration extensions",
         commands=[
             (
-                "systemd-sysext status --json=short --no-pager | "
+                "systemd-confext status --json=short --no-pager | "
                 f"python3 -c {shlex.quote(validation_script)} "
                 f"{expected_extensions}"
             ),
         ],
     )
 
-write_routing_changed = usr_write_through_changed or sysext_mutability_changed
-if write_routing_changed or not sysext_service_was_active:
+write_routing_changed = etc_write_through_changed or confext_mutability_changed
+if write_routing_changed or not confext_service_was_active:
     server.shell(
-        name="Validate extension write routing",
+        name="Validate configuration extension write routing",
         commands=[
-            "readlink /var/lib/extensions.mutable/usr | grep -Fx /usr",
+            "readlink /var/lib/extensions.mutable/etc | grep -Fx /etc",
             (
-                "findmnt --noheadings --output OPTIONS --target /usr | "
+                "findmnt --noheadings --output OPTIONS --target /etc | "
                 "tr ',' '\\n' | grep -Fx rw"
             ),
             (
-                "systemd-analyze cat-config systemd/sysext.conf | "
+                "systemd-analyze cat-config systemd/confext.conf | "
                 "grep -Fx 'Mutable=auto'"
             ),
         ],
@@ -150,7 +149,7 @@ for extension_name, extension in registered_extensions.items():
     extension_applied = (
         extension["changed"]
         or extension_name in missing_extensions
-        or not sysext_service_was_active
+        or not confext_service_was_active
     )
     if not extension_applied:
         continue

@@ -16,8 +16,11 @@ OWNER_TASKS = (
     "k3s",
     "argocd",
 )
-SYSTEM_EXTENSIONS_FINALIZER = "system-extensions"
-AVAILABLE_TASKS = OWNER_TASKS + (SYSTEM_EXTENSIONS_FINALIZER,)
+EXTENSION_FINALIZERS = (
+    ("system-extensions", "managed_system_extensions"),
+    ("configuration-extensions", "managed_configuration_extensions"),
+)
+AVAILABLE_TASKS = OWNER_TASKS + tuple(task for task, _ in EXTENSION_FINALIZERS)
 
 only_tasks_env = os.environ.get("TASKS")
 targeted_tasks = (
@@ -56,9 +59,7 @@ for task in OWNER_TASKS:
         local.include(f"tasks/{task}.py")
 
 # Extension-owning tasks register their payloads while they are included. Run
-# the finalizer automatically after those tasks so all changes need one global
-# systemd-sysext refresh, including during a targeted deployment.
-if should_run(SYSTEM_EXTENSIONS_FINALIZER) or host.data.get(
-    "managed_system_extensions",
-):
-    local.include(f"tasks/{SYSTEM_EXTENSIONS_FINALIZER}.py")
+# each relevant finalizer once, including during a targeted deployment.
+for finalizer, registry_key in EXTENSION_FINALIZERS:
+    if should_run(finalizer) or host.data.get(registry_key):
+        local.include(f"tasks/{finalizer}.py")
