@@ -3,6 +3,7 @@ import os
 from pyinfra import host, local
 from pyinfra.operations import server
 
+# This decides run order
 OWNER_TASKS = (
     "user",
     "ssh",
