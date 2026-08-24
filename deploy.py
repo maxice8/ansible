@@ -3,7 +3,7 @@ import os
 from pyinfra import host, local
 from pyinfra.operations import server
 
-AVAILABLE_TASKS = (
+OWNER_TASKS = (
     "user",
     "ssh",
     "netbird",
@@ -14,9 +14,9 @@ AVAILABLE_TASKS = (
     "firewall",
     "k3s",
     "argocd",
-    # Keep this last because activating sysext makes /usr and /opt read-only.
-    "system-extensions",
 )
+SYSTEM_EXTENSIONS_FINALIZER = "system-extensions"
+AVAILABLE_TASKS = OWNER_TASKS + (SYSTEM_EXTENSIONS_FINALIZER,)
 
 only_tasks_env = os.environ.get("TASKS")
 targeted_tasks = (
@@ -50,6 +50,14 @@ server.hostname(
     hostname=host.name,
 )
 
-for task in AVAILABLE_TASKS:
+for task in OWNER_TASKS:
     if should_run(task_name=task):
         local.include(f"tasks/{task}.py")
+
+# Extension-owning tasks register their payloads while they are included. Run
+# the finalizer automatically after those tasks so all changes need one global
+# systemd-sysext refresh, including during a targeted deployment.
+if should_run(SYSTEM_EXTENSIONS_FINALIZER) or host.data.get(
+    "managed_system_extensions",
+):
+    local.include(f"tasks/{SYSTEM_EXTENSIONS_FINALIZER}.py")

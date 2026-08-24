@@ -1,44 +1,27 @@
-import io
+from pyinfra.operations import apt, systemd
 
-from pyinfra.operations import apt, files, systemd
+from helpers.system_extensions import sync_system_extension
+
+
+def apply_journald_extension():
+    """Reload journald after its extension is applied."""
+    systemd.service(
+        name="Reload journald after applying its system extension",
+        service="systemd-journald.service",
+        running=True,
+        reloaded=True,
+    )
+
 
 apt.packages(
     name="Install the system core dump handler",
     packages=["systemd-coredump"],
 )
 
-files.directory(
-    name="Create the journald configuration directory",
-    path="/etc/systemd/journald.conf.d",
-    user="root",
-    group="root",
-    mode="0755",
-)
-
-journald_config_changed = files.put(
-    name="Configure the system journal retention",
-    src=io.StringIO(
-        """[Journal]
-Storage=persistent
-Compress=yes
-SystemMaxUse=512M
-SystemKeepFree=5G
-SystemMaxFileSize=64M
-MaxRetentionSec=7day
-MaxFileSec=1day
-"""
-    ),
-    dest="/etc/systemd/journald.conf.d/10-retention.conf",
-    user="root",
-    group="root",
-    mode="0644",
-).changed
-
-systemd.service(
-    name="Apply the system journal retention",
-    service="systemd-journald.service",
-    running=True,
-    restarted=journald_config_changed,
+sync_system_extension("coredump")
+sync_system_extension(
+    "journald",
+    after_refresh=apply_journald_extension,
 )
 
 for service in ("rpcbind.socket", "rpcbind.service"):
