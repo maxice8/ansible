@@ -14,6 +14,8 @@ AVAILABLE_TASKS = (
     "firewall",
     "k3s",
     "argocd",
+    # Keep this last because activating sysext makes /usr and /opt read-only.
+    "system-extensions",
 )
 
 only_tasks_env = os.environ.get("TASKS")

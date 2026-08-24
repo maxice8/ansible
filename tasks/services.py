@@ -34,32 +34,6 @@ MaxFileSec=1day
     mode="0644",
 ).changed
 
-files.directory(
-    name="Create the systemd-coredump configuration directory",
-    path="/etc/systemd/coredump.conf.d",
-    user="root",
-    group="root",
-    mode="0755",
-)
-
-files.put(
-    name="Configure core dump retention",
-    src=io.StringIO(
-        """[Coredump]
-Storage=external
-Compress=yes
-ProcessSizeMax=1G
-ExternalSizeMax=1G
-MaxUse=1G
-KeepFree=5G
-"""
-    ),
-    dest="/etc/systemd/coredump.conf.d/10-retention.conf",
-    user="root",
-    group="root",
-    mode="0644",
-)
-
 systemd.service(
     name="Apply the system journal retention",
     service="systemd-journald.service",
