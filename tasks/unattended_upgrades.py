@@ -5,8 +5,6 @@ from pyinfra.operations import apt, files, systemd
 apt.packages(
     name="Install unattended upgrades",
     packages=["unattended-upgrades"],
-    update=True,
-    cache_time=3600,
 )
 
 files.put(
