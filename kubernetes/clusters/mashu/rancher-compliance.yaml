@@ -8,12 +8,12 @@ spec:
   sources:
     - repoURL: https://charts.rancher.io
       chart: rancher-compliance-crd
-      targetRevision: 110.0.0+up1.5.0
+      targetRevision: 110.1.0+up1.5.1
       helm:
         releaseName: rancher-compliance-crd
     - repoURL: https://charts.rancher.io
       chart: rancher-compliance
-      targetRevision: 110.0.0+up1.5.0
+      targetRevision: 110.1.0+up1.5.1
       helm:
         releaseName: rancher-compliance
         valuesObject:
