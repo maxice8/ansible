@@ -10,7 +10,7 @@ servers = [
             },
             "k3s": {
                 "installer_sha256": "46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad",
-                "version": "v1.36.3+k3s1",
+                "version": "v1.36.4+k3s1",
             },
             # Access
             "ssh_user": "ubuntu",
