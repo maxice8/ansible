@@ -24,3 +24,6 @@ jobs:
         uses: https://github.com/astral-sh/ruff-action@v3
         with:
           args: "format --check ."
+
+      - name: Validate Component Update Mappings
+        run: python3 scripts/update_component.py --check

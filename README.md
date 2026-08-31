@@ -204,6 +204,12 @@ make update service=pomerium version=v0.33.1 dry_run=1
 These targets only edit the source files. Review the diff, perform the checks
 in [SERVICES.md](SERVICES.md), and commit the update normally.
 
+Validate every updater file, version pattern, and Argus service name with:
+
+```bash
+make check-updates
+```
+
 Update a SOPS-managed service secret through hidden prompts that work in any
 shell:
 

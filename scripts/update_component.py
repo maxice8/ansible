@@ -22,6 +22,7 @@ VERSION_PATTERN = re.compile(r"[0-9]+(?:\.[0-9]+)+(?:[-+][0-9A-Za-z][0-9A-Za-z.-
 class Edit:
     path: str
     pattern: str
+    matches: int = 1
 
 
 @dataclass(frozen=True)
@@ -30,8 +31,8 @@ class Component:
     suffix: str = ""
 
 
-def image(path: str, repository: str) -> Edit:
-    return Edit(path, rf"({re.escape(repository)}:)([^\s]+)")
+def image(path: str, repository: str, matches: int = 1) -> Edit:
+    return Edit(path, rf"({re.escape(repository)}:)([^\s]+)", matches)
 
 
 def chart(path: str, repository: str, name: str) -> Edit:
@@ -67,7 +68,7 @@ COMPONENTS = {
             ),
         ),
     ),
-    "rancher-chart": Component(
+    "rancher": Component(
         (
             chart(
                 "kubernetes/clusters/mashu/rancher.yaml",
@@ -76,7 +77,7 @@ COMPONENTS = {
             ),
         )
     ),
-    "rancher-compliance-chart": Component(
+    "rancher-compliance": Component(
         (
             chart(
                 "kubernetes/clusters/mashu/rancher-compliance.yaml",
@@ -107,7 +108,7 @@ COMPONENTS = {
             ),
         ),
     ),
-    "cert-manager-chart": Component(
+    "cert-manager": Component(
         (
             chart(
                 "kubernetes/clusters/mashu/cert-manager.yaml",
@@ -116,7 +117,7 @@ COMPONENTS = {
             ),
         ),
     ),
-    "sops-secrets-operator-chart": Component(
+    "sops-secrets-operator": Component(
         (
             chart(
                 "kubernetes/clusters/mashu/sops-secrets-operator.yaml",
@@ -125,7 +126,7 @@ COMPONENTS = {
             ),
         )
     ),
-    "netdata-chart": Component(
+    "netdata": Component(
         (
             chart(
                 "kubernetes/clusters/mashu/netdata.yaml",
@@ -141,11 +142,12 @@ COMPONENTS = {
             ),
         )
     ),
-    "archisteamfarm": Component(
+    "asf": Component(
         (
             image(
                 "kubernetes/apps/asf/deployment.yaml",
                 "docker.io/justarchi/archisteamfarm",
+                matches=2,
             ),
         )
     ),
@@ -177,7 +179,7 @@ COMPONENTS = {
     "forgejo-runner": Component(
         (
             image(
-                "kubernetes/apps/forgejo/runner-deployment.yaml",
+                "kubernetes/apps/forgejo-runner/deployment.yaml",
                 "code.forgejo.org/forgejo/runner",
             ),
         )
@@ -185,21 +187,13 @@ COMPONENTS = {
     "docker-dind": Component(
         (
             Edit(
-                "kubernetes/apps/forgejo/runner-deployment.yaml",
+                "kubernetes/apps/forgejo-runner/deployment.yaml",
                 r"(docker\.io/library/docker:)([^\s]+)",
             ),
         ),
         suffix="-dind",
     ),
-    "netbird-client": Component(
-        (
-            Edit(
-                "inventory.py",
-                r'("netbird":\s*\{[^}]*?"version":\s*")([^"]+)',
-            ),
-        )
-    ),
-    "netbird-server": Component(
+    "netbird": Component(
         (
             image(
                 "kubernetes/apps/netbird/deployments.yaml",
@@ -259,9 +253,17 @@ COMPONENTS = {
     ),
 }
 
-COMPONENTS["netbird"] = Component(
-    COMPONENTS["netbird-client"].edits + COMPONENTS["netbird-server"].edits
-)
+ALIASES = {
+    "archisteamfarm": "asf",
+    "cert-manager-chart": "cert-manager",
+    "netbird-server": "netbird",
+    "netdata-chart": "netdata",
+    "rancher-chart": "rancher",
+    "rancher-compliance-chart": "rancher-compliance",
+    "sops-secrets-operator-chart": "sops-secrets-operator",
+}
+
+ARGUS_CONFIG = ROOT / "kubernetes/apps/argus/config.yml"
 
 
 def normalize_version(raw_version: str, component: Component) -> str:
@@ -284,35 +286,82 @@ def download_sha256(url: str) -> str:
         raise RuntimeError(f"failed to download {url}: {error}") from error
 
 
-def replace_once(
+def replace_matches(
     contents: dict[Path, str],
     edit: Edit,
     value: str | Callable[[str], str],
 ) -> tuple[str, str]:
     path = ROOT / edit.path
-    text = contents.setdefault(path, path.read_text())
+    try:
+        text = contents.setdefault(path, path.read_text())
+    except OSError as error:
+        raise RuntimeError(f"failed to read {edit.path}: {error.strerror}") from error
     regex = re.compile(edit.pattern, re.MULTILINE)
     matches = list(regex.finditer(text))
-    if len(matches) != 1:
+    if len(matches) != edit.matches:
         raise RuntimeError(
-            f"expected one version match in {edit.path}, found {len(matches)}"
+            f"expected {edit.matches} version match(es) in {edit.path}, "
+            f"found {len(matches)}"
         )
-    old_value = matches[0].group(2)
+    old_values = {match.group(2) for match in matches}
+    if len(old_values) != 1:
+        raise RuntimeError(
+            f"expected matching versions in {edit.path}, found "
+            f"{', '.join(sorted(old_values))}"
+        )
+    old_value = old_values.pop()
     new_value = value(old_value) if callable(value) else value
     contents[path] = regex.sub(
-        lambda match: f"{match.group(1)}{new_value}", text, count=1
+        lambda match: f"{match.group(1)}{new_value}", text, count=edit.matches
     )
     return old_value, new_value
 
 
+def validate() -> None:
+    errors: list[str] = []
+    for component_name, component in COMPONENTS.items():
+        for edit in component.edits:
+            try:
+                replace_matches({}, edit, lambda current: current)
+            except RuntimeError as error:
+                errors.append(f"{component_name}: {error}")
+
+    try:
+        argus_config = ARGUS_CONFIG.read_text()
+    except OSError as error:
+        errors.append(
+            f"failed to read {ARGUS_CONFIG.relative_to(ROOT)}: {error.strerror}"
+        )
+    else:
+        _, separator, services_config = argus_config.partition("\nservice:\n")
+        if not separator:
+            errors.append("could not find the top-level Argus service map")
+        else:
+            argus_services = set(
+                re.findall(r"^  ([a-z0-9][a-z0-9-]*):$", services_config, re.MULTILINE)
+            )
+            component_names = set(COMPONENTS)
+            if argus_services != component_names:
+                errors.append(
+                    f"Argus-only services: {', '.join(sorted(argus_services - component_names)) or 'none'}; "
+                    f"updater-only services: {', '.join(sorted(component_names - argus_services)) or 'none'}"
+                )
+
+    if errors:
+        raise RuntimeError("\n".join(errors))
+
+    print(f"Validated {len(COMPONENTS)} component mappings and matching Argus services")
+
+
 def update(component_name: str, raw_version: str, dry_run: bool) -> None:
+    component_name = ALIASES.get(component_name, component_name)
     component = COMPONENTS[component_name]
     plain_version = normalize_version(raw_version, component)
     contents: dict[Path, str] = {}
     changes: list[tuple[str, str, str]] = []
 
     for edit in component.edits:
-        old, new = replace_once(
+        old, new = replace_matches(
             contents,
             edit,
             lambda current: (
@@ -332,7 +381,7 @@ def update(component_name: str, raw_version: str, dry_run: bool) -> None:
             "inventory.py",
             r'("argocd":\s*\{[^}]*?"manifest_sha256":\s*")([0-9a-f]{64})',
         )
-        old, new = replace_once(contents, checksum_edit, checksum)
+        old, new = replace_matches(contents, checksum_edit, checksum)
         changes.append((checksum_edit.path, old, new))
 
     if component_name == "k3s":
@@ -345,7 +394,7 @@ def update(component_name: str, raw_version: str, dry_run: bool) -> None:
             "inventory.py",
             r'("k3s":\s*\{[^}]*?"installer_sha256":\s*")([0-9a-f]{64})',
         )
-        old, new = replace_once(contents, checksum_edit, checksum)
+        old, new = replace_matches(contents, checksum_edit, checksum)
         changes.append((checksum_edit.path, old, new))
 
     changed_paths = [
@@ -367,12 +416,15 @@ def update(component_name: str, raw_version: str, dry_run: bool) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("component", nargs="?", choices=sorted(COMPONENTS))
+    parser.add_argument(
+        "component", nargs="?", choices=sorted(COMPONENTS.keys() | ALIASES.keys())
+    )
     parser.add_argument("version", nargs="?")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--check", action="store_true")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
-    if args.list:
+    if args.list or args.check:
         return args
     if not args.component or not args.version:
         parser.error("component and version are required")
@@ -381,6 +433,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.check:
+        try:
+            validate()
+        except RuntimeError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
+        return 0
     if args.list:
         for component in sorted(COMPONENTS):
             print(f"  {component}")

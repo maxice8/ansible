@@ -4,23 +4,21 @@ COMPONENTS := \
 	argocd \
 	k3s \
 	gateway-api \
-	rancher-chart \
-	rancher-compliance-chart \
+	rancher \
+	rancher-compliance \
 	traefik-chart \
 	traefik-image \
-	cert-manager-chart \
-	sops-secrets-operator-chart \
-	netdata-chart \
+	cert-manager \
+	sops-secrets-operator \
+	netdata \
 	argus \
-	archisteamfarm \
+	asf \
 	backrest \
 	forgejo-chart \
 	forgejo \
 	forgejo-runner \
 	docker-dind \
 	netbird \
-	netbird-client \
-	netbird-server \
 	netbird-dashboard \
 	pingvin-share \
 	pocket-id \
@@ -29,15 +27,24 @@ COMPONENTS := \
 	whoami \
 	yq
 
+COMPONENT_ALIASES := \
+	archisteamfarm \
+	cert-manager-chart \
+	netbird-server \
+	netdata-chart \
+	rancher-chart \
+	rancher-compliance-chart \
+	sops-secrets-operator-chart
+
 DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
 ifneq ($(filter update,$(MAKECMDGOALS)),)
-ifeq ($(filter $(service),$(COMPONENTS)),)
+ifeq ($(filter $(service),$(COMPONENTS) $(COMPONENT_ALIASES)),)
 $(error Unknown update service '$(service)'. Use one of: $(COMPONENTS))
 endif
 endif
 
-.PHONY: help list update secret
+.PHONY: help list check-updates update secret
 
 help:
 	@printf '%s\n' \
@@ -57,6 +64,9 @@ help:
 
 list:
 	@$(PYTHON) scripts/update_component.py --list
+
+check-updates:
+	@$(PYTHON) scripts/update_component.py --check
 
 update:
 	@$(PYTHON) scripts/update_component.py $(DRY_RUN_FLAG) "$(service)" "$(version)"
