@@ -201,8 +201,12 @@ SHA-256 pin automatically. Preview any update without writing files with:
 make update service=pomerium version=v0.33.1 dry_run=1
 ```
 
-These targets only edit the source files. Review the diff, perform the checks
-in [SERVICES.md](SERVICES.md), and commit the update normally.
+Successful updates commit only the component files using the repository's
+`chore(<service>): update to <version>` convention. Chart and image targets for
+the same service include that distinction in the subject. The updater refuses
+to modify a component file that already has staged or unstaged changes, while
+unrelated worktree changes remain untouched. Dry runs and no-op updates do not
+create commits.
 
 Validate every updater file, version pattern, and Argus service name with:
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -29,6 +30,8 @@ class Edit:
 class Component:
     edits: tuple[Edit, ...]
     suffix: str = ""
+    commit_scope: str = ""
+    commit_target: str = ""
 
 
 def image(path: str, repository: str, matches: int = 1) -> Edit:
@@ -98,7 +101,9 @@ COMPONENTS = {
                 "https://traefik.github.io/charts",
                 "traefik",
             ),
-        )
+        ),
+        commit_scope="traefik",
+        commit_target="chart",
     ),
     "traefik-image": Component(
         (
@@ -107,6 +112,8 @@ COMPONENTS = {
                 r"(image:\s+tag:\s+)([^\s]+)",
             ),
         ),
+        commit_scope="traefik",
+        commit_target="image",
     ),
     "cert-manager": Component(
         (
@@ -166,7 +173,9 @@ COMPONENTS = {
                 "code.forgejo.org/forgejo-helm",
                 "forgejo",
             ),
-        )
+        ),
+        commit_scope="forgejo",
+        commit_target="chart",
     ),
     "forgejo": Component(
         (
@@ -174,7 +183,9 @@ COMPONENTS = {
                 "kubernetes/clusters/mashu/forgejo.yaml",
                 r"(image:\s+tag:\s+)([^\s]+)",
             ),
-        )
+        ),
+        commit_scope="forgejo",
+        commit_target="image",
     ),
     "forgejo-runner": Component(
         (
@@ -353,6 +364,36 @@ def validate() -> None:
     print(f"Validated {len(COMPONENTS)} component mappings and matching Argus services")
 
 
+def git_run(
+    arguments: list[str], *, capture_output: bool = False
+) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            ["git", *arguments],
+            cwd=ROOT,
+            check=True,
+            capture_output=capture_output,
+            text=True,
+        )
+    except OSError as error:
+        raise RuntimeError(f"failed to run Git: {error}") from error
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"Git command failed with exit status {error.returncode}"
+        ) from error
+
+
+def ensure_clean_component_paths(changed_paths: list[Path]) -> list[str]:
+    relative_paths = [str(path.relative_to(ROOT)) for path in changed_paths]
+    status = git_run(["status", "--short", "--", *relative_paths], capture_output=True)
+    if status.stdout:
+        raise RuntimeError(
+            "refusing to overwrite or commit pre-existing component changes:\n"
+            f"{status.stdout.rstrip()}"
+        )
+    return relative_paths
+
+
 def update(component_name: str, raw_version: str, dry_run: bool) -> None:
     component_name = ALIASES.get(component_name, component_name)
     component = COMPONENTS[component_name]
@@ -400,18 +441,28 @@ def update(component_name: str, raw_version: str, dry_run: bool) -> None:
     changed_paths = [
         path for path, new_text in contents.items() if new_text != path.read_text()
     ]
-    action = "Would update" if dry_run else "Updated"
-    for path, old, new in changes:
-        if old != new:
-            print(f"{action} {path}: {old} -> {new}")
-
     if not changed_paths:
         print(f"{component_name} is already at {changes[0][2]}")
         return
 
-    if not dry_run:
-        for path in changed_paths:
-            path.write_text(contents[path])
+    if dry_run:
+        for path, old, new in changes:
+            if old != new:
+                print(f"Would update {path}: {old} -> {new}")
+        return
+
+    relative_paths = ensure_clean_component_paths(changed_paths)
+    for path in changed_paths:
+        path.write_text(contents[path])
+    for path, old, new in changes:
+        if old != new:
+            print(f"Updated {path}: {old} -> {new}")
+
+    scope = component.commit_scope or component_name
+    target = f"{component.commit_target} " if component.commit_target else ""
+    message = f"chore({scope}): update {target}to {changes[0][2]}"
+    sys.stdout.flush()
+    git_run(["commit", "--only", "-m", message, "--", *relative_paths])
 
 
 def parse_args() -> argparse.Namespace:

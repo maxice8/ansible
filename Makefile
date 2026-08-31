@@ -48,7 +48,7 @@ endif
 
 help:
 	@printf '%s\n' \
-		'Update a component:' \
+		'Update and commit a component:' \
 		'  make update service=<component> version=<version>' \
 		'' \
 		'Preview without writing:' \
