@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: netbird-dashboard
-          image: docker.io/netbirdio/dashboard:v2.91.1
+          image: docker.io/netbirdio/dashboard:v2.92.0
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
