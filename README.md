@@ -372,6 +372,16 @@ name suffix when a configuration change should restart the pod.
 
 ### Check a host change
 
+Pyinfra manages the firewall policy in `/etc/nftables.conf`. The
+`homelab-firewall` service loads it at boot. Pyinfra also loads it when the
+managed policy or service file changes, but does not compare or repair live
+rule changes. To restore the policy from disk manually:
+
+```bash
+ssh "$HOSTNAME" \
+  'sudo nft --check -f /etc/nftables.conf && sudo systemctl reload-or-restart homelab-firewall.service'
+```
+
 Run a Pyinfra dry run before you deploy a host change:
 
 ```bash

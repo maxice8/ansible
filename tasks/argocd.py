@@ -131,7 +131,15 @@ server_parameters_state = host.get_fact(
 if server_parameters_changed or server_parameters_state != "current":
     server.shell(
         name="Apply the Argo CD server configuration",
-        commands=["k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml"],
+        commands=[
+            "k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml",
+            # The server reads these parameters through environment variables.
+            "k3s kubectl rollout restart deployment/argocd-server -n argocd",
+            (
+                "k3s kubectl rollout status deployment/argocd-server "
+                "-n argocd --timeout=300s"
+            ),
+        ],
     )
 
 root_application_changed = files.put(

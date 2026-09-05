@@ -128,33 +128,15 @@ WantedBy=multi-user.target
     mode="0644",
 ).changed
 
-firewall_revision = host.get_fact(
-    Command,
-    command=(
-        "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'redirect to :8443' >/dev/null && "
-        "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'udp dport { 3478, 21027, 22000, 51820 }' >/dev/null && "
-        "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'udp sport 547 udp dport 546' >/dev/null && "
-        "nft list table inet hostfilter 2>/dev/null | "
-        "grep -F 'tcp dport { 22, 23, 22000 }' >/dev/null "
-        "&& printf current || printf stale"
-    ),
-)
-firewall_changed = (
-    firewall_config_changed or firewall_unit_changed or firewall_revision != "current"
-)
-
 systemd.service(
     name="Enable the Mashu firewall policy",
     service="homelab-firewall.service",
-    running=None,
+    running=True,
     enabled=True,
     daemon_reload=firewall_unit_changed,
 )
 
-if firewall_changed:
+if firewall_config_changed or firewall_unit_changed:
     systemd.service(
         name="Apply the changed Mashu firewall policy",
         service="homelab-firewall.service",
