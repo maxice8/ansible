@@ -330,44 +330,6 @@ service:
     dashboard:
       web_url: https://github.com/docker/cli/releases/tag/v{{ version }}
 
-  netbird:
-    notify:
-      discord: {}
-    latest_version:
-      url: netbirdio/netbird
-      url_commands:
-        - type: regex
-          regex: '^v([0-9.]+)$'
-      require:
-        docker:
-          type: hub
-          image: netbirdio/netbird-server
-          tag: '{{ version }}'
-    deployed_version:
-      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird/deployments.yaml
-      regex: 'netbird-server:([0-9.]+)'
-    dashboard:
-      web_url: https://github.com/netbirdio/netbird/releases/tag/v{{ version }}
-
-  netbird-dashboard:
-    notify:
-      discord: {}
-    latest_version:
-      url: netbirdio/dashboard
-      url_commands:
-        - type: regex
-          regex: '^v([0-9.]+)$'
-      require:
-        docker:
-          type: hub
-          image: netbirdio/dashboard
-          tag: 'v{{ version }}'
-    deployed_version:
-      url: https://raw.githubusercontent.com/maxice8/ansible/master/kubernetes/apps/netbird-dashboard/deployment.yaml
-      regex: 'dashboard:v([0-9.]+)'
-    dashboard:
-      web_url: https://github.com/netbirdio/dashboard/releases/tag/v{{ version }}
-
   pingvin-share:
     notify:
       discord: {}

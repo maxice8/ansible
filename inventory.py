@@ -13,6 +13,7 @@ servers = [
                 "version": "v1.36.4+k3s1",
             },
             # Access
+            "ssh_hostname": "2603:c025:4005:8f7e:0:b837:618:268c",
             "ssh_user": "ubuntu",
         },
     ),

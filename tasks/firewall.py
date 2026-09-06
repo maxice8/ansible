@@ -70,8 +70,6 @@ table inet hostfilter {
 
         iifname "lo" counter accept
         iifname "tailscale0" counter accept
-        # Retain NetBird access until the live migration is complete.
-        iifname "wt0" counter accept
         ct state established,related counter accept
         udp sport 547 udp dport 546 counter accept
         ct state invalid counter drop
@@ -79,7 +77,7 @@ table inet hostfilter {
         iifname { "cni0", "flannel.1" } counter accept
         ct original proto-dst { 80, 443 } counter accept
         tcp dport { 22, 23, 22000 } counter accept
-        udp dport { 3478, 21027, 22000, 41641, 51820 } counter accept
+        udp dport { 21027, 22000, 41641 } counter accept
     }
 
     chain forward {
@@ -112,7 +110,7 @@ firewall_unit_changed = files.put(
         """[Unit]
 Description=Apply the Mashu host firewall policy
 After=network-pre.target
-Before=k3s.service tailscaled.service netbird.service
+Before=k3s.service tailscaled.service
 
 [Service]
 Type=oneshot

@@ -40,11 +40,6 @@ SECRETS = {
         "file": "kubernetes/apps/forgejo-runner/credentials.sops.yaml",
         "fields": (("Forgejo runner token", "FORGEJO_RUNNER_TOKEN"),),
     },
-    "netbird": {
-        "file": "kubernetes/apps/netbird/credentials.sops.yaml",
-        "fields": (),
-        "editor": True,
-    },
     "netdata": {
         "file": "kubernetes/apps/netdata/notifications.sops.yaml",
         "fields": (("Discord webhook URL", "NETDATA_DISCORD_WEBHOOK_URL"),),

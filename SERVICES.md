@@ -65,8 +65,8 @@ List the supported services with:
 make help
 ```
 
-Backrest and NetBird contain multiline values, so their targets open the SOPS
-editor. Save and close the editor to encrypt the changes.
+Backrest contains multiline values, so its target opens the SOPS editor.
+Save and close the editor to encrypt the changes.
 
 Confirm that SOPS can decrypt the file. Discard the plain output:
 
@@ -100,7 +100,6 @@ The current manifests use these name patterns:
 - `*.${HOSTNAME}.${DOMAIN}`
 - `git.${DOMAIN}`
 - `id.${DOMAIN}`
-- `netbird.${DOMAIN}`
 - `rancher.${DOMAIN}`
 
 Change the manifests if you use different names.
@@ -627,38 +626,6 @@ enables Tailscale SSH, accepted routes, and tailnet DNS; see
 the OCI security list for IPv4 and IPv6 to support direct peer connections.
 Tailscale uses its hosted control plane; it does not need a Kubernetes server
 or a Pocket ID client in this repository.
-
-## NetBird (pending retirement)
-
-The server and dashboard remain deployed until the migration is approved.
-Follow [TAILSCALE-MIGRATION.md](TAILSCALE-MIGRATION.md) to retire them after
-client access is verified.
-
-### Required network access
-
-| Protocol | Destination port | Purpose |
-| --- | ---: | --- |
-| UDP | 3478 | NetBird server STUN |
-
-The encrypted NetBird resource contains the complete server configuration. It
-is in
-`kubernetes/apps/netbird/credentials.sops.yaml`. The NetBird data volume
-contains the peers, users, policies, and server state. Back up and restore this
-volume.
-
-Edit the NetBird server settings with SOPS:
-
-```bash
-make secret service=netbird
-```
-
-The target opens the SOPS editor for the complete multiline server
-`config.yaml`.
-
-For a new NetBird server, create its Pocket ID OIDC client and update the
-encrypted server configuration and the dashboard ConfigMap. Keep the public
-server name at `https://netbird.${DOMAIN}`. Test dashboard sign-in, peer
-connections, relay, and STUN before you use the server for recovery access.
 
 ## Forgejo and Forgejo Runner
 

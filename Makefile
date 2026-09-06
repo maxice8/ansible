@@ -18,8 +18,6 @@ COMPONENTS := \
 	forgejo \
 	forgejo-runner \
 	docker-dind \
-	netbird \
-	netbird-dashboard \
 	pingvin-share \
 	pocket-id \
 	pomerium \
@@ -30,7 +28,6 @@ COMPONENTS := \
 COMPONENT_ALIASES := \
 	archisteamfarm \
 	cert-manager-chart \
-	netbird-server \
 	netdata-chart \
 	rancher-chart \
 	rancher-compliance-chart \

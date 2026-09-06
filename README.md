@@ -24,6 +24,10 @@ Pyinfra uses the local SSH configuration. Configure the host alias, user, key,
 and host-key policy before you run Pyinfra. The connection must not require
 interactive input.
 
+Mashu's inventory sets its public IPv6 address as the Pyinfra connection
+target, so deployments also work before the overlay client is enrolled.
+For interactive Tailscale access, use `tailscale ssh ubuntu@100.91.248.66`.
+
 This command must connect without a password prompt:
 
 ```bash
@@ -161,12 +165,10 @@ validity is checked only during actual enrollment.
 
 Keep Tailscale's default netfilter mode enabled. Accepting routes does not
 advertise Mashu's networks or make it an exit node. Verify tailnet DNS and
-accepted routes against K3s and the existing NetBird overlay during cutover.
+accepted routes against K3s.
 Tailscale SSH handles tailnet connections; public OpenSSH remains the
 recovery path.
 
-See [the Mashu migration runbook](TAILSCALE-MIGRATION.md) before applying.
-The firewall temporarily permits both clients.
 
 ### Install K3s and Argo CD
 
@@ -245,8 +247,8 @@ shell:
 make secret service=argus
 ```
 
-Submit an empty response to keep the existing value. The Backrest and NetBird
-targets open the SOPS editor because they contain multiline values. Run
+Submit an empty response to keep the existing value. The Backrest target
+opens the SOPS editor because it contains multiline values. Run
 `make help` to list all supported services.
 
 ## Argo CD
@@ -285,7 +287,6 @@ Argo CD does not restore manual replica changes for these applications:
 
 - ASF
 - Forgejo
-- NetBird
 - Pingvin Share
 - Pocket ID
 - Syncthing

@@ -204,22 +204,6 @@ COMPONENTS = {
         ),
         suffix="-dind",
     ),
-    "netbird": Component(
-        (
-            image(
-                "kubernetes/apps/netbird/deployments.yaml",
-                "docker.io/netbirdio/netbird-server",
-            ),
-        )
-    ),
-    "netbird-dashboard": Component(
-        (
-            image(
-                "kubernetes/apps/netbird-dashboard/deployment.yaml",
-                "docker.io/netbirdio/dashboard",
-            ),
-        ),
-    ),
     "pingvin-share": Component(
         (
             image(
@@ -267,7 +251,6 @@ COMPONENTS = {
 ALIASES = {
     "archisteamfarm": "asf",
     "cert-manager-chart": "cert-manager",
-    "netbird-server": "netbird",
     "netdata-chart": "netdata",
     "rancher-chart": "rancher",
     "rancher-compliance-chart": "rancher-compliance",
