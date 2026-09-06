@@ -60,7 +60,7 @@ This repository intentionally describes Mashu directly rather than providing a
 generic multi-host framework.
 
 The current K3s configuration uses the private IPv4 address and the public
-IPv6 address as node addresses. Do not use the NetBird address as a node
+IPv6 address as node addresses. Do not use the Tailscale address as a node
 address.
 
 ## Secret Management
@@ -107,7 +107,7 @@ discovers the public interface from the host's default IPv4 route.
 Deploy the baseline before you install K3s:
 
 ```bash
-TASKS=user,ssh,netbird,kernel,services,firewall \
+TASKS=user,ssh,tailscale,kernel,services,firewall \
   uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
 ```
 
@@ -126,23 +126,47 @@ Pyinfra enables USG, installs it, and enables `usg-audit.timer`. The timer runs
 each day at 00:00. It keeps 90 days of HTML and XML reports in `/var/lib/usg`.
 The deployment does not start an audit outside the timer schedule.
 
-### Enroll the NetBird client
+### Enroll the Tailscale client
 
-Pyinfra installs the NetBird client but does not enroll it. Start enrollment:
+Pyinfra installs Tailscale, configures UDP 41641, and enrolls Mashu with an
+**auth key** decrypted locally from `vars/settings.sops.yaml`. It enables Tailscale SSH, accepts
+advertised subnet routes and tailnet DNS, and requests `tag:server`.
+Configure OCI ingress for UDP 41641 on IPv4 and IPv6.
+
+Create a non-ephemeral auth key with `tag:server` in the Tailscale admin
+console. Use a pre-approved key if device approval is enabled. The tailnet
+policy must permit that tag and SSH access to Mashu as `ubuntu`.
+
+Restore the existing `.age-key.txt` from your password manager, then store the
+key through the existing SOPS helper:
 
 ```bash
-ssh "$HOSTNAME"
-sudo netbird up --management-url "https://netbird.${DOMAIN}"
-netbird status
-ip -4 address show wt0
+make secret service=tailscale
+TASKS=tailscale,firewall .venv/bin/pyinfra inventory.py deploy.py \
+  --diff --dry --sudo --limit "$HOSTNAME"
+TASKS=tailscale,firewall .venv/bin/pyinfra inventory.py deploy.py \
+  --diff --sudo --limit "$HOSTNAME"
 ```
 
-Approve or complete the enrollment in the NetBird interface. No inventory
-change is needed after enrollment.
+The helper updates `tailscale.auth_key` in `vars/settings.sops.yaml`. The file
+uses the existing Age recipient and initially contains an encrypted placeholder.
+Pyinfra decrypts it in memory for enrollment, masks the key in output, and
+passes it through a temporary root-only file on Mashu that is removed on
+success or failure. No auth-key environment variable is needed from you.
 
-If this cluster also hosts the NetBird server, the server can be unavailable
-during a full rebuild. In this case, install K3s and Argo CD first. Restore and
-start the NetBird server, then enroll the host.
+Initial enrollment requires a working local SOPS identity and a configured
+key, including during deployment previews. A running, enrolled host reconciles
+preferences without decrypting the file or forcing reauthentication. Auth-key
+validity is checked only during actual enrollment.
+
+Keep Tailscale's default netfilter mode enabled. Accepting routes does not
+advertise Mashu's networks or make it an exit node. Verify tailnet DNS and
+accepted routes against K3s and the existing NetBird overlay during cutover.
+Tailscale SSH handles tailnet connections; public OpenSSH remains the
+recovery path.
+
+See [the Mashu migration runbook](TAILSCALE-MIGRATION.md) before applying.
+The firewall temporarily permits both clients.
 
 ### Install K3s and Argo CD
 

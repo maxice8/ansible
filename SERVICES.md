@@ -13,8 +13,9 @@ export DOMAIN="example.com"
 
 ## Secret Rules
 
-SOPS encrypts the Kubernetes secrets in this repository. The SOPS Secrets
-Operator decrypts them in the cluster.
+SOPS encrypts Kubernetes secrets and host settings in this repository. The
+SOPS Secrets Operator decrypts Kubernetes secrets in the cluster. Pyinfra
+decrypts `vars/settings.sops.yaml` locally when Tailscale needs enrollment.
 
 Keep these recovery items in a password manager and in a secure backup:
 
@@ -616,7 +617,22 @@ must use Pocket ID authentication. Also add its Kubernetes `HTTPRoute` to
 Test one protected service in a private browser window. Confirm that Pocket ID
 sign-in returns the browser to the service.
 
-## NetBird
+## Tailscale
+
+Run `make secret service=tailscale` to store the auth key in
+`vars/settings.sops.yaml` using the existing Age identity.
+The host task enrolls Mashu using that encrypted key, requests `tag:server`, and
+enables Tailscale SSH, accepted routes, and tailnet DNS; see
+[README.md](README.md#enroll-the-tailscale-client). Allow inbound UDP 41641 in
+the OCI security list for IPv4 and IPv6 to support direct peer connections.
+Tailscale uses its hosted control plane; it does not need a Kubernetes server
+or a Pocket ID client in this repository.
+
+## NetBird (pending retirement)
+
+The server and dashboard remain deployed until the migration is approved.
+Follow [TAILSCALE-MIGRATION.md](TAILSCALE-MIGRATION.md) to retire them after
+client access is verified.
 
 ### Required network access
 

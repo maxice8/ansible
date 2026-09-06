@@ -47,7 +47,7 @@ firewall_config_changed = files.put(
     src=io.StringIO(
         """#!/usr/sbin/nft -f
 
-# This file owns only the hostfilter table. K3s and NetBird own their tables.
+# This file owns only the hostfilter table. Overlay clients and K3s own theirs.
 destroy table inet hostfilter
 
 table inet hostfilter {
@@ -69,6 +69,8 @@ table inet hostfilter {
         type filter hook input priority -10; policy drop;
 
         iifname "lo" counter accept
+        iifname "tailscale0" counter accept
+        # Retain NetBird access until the live migration is complete.
         iifname "wt0" counter accept
         ct state established,related counter accept
         udp sport 547 udp dport 546 counter accept
@@ -77,7 +79,7 @@ table inet hostfilter {
         iifname { "cni0", "flannel.1" } counter accept
         ct original proto-dst { 80, 443 } counter accept
         tcp dport { 22, 23, 22000 } counter accept
-        udp dport { 3478, 21027, 22000, 51820 } counter accept
+        udp dport { 3478, 21027, 22000, 41641, 51820 } counter accept
     }
 
     chain forward {
@@ -110,7 +112,7 @@ firewall_unit_changed = files.put(
         """[Unit]
 Description=Apply the Mashu host firewall policy
 After=network-pre.target
-Before=k3s.service netbird.service
+Before=k3s.service tailscaled.service netbird.service
 
 [Service]
 Type=oneshot

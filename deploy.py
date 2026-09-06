@@ -6,7 +6,7 @@ from pyinfra.operations import server
 AVAILABLE_TASKS = (
     "user",
     "ssh",
-    "netbird",
+    "tailscale",
     "kernel",
     "services",
     "unattended_upgrades",

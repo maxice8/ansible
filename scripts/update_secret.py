@@ -15,6 +15,11 @@ ROOT = Path(__file__).resolve().parent.parent
 AGE_KEY = ROOT / ".age-key.txt"
 
 SECRETS = {
+    "tailscale": {
+        "file": "vars/settings.sops.yaml",
+        "fields": (("Tailscale auth key", "auth_key"),),
+        "index_prefix": '["tailscale"]',
+    },
     "argus": {
         "file": "kubernetes/apps/argus/credentials.sops.yaml",
         "fields": (("GitHub token", "GITHUB_TOKEN"),),
@@ -75,8 +80,14 @@ def sops_environment() -> dict[str, str]:
     return environment
 
 
-def set_secret(path: Path, key: str, value: str, environment: dict[str, str]) -> None:
-    index = f'["spec"]["secretTemplates"][0]["stringData"]["{key}"]'
+def set_secret(
+    path: Path,
+    key: str,
+    value: str,
+    environment: dict[str, str],
+    index_prefix: str = '["spec"]["secretTemplates"][0]["stringData"]',
+) -> None:
+    index = f'{index_prefix}["{key}"]'
     subprocess.run(
         ["sops", "set", "--value-stdin", str(path), index],
         input=json.dumps(value),
@@ -127,7 +138,10 @@ def update(service: str) -> None:
     for label, key in secret["fields"]:
         value = getpass.getpass(f"{label} (leave empty to keep): ")
         if value:
-            set_secret(path, key, value, environment)
+            options = {}
+            if "index_prefix" in secret:
+                options["index_prefix"] = secret["index_prefix"]
+            set_secret(path, key, value, environment, **options)
             changed += 1
 
     if secret.get("discord_webhook"):
