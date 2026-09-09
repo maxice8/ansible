@@ -18,7 +18,7 @@ spec:
         runAsUser: 65532
       containers:
         - name: pomerium
-          image: docker.io/pomerium/pomerium:v0.33.1
+          image: docker.io/pomerium/pomerium:v0.33.3
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
