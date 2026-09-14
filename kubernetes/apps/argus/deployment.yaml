@@ -21,7 +21,7 @@ spec:
         runAsUser: 911
       containers:
         - name: argus
-          image: docker.io/releaseargus/argus:0.37.1
+          image: docker.io/releaseargus/argus:0.38.0
           imagePullPolicy: IfNotPresent
           command:
             - /usr/bin/argus
