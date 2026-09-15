@@ -1,6 +1,7 @@
 # .gitignore
 *.local.yaml
 .vscode
+__pycache__/
 
 # This file contains the Age identity that decrypts SOPS files.
 .age-key.txt

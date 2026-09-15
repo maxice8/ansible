@@ -1,10 +1,11 @@
 import hashlib
-import io
 from pathlib import Path
 
 from pyinfra import host
 from pyinfra.facts.server import Command
 from pyinfra.operations import files, server
+
+from helpers import apply_manifest
 
 argocd = host.data.argocd
 manifest_url = (
@@ -22,10 +23,10 @@ files.download(
     mode="0644",
 )
 
-namespace_changed = files.put(
-    name="Configure the Argo CD namespace",
-    src=io.StringIO(
-        """apiVersion: v1
+apply_manifest(
+    "the Argo CD namespace",
+    "argocd-namespace",
+    """apiVersion: v1
 kind: Namespace
 metadata:
   name: argocd
@@ -36,26 +37,8 @@ metadata:
     pod-security.kubernetes.io/audit-version: v1.36
     pod-security.kubernetes.io/warn: restricted
     pod-security.kubernetes.io/warn-version: v1.36
-"""
-    ),
-    dest="/usr/local/src/argocd-namespace.yaml",
-    user="root",
-    group="root",
-    mode="0644",
-).changed
-
-namespace_state = host.get_fact(
-    Command,
-    command=(
-        "k3s kubectl diff -f /usr/local/src/argocd-namespace.yaml >/dev/null 2>&1; "
-        "case $? in 0) printf current;; *) printf drifted;; esac"
-    ),
+""",
 )
-if namespace_changed or namespace_state != "current":
-    server.shell(
-        name="Apply the Argo CD namespace",
-        commands=["k3s kubectl apply -f /usr/local/src/argocd-namespace.yaml"],
-    )
 
 installed_image = host.get_fact(
     Command,
@@ -102,50 +85,28 @@ if argocd_install_changed:
         ],
     )
 
-server_parameters_changed = files.put(
-    name="Configure the Argo CD server",
-    src=io.StringIO(
-        """apiVersion: v1
+apply_manifest(
+    "the Argo CD server",
+    "argocd-server-parameters",
+    """apiVersion: v1
 kind: ConfigMap
 metadata:
   name: argocd-cmd-params-cm
   namespace: argocd
 data:
   server.insecure: "true"
-"""
-    ),
-    dest="/usr/local/src/argocd-server-parameters.yaml",
-    user="root",
-    group="root",
-    mode="0644",
-).changed
-
-server_parameters_state = host.get_fact(
-    Command,
-    command=(
-        "k3s kubectl diff "
-        "-f /usr/local/src/argocd-server-parameters.yaml >/dev/null 2>&1; "
-        "case $? in 0) printf current;; *) printf drifted;; esac"
+""",
+    # The server reads these parameters through environment variables.
+    after=(
+        "k3s kubectl rollout restart deployment/argocd-server -n argocd",
+        "k3s kubectl rollout status deployment/argocd-server -n argocd --timeout=300s",
     ),
 )
-if server_parameters_changed or server_parameters_state != "current":
-    server.shell(
-        name="Apply the Argo CD server configuration",
-        commands=[
-            "k3s kubectl apply -f /usr/local/src/argocd-server-parameters.yaml",
-            # The server reads these parameters through environment variables.
-            "k3s kubectl rollout restart deployment/argocd-server -n argocd",
-            (
-                "k3s kubectl rollout status deployment/argocd-server "
-                "-n argocd --timeout=300s"
-            ),
-        ],
-    )
 
-root_application_changed = files.put(
-    name="Deploy the Mashu root application",
-    src=io.StringIO(
-        f'''apiVersion: argoproj.io/v1alpha1
+apply_manifest(
+    "the Mashu root application",
+    "argocd-root-application",
+    f'''apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: mashu
@@ -168,27 +129,8 @@ spec:
     syncOptions:
       - PruneLast=true
       - ServerSideApply=true
-'''
-    ),
-    dest="/usr/local/src/argocd-root-application.yaml",
-    user="root",
-    group="root",
-    mode="0644",
-).changed
-
-root_application_state = host.get_fact(
-    Command,
-    command=(
-        "k3s kubectl diff "
-        "-f /usr/local/src/argocd-root-application.yaml >/dev/null 2>&1; "
-        "case $? in 0) printf current;; *) printf drifted;; esac"
-    ),
+''',
 )
-if root_application_changed or root_application_state != "current":
-    server.shell(
-        name="Apply the Mashu root application",
-        commands=["k3s kubectl apply -f /usr/local/src/argocd-root-application.yaml"],
-    )
 
 age_identity_source = Path(".age-key.txt")
 age_identity_available = age_identity_source.is_file()

@@ -117,6 +117,12 @@ TASKS=user,ssh,tailscale,kernel,services,firewall \
 
 ### Attach Ubuntu Pro
 
+As of 2026-09-15, Pro works on Mashu's Ubuntu 26.04.1, but Canonical still
+reports USG as unavailable for this release. `deploy.py` skips USG on Mashu.
+Check `sudo pro status --all` before removing that skip. The retained USG
+24.04 packages and active audit timer do not establish Ubuntu 26.04 support.
+The procedure below applies when USG is available for the host release.
+
 USG requires Ubuntu Pro. Attach Mashu before the full deployment. The free
 personal subscription is sufficient.
 

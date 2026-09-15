@@ -27,3 +27,17 @@ resources:
   - pocket-id.yaml
   - pomerium.yaml
   - netdata.yaml
+
+patches:
+  - target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+    patch: |-
+      - op: add
+        path: /spec/syncPolicy/automated
+        value:
+          enabled: true
+          prune: true
+          selfHeal: true
+          allowEmpty: false

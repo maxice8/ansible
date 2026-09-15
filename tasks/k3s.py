@@ -7,20 +7,15 @@ from pyinfra.facts.hardware import Ipv4Addrs, Ipv6Addrs
 from pyinfra.facts.server import Command
 from pyinfra.operations import apt, files, server, systemd
 
+from helpers import get_public_interface
+
 k3s = host.data.k3s
 K3S_INSTALLER_URL = (
     "https://raw.githubusercontent.com/k3s-io/k3s/"
     f"{quote(k3s['version'], safe='')}/install.sh"
 )
 
-primary_interface = host.get_fact(
-    Command,
-    command=(
-        "ip -o -4 route show default | "
-        "awk 'NR == 1 {for (i = 1; i <= NF; i++) "
-        'if ($i == "dev") {print $(i + 1); exit}}\''
-    ),
-)
+primary_interface = get_public_interface()
 ipv4_addresses = host.get_fact(Ipv4Addrs)
 ipv6_addresses = host.get_fact(Ipv6Addrs)
 

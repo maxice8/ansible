@@ -450,18 +450,28 @@ def update(component_name: str, raw_version: str, dry_run: bool) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "component", nargs="?", choices=sorted(COMPONENTS.keys() | ALIASES.keys())
-    )
-    parser.add_argument("version", nargs="?")
+    parser.add_argument("component", nargs="?", metavar="COMPONENT")
+    parser.add_argument("version", nargs="?", metavar="VERSION")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
     if args.list or args.check:
         return args
-    if not args.component or not args.version:
-        parser.error("component and version are required")
+    if not args.component:
+        parser.error(
+            "missing service. Use: make update service=<component> version=<version>. "
+            "Run 'make list' for available services."
+        )
+    if args.component not in COMPONENTS and args.component not in ALIASES:
+        parser.error(
+            f"unknown service {args.component!r}. "
+            f"Available services: {', '.join(sorted(COMPONENTS))}"
+        )
+    if not args.version:
+        parser.error(
+            f"missing version. Use: make update service={args.component} version=<version>"
+        )
     return args
 
 

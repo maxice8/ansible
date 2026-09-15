@@ -169,11 +169,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: forgejo
   syncPolicy:
-    automated:
-      enabled: true
-      prune: true
-      selfHeal: true
-      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
       - RespectIgnoreDifferences=true
