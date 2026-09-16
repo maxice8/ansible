@@ -57,7 +57,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         - name: dind
-          image: docker.io/library/docker:29.8.0-dind
+          image: docker.io/library/docker:29.8.1-dind
           imagePullPolicy: IfNotPresent
           args:
             - dockerd
