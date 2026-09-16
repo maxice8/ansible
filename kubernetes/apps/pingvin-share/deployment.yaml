@@ -20,7 +20,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: pingvin-share
-          image: docker.io/smp46/pingvin-share-x:v1.22.2
+          image: docker.io/smp46/pingvin-share-x:v1.22.3
           imagePullPolicy: IfNotPresent
           env:
             - name: TRUST_PROXY
