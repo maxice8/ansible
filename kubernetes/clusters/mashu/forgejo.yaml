@@ -20,7 +20,7 @@ spec:
           fullnameOverride: forgejo
 
           image:
-            tag: 16.0.4
+            tag: 16.0.5
             pullPolicy: IfNotPresent
             rootless: true
 
