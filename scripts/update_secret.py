@@ -129,25 +129,26 @@ def update(service: str) -> None:
         subprocess.run(["sops", str(path)], check=True, env=environment)
         return
 
-    changed = 0
+    updates = {}
     for label, key in secret["fields"]:
         value = getpass.getpass(f"{label} (leave empty to keep): ")
         if value:
-            options = {}
-            if "index_prefix" in secret:
-                options["index_prefix"] = secret["index_prefix"]
-            set_secret(path, key, value, environment, **options)
-            changed += 1
+            updates[key] = value
 
     if secret.get("discord_webhook"):
         webhook_url = getpass.getpass("Discord webhook URL (leave empty to keep): ")
         if webhook_url:
             webhook_id, webhook_token = parse_discord_webhook(webhook_url)
-            set_secret(path, "DISCORD_WEBHOOK_ID", webhook_id, environment)
-            set_secret(path, "DISCORD_TOKEN", webhook_token, environment)
-            changed += 1
+            updates["DISCORD_WEBHOOK_ID"] = webhook_id
+            updates["DISCORD_TOKEN"] = webhook_token
 
-    if changed:
+    options = {}
+    if "index_prefix" in secret:
+        options["index_prefix"] = secret["index_prefix"]
+    for key, value in updates.items():
+        set_secret(path, key, value, environment, **options)
+
+    if updates:
         print(f"Updated {secret['file']}")
     else:
         print("No secret values changed")
@@ -155,11 +156,21 @@ def update(service: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("service", nargs="?", choices=sorted(SECRETS))
+    parser.add_argument("service", nargs="?", metavar="SERVICE")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
-    if not args.list and not args.service:
-        parser.error("service is required")
+    if args.list:
+        return args
+    if not args.service:
+        parser.error(
+            "missing service. Use: make secret service=<service>. "
+            "Run 'make help' for available services."
+        )
+    if args.service not in SECRETS:
+        parser.error(
+            f"unknown service {args.service!r}. "
+            f"Available services: {', '.join(sorted(SECRETS))}"
+        )
     return args
 
 

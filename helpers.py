@@ -20,7 +20,7 @@ def get_public_interface():
     return interface
 
 
-def apply_manifest(name, filename, contents, after=()):
+def apply_manifest(name, filename, contents, after=(), bootstrap=False):
     path = f"/usr/local/src/{filename}.yaml"
     changed = files.put(
         name=f"Configure {name}",
@@ -30,13 +30,21 @@ def apply_manifest(name, filename, contents, after=()):
         group="root",
         mode="0644",
     ).changed
-    state = host.get_fact(
-        Command,
-        command=(
-            f"k3s kubectl diff -f {path} >/dev/null 2>&1; "
-            "case $? in 0) printf current;; *) printf drifted;; esac"
-        ),
-    )
+    state = "pending"
+    if not bootstrap:
+        state = host.get_fact(
+            Command,
+            command=(
+                f"if [ ! -f {path} ] || ! command -v k3s >/dev/null 2>&1; then "
+                "printf pending; else "
+                f"diff_error=$(k3s kubectl diff --request-timeout=30s -f {path} "
+                "2>&1 >/dev/null); "
+                "case $? in 0) printf current;; 1) printf drifted;; "
+                "*) printf 'error: %s' \"$diff_error\";; esac; fi"
+            ),
+        )
+    if state not in {"current", "drifted", "pending"}:
+        raise RuntimeError(f"Cannot compare {name} with Kubernetes: {state}")
     if changed or state != "current":
         server.shell(
             name=f"Apply {name}",

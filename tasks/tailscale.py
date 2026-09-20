@@ -7,50 +7,7 @@ from pathlib import Path
 from pyinfra import host
 from pyinfra.api.hiddenvalue import HiddenValue
 from pyinfra.facts.server import Command
-from pyinfra.operations import apt, files, server, systemd
-
-# Only initial enrollment needs the local SOPS identity. Registered hosts can
-# reconcile preferences even after the auth key or local identity is removed.
-backend_state = host.get_fact(
-    Command,
-    command=(
-        "if command -v tailscale >/dev/null 2>&1 "
-        "&& systemctl is-active --quiet tailscaled; then "
-        "tailscale status --json | python3 -c "
-        "'import json,sys; print(json.load(sys.stdin)[\"BackendState\"])'; "
-        "else printf NeedsLogin; fi"
-    ),
-)
-auth_key = ""
-if backend_state in {"NeedsLogin", "NoState"}:
-    root = Path(__file__).resolve().parent.parent
-    environment = os.environ.copy()
-    if (root / ".age-key.txt").is_file():
-        environment["SOPS_AGE_KEY_FILE"] = str(root / ".age-key.txt")
-    try:
-        decrypted = subprocess.run(
-            [
-                "sops",
-                "--decrypt",
-                "--output-type",
-                "json",
-                str(root / "vars/settings.sops.yaml"),
-            ],
-            env=environment,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        auth_key = json.loads(decrypted.stdout)["tailscale"]["auth_key"]
-    except (OSError, subprocess.SubprocessError, ValueError, KeyError):
-        raise RuntimeError(
-            "Cannot load vars/settings.sops.yaml. Restore .age-key.txt or configure "
-            "your SOPS identity, then run make secret service=tailscale."
-        ) from None
-    if not isinstance(auth_key, str):
-        raise RuntimeError("tailscale.auth_key must be a string")
-    if not auth_key.strip() or auth_key == "REPLACE_WITH_TAILSCALE_AUTH_KEY":
-        raise RuntimeError("Set the auth key with make secret service=tailscale first")
+from pyinfra.operations import apt, files, python, server, systemd
 
 apt.packages(
     name="Install Tailscale dependencies",
@@ -110,9 +67,60 @@ files.put(
     mode="0700",
 )
 
-server.shell(
+
+def configure_tailscale():
+    # Only initial enrollment needs the local SOPS identity. Registered hosts can
+    # reconcile preferences even after the auth key or local identity is removed.
+    backend_state = host.get_fact(
+        Command,
+        command=(
+            "tailscale status --json | python3 -c "
+            "'import json,sys; print(json.load(sys.stdin)[\"BackendState\"])'"
+        ),
+    )
+    auth_key = ""
+    if backend_state in {"NeedsLogin", "NoState"}:
+        root = Path(__file__).resolve().parent.parent
+        environment = os.environ.copy()
+        if (root / ".age-key.txt").is_file():
+            environment["SOPS_AGE_KEY_FILE"] = str(root / ".age-key.txt")
+        try:
+            decrypted = subprocess.run(
+                [
+                    "sops",
+                    "--decrypt",
+                    "--output-type",
+                    "json",
+                    str(root / "vars/settings.sops.yaml"),
+                ],
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            auth_key = json.loads(decrypted.stdout)["tailscale"]["auth_key"]
+        except (OSError, subprocess.SubprocessError, ValueError, KeyError):
+            raise RuntimeError(
+                "Cannot load vars/settings.sops.yaml. Restore .age-key.txt or configure "
+                "your SOPS identity, then run make secret service=tailscale."
+            ) from None
+        if not isinstance(auth_key, str):
+            raise RuntimeError("tailscale.auth_key must be a string")
+        if not auth_key.strip() or auth_key == "REPLACE_WITH_TAILSCALE_AUTH_KEY":
+            raise RuntimeError(
+                "Set the auth key with make secret service=tailscale first"
+            )
+
+    server.shell(
+        name="Apply Tailscale enrollment and preferences",
+        commands=["/usr/local/sbin/configure-tailscale"],
+        _env={"TS_AUTHKEY": HiddenValue(auth_key)},
+    )
+
+
+python.call(
     name="Enroll Tailscale and configure SSH, routes, DNS, and tag:server",
-    commands=["/usr/local/sbin/configure-tailscale"],
+    function=configure_tailscale,
     _if=lambda: (
         host.get_fact(
             Command,
@@ -123,5 +131,4 @@ server.shell(
         )
         != "ready"
     ),
-    _env={"TS_AUTHKEY": HiddenValue(auth_key)},
 )

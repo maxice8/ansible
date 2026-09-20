@@ -165,9 +165,10 @@ passes it through a temporary root-only file on Mashu that is removed on
 success or failure. No auth-key environment variable is needed from you.
 
 Initial enrollment requires a working local SOPS identity and a configured
-key, including during deployment previews. A running, enrolled host reconciles
-preferences without decrypting the file or forcing reauthentication. Auth-key
-validity is checked only during actual enrollment.
+key. Pyinfra starts the daemon before checking enrollment and decrypts the key
+only if login is needed. An enrolled host can recover a stopped daemon without
+local secrets or reauthentication. Deployment previews do not decrypt or
+validate the auth key; these checks run during actual enrollment.
 
 Keep Tailscale's default netfilter mode enabled. Accepting routes does not
 advertise Mashu's networks or make it an exit node. Verify tailnet DNS and

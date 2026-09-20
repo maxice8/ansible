@@ -101,6 +101,7 @@ data:
         "k3s kubectl rollout restart deployment/argocd-server -n argocd",
         "k3s kubectl rollout status deployment/argocd-server -n argocd --timeout=300s",
     ),
+    bootstrap=argocd_install_changed,
 )
 
 apply_manifest(
@@ -130,6 +131,8 @@ spec:
       - PruneLast=true
       - ServerSideApply=true
 ''',
+    # Argo CD's Application CRD may still be waiting for installation.
+    bootstrap=argocd_install_changed,
 )
 
 age_identity_source = Path(".age-key.txt")
