@@ -4,9 +4,9 @@ servers = [
         {
             # Managed software
             "argocd": {
-                "manifest_sha256": "7efe2d6bbc03f63623640f1e4198f16c84009d510fb810ef71e56df1b7614ba9",
+                "manifest_sha256": "1feb02cc7bacf3a379da58b0ca8c6f07d18288cd04d531dabd08816375e5e010",
                 "repository_url": "https://github.com/maxice8/ansible.git",
-                "version": "v3.5.3",
+                "version": "v3.5.4",
             },
             "k3s": {
                 "installer_sha256": "46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad",
