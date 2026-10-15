@@ -28,6 +28,10 @@ defaults:
 notify:
   discord:
     type: discord
+    options:
+      message: >-
+        {{ service_id }} - {{ version }} released
+        {% if web_url %}Changelog: {{ web_url }}{% endif %}
     url_fields:
       Token: ${ARGUS_DISCORD_TOKEN}
       WebhookID: ${ARGUS_DISCORD_WEBHOOK_ID}
