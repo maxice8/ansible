@@ -5,3 +5,8 @@ __pycache__/
 
 # This file contains the Age identity that decrypts SOPS files.
 .age-key.txt
+
+# Local development environment
+.devenv/
+.direnv/
+.venv/

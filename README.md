@@ -7,6 +7,10 @@ platform components and applications in Kubernetes.
 
 ## Requirements
 
+With Nix and [devenv](https://devenv.sh/) installed, run `devenv shell` to
+load the local tools and install the pinned Python requirements into a managed
+virtual environment. The manual setup below remains available without Nix.
+
 ### Python and Pyinfra
 
 Use [uv](https://github.com/astral-sh/uv) to install the Python packages from
