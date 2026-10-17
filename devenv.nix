@@ -13,9 +13,11 @@
     git
     gnumake
     openssh
+    curl
     age
     sops
     kubectl
+    kubernetes-helm
     yq-go
     ruff
     gitleaks
