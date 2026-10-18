@@ -6,6 +6,7 @@ let
     traefik-image = { repo = "traefik/traefik"; version = (pkgs.callPackage ../../pkgs/traefik.nix {}).version; };
     argus = { repo = "release-argus/Argus"; version = argus.version; };
     asf = { repo = "JustArchiNET/ArchiSteamFarm"; version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix {}).version; };
+    backrest = { repo = "garethgeorge/backrest"; version = (pkgs.callPackage ../../pkgs/backrest.nix {}).version; };
     forgejo-runner = { repo = "forgejo/runner"; version = pkgs.forgejo-runner.version; };
     pingvin-share = { repo = "smp46/pingvin-share-x"; version = lib.removePrefix "v" (pkgs.callPackage ../../pkgs/pingvin-share-image.nix {}).imageTag; };
     pocket-id = { repo = "pocket-id/pocket-id"; version = (pkgs.callPackage ../../pkgs/pocket-id.nix {}).version; };

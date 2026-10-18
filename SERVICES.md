@@ -49,6 +49,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Release Argus | `argus_github_token`, `argus_discord_token`, `argus_discord_webhook_id` | `argus` (approval/release state) |
 | Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
 | Netdata | `netdata_discord_url`, `netdata_heartbeat_url` | `netdata` (collector state and retained historical data) |
+| Backrest | `backrest_config_json`, `backrest_ssh_key`, `backrest_known_hosts`, `backrest_repository_password` | `backrest` (configuration/history) and `backup-capture` (consistent exports) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 | ArchiSteamFarm | Configure Steam credentials through its private state/UI | `archisteamfarm` |
 | Pingvin Share X | Configure users/OIDC through its state/UI | `pingvin-share` |
@@ -317,3 +318,18 @@ Persistent state lives under `/var/lib/data/pingvin-share`; runtime images are d
 
 The host collector runs without privileged plugin wrappers or a Docker socket.
 Discord notifications and heartbeat URLs are supplied as systemd credentials.
+
+## Backrest and application recovery
+
+Backrest's encrypted seed initializes a new installation; the UI-owned live
+configuration persists in its data directory afterward. Changing the seed does
+not overwrite an existing configuration. Preserve the repository identity,
+retention/schedule and one `/var/lib/data` source. Changing repository credentials
+requires checking the actual live configuration and access, not only editing the
+seed. Do not put a mutable database backup under `/var/cache`.
+
+The controlled capture service exports consistent database snapshots and briefly
+stops coordinated writers when required. Do not start it as an incidental deploy
+check. Stop the affected service before restoring its data; preserve ownership,
+verify the restored identity/schema and then restart. Routine deployment does
+not perform a backup or restore.
