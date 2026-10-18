@@ -45,7 +45,10 @@ def configure(check=False):
             raise RuntimeError("Set TS_AUTHKEY for initial Tailscale enrollment")
         # /run is volatile; NamedTemporaryFile is mode 0600 and removes the key
         # on success or failure. The CLI receives only the file path.
-        with tempfile.NamedTemporaryFile(mode="w", dir="/run") as key_file:
+        # The Nix oneshot has a private writable runtime directory under ProtectSystem.
+        with tempfile.NamedTemporaryFile(
+            mode="w", dir=os.environ.get("RUNTIME_DIRECTORY", "/run")
+        ) as key_file:
             key_file.write(auth_key)
             key_file.flush()
             subprocess.run(
@@ -60,8 +63,21 @@ def configure(check=False):
                 capture_output=True,
             )
     elif state in {"Running", "Stopped"}:
-        subprocess.run(["tailscale", "set", *FLAGS], check=True, capture_output=True)
-        if state == "Stopped":
+        # Tags belong to `up`; `set` supports only the other mutable preferences.
+        set_flags = [flag for flag in FLAGS if not flag.startswith("--advertise-tags=")]
+        subprocess.run(
+            ["tailscale", "set", *set_flags], check=True, capture_output=True
+        )
+        if (
+            read_json("debug", "prefs").get("AdvertiseTags")
+            != PREFERENCES["AdvertiseTags"]
+        ):
+            subprocess.run(
+                ["tailscale", "up", "--timeout=60s", *FLAGS],
+                check=True,
+                capture_output=True,
+            )
+        elif state == "Stopped":
             subprocess.run(
                 ["tailscale", "up", "--timeout=60s"],
                 check=True,

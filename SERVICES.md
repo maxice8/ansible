@@ -41,6 +41,7 @@ Nix command; rotation is not complete until the consumer is checked.
 
 | Service | Secret fields in the shared encrypted document | Durable directory |
 | --- | --- | --- |
+| Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
 service ownership/modes are part of the deployment; do not change them globally.
@@ -84,3 +85,15 @@ Application firewall DNS allowances now target `127.0.0.1:53` instead of the
 host's `127.0.0.53` stub. Existing application-specific connection permissions
 are unchanged: resolving a tailnet name does not grant additional tailnet access.
 A tailnet suffix change must also update the application search suffix.
+
+## Tailscale
+
+Initial enrollment uses a non-ephemeral auth key requesting `tag:server`. The
+helper enables Tailscale SSH and accepts routes and tailnet DNS. Tailnet policy
+must permit the tag and the `ubuntu` login. Store the key through
+`make secret service=tailscale`; already-enrolled nodes reconcile preferences
+without replacing their identity. Never clone the live node state into a VM.
+
+Keep the independent key-only SSH22 path working before changing networking or
+the Tailscale daemon. Tailscale owns its own packet-filter tables; the host
+firewall deliberately owns only `inet hostfilter`.
