@@ -10,6 +10,7 @@ pkgs.writeShellScript "activate-portable-${name}" ''
   fi
   /usr/bin/portablectl "$action" --profile=mashu --now '${image}/${name}.raw'
   /usr/bin/systemctl enable ${name}.service
-  /usr/bin/curl --fail --silent --show-error --retry 10 --retry-delay 1 \
+  # A listener can open before its health route is registered (brief HTTP 404).
+  /usr/bin/curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
     --retry-connrefused --max-time 5 '${healthURL}'
 ''

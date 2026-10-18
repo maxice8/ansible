@@ -8,9 +8,9 @@ policy, service accounts, credentials and hardened systemd services.
 Application state lives under **`/var/lib/data/<service>`**. Pingvin Share X and
 CI jobs use separate rootless Podman runtimes; other applications run directly
 under systemd. Caches, images and CI workspaces under `/var/cache` are disposable.
-Release Argus and Pocket ID run from Nix-built `argus.raw` and `pocket-id.raw`
-portable images. Deployment uses `portablectl` to persistently attach their units
-and host systemd starts them at boot. No attachment wrapper runs at boot.
+Release Argus, Pocket ID and Traefik run from Nix-built `argus.raw`,
+`pocket-id.raw` and `traefik.raw` portable images. Deployment uses `portablectl` to
+persistently attach their units and host systemd starts them at boot. No attachment wrapper runs at boot.
 
 ## Development environment
 

@@ -105,6 +105,36 @@ certificates and account state persist in its own data directory. Check issuance
 and HTTPS before revoking an old token. Required DNS names and ingress ports are
 listed in README.md. The retired cluster's Argo/Rancher/whoami routes are absent.
 
+### Traefik portable service
+
+`services/traefik/default.nix` packages the pinned binary, static configuration
+and file-provider routes into `traefik.raw`. Configuration changes replace the
+image through the shared deployment hook. UID/GID 5002 and the existing
+`/var/lib/data/traefik/acme.json` persist; the Cloudflare token is injected with
+`LoadCredential`, never included in the image. The host still owns the firewall.
+Systemd grants only `CAP_NET_BIND_SERVICE` for TCP 80/443, with health on loopback
+9080. Attachment and boot enablement follow the same pattern as Argus/Pocket ID.
+
+```sh
+ssh mashu 'sudo -n portablectl inspect traefik; systemctl is-enabled traefik'
+ssh mashu 'systemctl show traefik -p RootImage -p User -p CapabilityBoundingSet'
+ssh mashu 'curl --fail http://127.0.0.1:9080/ping'
+```
+
+For a native-generation rollback, first run `sudo systemctl disable --now traefik`
+and `sudo portablectl detach traefik`, then deploy the retained native profile.
+Never use `--clean`: the certificate account and private keys must survive.
+The pre-migration backup and native profile are recorded in
+`/var/backups/traefik-before-portable-20261018T191254Z`.
+
+Validated on Mashu on 2026-10-18 with the same 3.7.15 binary: all nine origin
+HTTPS routes retain the original trusted certificate, HTTP redirects work, ACME
+state and the runtime DNS token are unchanged, and the original state mount,
+numeric identity, capability bounds and boot enablement are intact. Deployment
+also checks both SSH paths, DNS, application health and public HTTPS. The shared
+health retry tolerates Traefik's brief startup 404 before `/ping` is registered.
+Certificate issuance/renewal and a full host reboot were not exercised.
+
 ## Pocket ID and Pomerium
 
 Keep Pocket ID's canonical issuer `https://id.maxice8.com` stable. Create or retain
@@ -230,11 +260,10 @@ outage impact even when their image is simple; migrate one application at a time
 
 | Order | Service | Main work beyond the Argus pattern |
 | --- | --- | --- |
-| 1 | Traefik | One binary and config, ACME state, DNS credential and low-port capability; validate public ingress and certificate renewal. |
-| 2 | Syncthing | Bind synchronized folders and identity/config state; verify peer connections, discovery and real transfers. |
-| 3 | ArchiSteamFarm | Include .NET and UI assets, preserve bot state and allow JIT; verify Steam connectivity without parallel bot sessions. |
-| 4 | Pomerium | Embedded Envoy, executable temporary files and internal RPC listeners; verify login, callbacks and existing sessions. |
-| 5 | Forgejo | Git/LFS/SSH and helper closure, generated hooks, repository/database state; verify push, clone, SSH and jobs. |
+| 1 | Syncthing | Bind synchronized folders and identity/config state; verify peer connections, discovery and real transfers. |
+| 2 | ArchiSteamFarm | Include .NET and UI assets, preserve bot state and allow JIT; verify Steam connectivity without parallel bot sessions. |
+| 3 | Pomerium | Embedded Envoy, executable temporary files and internal RPC listeners; verify login, callbacks and existing sessions. |
+| 4 | Forgejo | Git/LFS/SSH and helper closure, generated hooks, repository/database state; verify push, clone, SSH and jobs. |
 
 Keep Unbound, Tailscale, Netdata, Backrest, the Forgejo runner and its Podman
 engine native for their host/network/data/socket integration. Keep Pingvin Share X
