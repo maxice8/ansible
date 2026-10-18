@@ -42,6 +42,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Service | Secret fields in the shared encrypted document | Durable directory |
 | --- | --- | --- |
 | Traefik | `cloudflare_dns_api_token` | `traefik` (including ACME account/certificates) |
+| Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
@@ -136,3 +137,36 @@ numeric identity, capability bounds and boot enablement are intact. Deployment
 also checks both SSH paths, DNS, application health and public HTTPS. The shared
 health retry tolerates Traefik's brief startup 404 before `/ping` is registered.
 Certificate issuance/renewal and a full host reboot were not exercised.
+
+### Pocket ID portable service
+
+`services/pocket-id/default.nix` packages the pinned application and embedded UI
+into `pocket-id.raw`. The existing UID/GID 5004, issuer URL, encryption key,
+database/uploads under `/var/lib/data/pocket-id`, firewall and loopback listeners
+remain unchanged. The Francis task runtime still uses UDP 1414 on loopback;
+public web traffic reaches TCP 1411 through Traefik/Pomerium.
+
+Deployment attaches/replaces the image and enables `pocket-id.service` under
+`system-manager.target`. The shared profile in `services/portable-profile.nix`
+exposes application DNS, machine identity and logging; runtime systemd credentials
+supply the encryption key. The image contains no key or user database.
+
+```sh
+ssh mashu 'sudo -n portablectl inspect pocket-id; systemctl is-enabled pocket-id'
+ssh mashu 'systemctl show pocket-id -p RootImage -p User -p CapabilityBoundingSet'
+ssh mashu 'curl --fail http://127.0.0.1:1411/.well-known/openid-configuration'
+```
+
+Before rollback to a native Pocket ID generation, run
+`sudo systemctl disable --now pocket-id` and `sudo portablectl detach pocket-id`,
+then deploy the retained native profile. Detachment retains identity data;
+never use `--clean` for this rollback.
+
+Validated on Mashu on 2026-10-18 using the same 2.18.0 binary: the existing user,
+two passkeys, five OIDC clients, uploads, issuer metadata, signing keys and runtime
+encryption key are unchanged. Database integrity, original state mount/ownership,
+capability restrictions, login-page delivery, persistent boot enablement and repeat
+deployment passed. SSH, DNS, application health and public HTTPS checks also passed.
+The backup and native rollback profile are in
+`/var/backups/pocket-id-before-portable-20261018T185106Z`. A full reboot was not
+exercised; browser passkey authentication requires a user check.

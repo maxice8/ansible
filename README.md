@@ -22,5 +22,6 @@ Never copy local age identities into the Nix store.
 - `unbound`
 - `tailscale`
 - `traefik`
+- `pocket-id`
 
 See [SERVICES.md](SERVICES.md) for service configuration and credentials.
