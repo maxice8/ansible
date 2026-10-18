@@ -48,6 +48,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Forgejo | `forgejo_app_ini` | `forgejo` (database, repositories, attachments, SSH identity) |
 | Release Argus | `argus_github_token`, `argus_discord_token`, `argus_discord_webhook_id` | `argus` (approval/release state) |
 | Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
+| Netdata | `netdata_discord_url`, `netdata_heartbeat_url` | `netdata` (collector state and retained historical data) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 | ArchiSteamFarm | Configure Steam credentials through its private state/UI | `archisteamfarm` |
 | Pingvin Share X | Configure users/OIDC through its state/UI | `pingvin-share` |
@@ -311,3 +312,8 @@ then verify delivery before revoking old credentials. Update packages through
 
 The pinned upstream OCI image runs under a dedicated rootless identity.
 Persistent state lives under `/var/lib/data/pingvin-share`; runtime images are disposable.
+
+## Netdata
+
+The host collector runs without privileged plugin wrappers or a Docker socket.
+Discord notifications and heartbeat URLs are supplied as systemd credentials.

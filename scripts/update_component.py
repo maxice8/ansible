@@ -23,10 +23,11 @@ PACKAGES = {
     "tailscale": "tailscale",
     "traefik": "traefik",
 }
-LOCKED = {"forgejo-runner"}
+LOCKED = {"forgejo-runner", "netdata"}
 ALIASES = {
     "archisteamfarm": "asf",
     "traefik-image": "traefik",
+    "netdata-agent": "netdata",
 }
 COMPONENTS = set(PACKAGES) | LOCKED | {"pingvin-share"}
 VERSION = re.compile(r'(\bversion = ")([^"\n]+)(")')
