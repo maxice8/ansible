@@ -27,8 +27,8 @@ let
       privileged = false;
       enable_ipv6 = false;
       options = "--cap-drop=ALL --security-opt=no-new-privileges";
-      # Host bind mounts stay forbidden.
-      valid_volumes = [ ];
+      # Workflows may share this disposable public cache; host bind mounts stay forbidden.
+      valid_volumes = [ "ansible-nix-ci" ];
       docker_host = "unix:///run/runner-engine/podman.sock";
       force_pull = false;
     };

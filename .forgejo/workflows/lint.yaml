@@ -1,4 +1,4 @@
-name: Pyinfra Lint
+name: Infrastructure Checks
 on:
   push:
     branches: ["master"]
@@ -7,23 +7,61 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: alpine
+    # Relative /var/run symlinks avoid Podman 5.8.7's archive-copy regression.
+    container:
+      image: node:20-alpine
+      volumes:
+        # Disposable public-input cache; never mount the host's deployment store.
+        - ansible-nix-ci:/tmp/nix
+    env:
+      # Retain store contents and fetch metadata across jobs without host privileges.
+      NIX_REMOTE: "local?root=/tmp/nix"
+      XDG_CACHE_HOME: /tmp/nix/cache
+      NIX_CONFIG: |
+        experimental-features = nix-command flakes
+        build-users-group =
+        sandbox = false
     steps:
-      # Forgejo's checkout action (already working properly via data.forgejo.org)
-      - name: Checkout Repository
+      - name: Install validation tools
+        shell: sh
+        run: apk add --no-cache bash git python3 py3-pip nix
+
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Explicitly pull Ruff from GitHub
-      - name: Lint Python Code (Ruff)
-        uses: https://github.com/astral-sh/ruff-action@v3
         with:
-          args: "check ."
+          persist-credentials: false
 
-      # Explicitly pull Ruff from GitHub
-      - name: Check Code Formatting (Ruff)
-        uses: https://github.com/astral-sh/ruff-action@v3
-        with:
-          args: "format --check ."
+      - name: Clean persistent CI cache above 2 GiB
+        # shortcut: runner capacity=1 serializes cleanup; add locking before increasing it.
+        run: |
+          cache_kib=$(du -sk /tmp/nix | cut -f1)
+          echo "CI cache: $cache_kib KiB; cleanup threshold: 2097152 KiB"
+          if [ "$cache_kib" -gt 2097152 ]; then
+            nix store gc
+            rm -rf /tmp/nix/cache
+          fi
 
-      - name: Validate Component Update Mappings
+      - name: Install Ruff
+        run: |
+          python3 -m venv /tmp/ci-tools
+          /tmp/ci-tools/bin/pip install ruff==0.16.1
+          echo /tmp/ci-tools/bin >> "$GITHUB_PATH"
+
+      - name: Lint Python
+        run: ruff check .
+
+      - name: Check Python formatting
+        run: ruff format --check .
+
+      - name: Check bootstrap syntax
+        run: bash -n bootstrap.sh
+
+      - name: Validate component update mappings
         run: python3 scripts/update_component.py --check
+
+      - name: Check Nix formatting
+        run: git ls-files -z '*.nix' | xargs -0 nix fmt -- --check
+
+      - name: Evaluate Mashu configuration
+        run: nix eval --no-write-lock-file --raw .#systemConfigs.mashu.drvPath

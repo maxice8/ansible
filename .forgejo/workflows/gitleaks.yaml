@@ -1,29 +1,28 @@
-# .forgejo/workflows/gitleaks.yml
 name: Gitleaks Security Audit
-
 on:
-  # Trigger on push to ANY branch.
-  # This covers main, feature branches, and "orphan" branches 
-  # that never get a PR.
   push:
     branches: ["**"]
+  pull_request:
 
 jobs:
   scan:
     name: Gitleaks Scan
-    runs-on: ubuntu-latest
+    runs-on: alpine
+    # Checkout actions need Node; Alpine avoids Podman's absolute-symlink copy bug.
+    container:
+      image: node:20-alpine
     steps:
-      # 1. We MUST check out the code first.
-      # Without this, the runner workspace is empty.
-      - name: Checkout Code
+      - name: Install checkout tools
+        shell: sh
+        run: apk add --no-cache bash git
+
+      - name: Checkout repository history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      # 2. Run the Gitleaks Docker container directly
-      # The 'docker://' prefix tells Forgejo to pull this image and run it.
-      - name: Run Gitleaks (Docker)
-        uses: docker://zricethezav/gitleaks
+      - name: Scan repository history
+        uses: docker://zricethezav/gitleaks:v8.30.0
         with:
-          # Arguments passed to the container's entrypoint
-          args: detect --source=. -v --redact
+          args: git --redact --verbose
