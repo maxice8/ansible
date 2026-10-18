@@ -1,6 +1,8 @@
 # Service setup and credentials
 
-Nix declares service configuration; durable application state lives under `/var/lib/data`.
+Run local commands inside the [devenv environment](README.md#development-environment).
+Nix owns final service configuration; applications own their mutable state under
+`/var/lib/data`. The repository contains no cutover scripts.
 
 ## SOPS identity
 
@@ -97,17 +99,63 @@ host's `127.0.0.53` stub. Existing application-specific connection permissions
 are unchanged: resolving a tailnet name does not grant additional tailnet access.
 A tailnet suffix change must also update the application search suffix.
 
-## Tailscale
+The pre-cutover profile and resolver/container/portable configuration snapshots
+are in `/var/backups/application-dns-before-20261018T195132Z`. Restore that profile
+through `deploy.py` for rollback; it retains the prior application DNS paths.
 
-Initial enrollment uses a non-ephemeral auth key requesting `tag:server`. The
-helper enables Tailscale SSH and accepts routes and tailnet DNS. Tailnet policy
-must permit the tag and the `ubuntu` login. Store the key through
-`make secret service=tailscale`; already-enrolled nodes reconcile preferences
-without replacing their identity. Never clone the live node state into a VM.
+Deployed on 2026-10-18 with System Manager profile
+`/nix/store/09i7vf5d2xa617g2bvkdxp7fd1z1v2nf-system-manager`. Live checks verified
+resolver mounts and public/MagicDNS queries in all twelve application contexts,
+short names in native namespaces, and public/MagicDNS/short/reverse lookups in
+Pingvin and an automatically removed CI container using a cached image. Fresh
+Tailscale and public SSH, application health, HTTPS routes and existing
+certificates passed; the host resolver and Tailscale process were unchanged.
 
-Keep the independent key-only SSH22 path working before changing networking or
-the Tailscale daemon. Tailscale owns its own packet-filter tables; the host
-firewall deliberately owns only `inet hostfilter`.
+Initial new TCP connections from Mashu to Hiyori's tailnet addresses on port 22000 timed out:
+Hiyori's Tailscale daemon logged `no rules matched` because its policy excluded
+Mashu (`tag:server`) as a source. After the user added the grant below, fresh TCP
+connections from Syncthing UID 5001 succeeded over both IPv4 and IPv6. At the
+user's request, Syncthing was restarted on 2026-10-18 at 21:02 UTC. Both Hiyori
+and Hiiro reconnected with primary TCP sessions over Tailscale IPv6; additional
+public connections remain available. All five folders returned to idle with zero
+pending items or errors, and no systemd units were failed.
+
+The user subsequently replaced the address-specific rule with this entry in the
+[Tailscale access controls](https://login.tailscale.com/admin/acls). Fresh TCP
+connections as UID 5001 to Hiyori succeeded again over both address families.
+
+```json
+{
+  "src": ["tag:server"],
+  "dst": ["maxice8@github"],
+  "ip": ["tcp:22000", "udp:22000"]
+}
+```
+
+This permits all servers to reach all personal devices owned by that user,
+including future devices, on Syncthing's TCP/UDP port over both address families.
+Existing peer configuration and local firewall allowances were left intact.
+Post-reboot acceptance is recorded below; full CI workflow and forced ACME
+renewal remain separate checks.
+
+
+## Public services
+
+| Address | Authentication / setup |
+| --- | --- |
+| `https://git.maxice8.com` | Forgejo's own accounts/OIDC; Git SSH uses `git.maxice8.com:23` |
+| `https://id.maxice8.com` | Pocket ID passkeys and OIDC administration |
+| `https://share.mashu.maxice8.com` | Pingvin's own accounts/OIDC |
+| `https://pomerium.maxice8.com` | Authentication gateway for protected applications |
+| `https://argus.mashu.maxice8.com` | Pomerium-protected release dashboard |
+| `https://asf.mashu.maxice8.com` | Pomerium-protected Steam account management |
+| `https://syncthing.mashu.maxice8.com` | Pomerium plus Syncthing GUI credentials |
+| `https://netdata.mashu.maxice8.com` | Pomerium-protected monitoring |
+| `https://backrest.mashu.maxice8.com` | Pomerium-protected backup administration |
+
+Create initial application administrators only on fresh datasets. Preserve
+existing accounts, passkeys, issuer URLs, OIDC clients and callbacks on upgrades.
+Do not replace Pocket ID's encryption key as a routine password rotation.
 
 ## Traefik / Cloudflare
 
@@ -147,6 +195,16 @@ also checks both SSH paths, DNS, application health and public HTTPS. The shared
 health retry tolerates Traefik's brief startup 404 before `/ping` is registered.
 Certificate issuance/renewal and a full host reboot were not exercised.
 
+## Pocket ID and Pomerium
+
+Keep Pocket ID's canonical issuer `https://id.maxice8.com` stable. Create or retain
+the Pomerium OIDC client with its exact callback URL shown by the provider. Store
+client/cookie/shared credentials through `make secret service=pomerium`. Preserve
+its databroker directory when maintaining existing sessions.
+
+Test a real passkey login and protected-application redirect after identity or
+OIDC changes. Loopback readiness checks alone do not exercise a browser login.
+
 ### Pocket ID portable service
 
 `services/pocket-id/default.nix` packages the pinned application and embedded UI
@@ -179,56 +237,6 @@ deployment passed. SSH, DNS, application health and public HTTPS checks also pas
 The backup and native rollback profile are in
 `/var/backups/pocket-id-before-portable-20261018T185106Z`. A full reboot was not
 exercised; browser passkey authentication requires a user check.
-
-## Pocket ID and Pomerium
-
-Keep Pocket ID's canonical issuer `https://id.maxice8.com` stable. Create or retain
-the Pomerium OIDC client with its exact callback URL shown by the provider. Store
-client/cookie/shared credentials through `make secret service=pomerium`. Preserve
-its databroker directory when maintaining existing sessions.
-
-Test a real passkey login and protected-application redirect after identity or
-OIDC changes. Loopback readiness checks alone do not exercise a browser login.
-
-## Syncthing
-
-| Service | Image | State and special runtime requirements |
-| --- | --- | --- |
-| Syncthing 2.1.6 | `syncthing.raw` | UID/GID 5001; device keys, index and all five synchronized folders stay under `/var/lib/data/syncthing`. The host heartbeat remains native. New synchronized folders must be inside that state root to be visible in the image. |
-
-## Forgejo
-
-| Service | Image | State and special runtime requirements |
-| --- | --- | --- |
-| Forgejo 17.0.0 | `forgejo.raw` | UID/GID 5005; database, repositories, LFS and SSH host keys remain under `/var/lib/data/forgejo`. The image includes Git/LFS/SSH, signing/compression helpers, `/bin/sh`, `/usr/bin/env` and a minimal Forgejo account database for subprocesses. |
-
-## ArchiSteamFarm
-
-| Service | Image | State and special runtime requirements |
-| --- | --- | --- |
-| ArchiSteamFarm 6.3.10.6 | `archisteamfarm.raw` | UID/GID 5013; bot configuration/session state remains under `/var/lib/data/archisteamfarm`. The image includes .NET, plugins and the UI, preserving its state-directory symlink. JIT and executable private temporary files remain allowed. |
-
-## Pomerium
-
-| Service | Image | State and special runtime requirements |
-| --- | --- | --- |
-| Pomerium 0.33.4 | `pomerium.raw` | UID/GID 5003; the original databroker persists, and four credentials enter through `LoadCredential`. Embedded Envoy uses Nix glibc via conventional loader paths, executable private temporary files and the existing loopback RPC range. |
-
-## Forgejo and runner
-
-Preserve repositories, database, hook paths and SSH host keys. The Forgejo service
-regenerates hooks against its selected Nix executable at startup. Public SSH23
-redirects to its unprivileged 2222 listener; administrator OpenSSH stays on 22.
-
-Create an instance runner registration token through Forgejo administration and
-store it with `make secret service=forgejo-runner`. Existing `.runner` identity
-is reused: rotating the registration token does not re-register that runner.
-Do not delete an active identity merely to rotate an enrollment credential.
-
-The runner agent accesses a dedicated rootless Podman API socket. Job storage is
-disposable and separated from application data. Its systemd sandbox alone is not
-a substitute for inspecting job containers. Validate a representative workflow
-when changing the engine, runner version, labels or socket configuration.
 
 ## Argus and version updates
 
@@ -309,15 +317,142 @@ Discord webhook URL, storing the webhook ID/token separately. Deploy the change,
 then verify delivery before revoking old credentials. Update packages through
 `make update`, review/build them and explicitly deploy; no GitOps controller runs.
 
-## Pingvin Share X
+### Application portable services
 
-The pinned upstream OCI image runs under a dedicated rootless identity.
-Persistent state lives under `/var/lib/data/pingvin-share`; runtime images are disposable.
+The remaining application modules follow the same stable-image, persistent
+attachment and shared health-check pattern:
 
-## Netdata
+| Service | Image | State and special runtime requirements |
+| --- | --- | --- |
+| Syncthing 2.1.6 | `syncthing.raw` | UID/GID 5001; device keys, index and all five synchronized folders stay under `/var/lib/data/syncthing`. The host heartbeat remains native. New synchronized folders must be inside that state root to be visible in the image. |
+| ArchiSteamFarm 6.3.10.6 | `archisteamfarm.raw` | UID/GID 5013; bot configuration/session state remains under `/var/lib/data/archisteamfarm`. The image includes .NET, plugins and the UI, preserving its state-directory symlink. JIT and executable private temporary files remain allowed. |
+| Pomerium 0.33.4 | `pomerium.raw` | UID/GID 5003; the original databroker persists, and four credentials enter through `LoadCredential`. Embedded Envoy uses Nix glibc via conventional loader paths, executable private temporary files and the existing loopback RPC range. |
+| Forgejo 17.0.0 | `forgejo.raw` | UID/GID 5005; database, repositories, LFS and SSH host keys remain under `/var/lib/data/forgejo`. The image includes Git/LFS/SSH, signing/compression helpers, `/bin/sh`, `/usr/bin/env` and a minimal Forgejo account database for subprocesses. |
 
-The host collector runs without privileged plugin wrappers or a Docker socket.
-Discord notifications and heartbeat URLs are supplied as systemd credentials.
+Host accounts, firewalls, credentials and backup/heartbeat units retain their
+existing ownership. Each image binds only its own state directory; it does not
+expose another application's data. Configuration changes rebuild the image and
+reattach it during deployment.
+
+The consistent pre-migration state backups, key/identity baseline, native units
+and retained native profile are in
+`/var/backups/remaining-before-portable-20261018T192401Z`. Syncthing's backup
+contains its configuration/index/identity, not a second copy of synchronized
+payloads. Those payloads stay in place and remain covered by normal backups.
+For rollback to the recorded native profile, disable/stop and detach the four
+portable services first, without `--clean`, then deploy that retained profile.
+
+The Syncthing heartbeat checks local readiness through `ExecCondition`: an
+intentional pause skips the external ping without marking the unit failed, and
+the external monitor still detects a prolonged absence of heartbeats.
+
+Validated on Mashu on 2026-10-18: the original identities, credentials and state
+mounts are preserved; all four images have no Linux capabilities and are enabled
+under `system-manager.target`. All five Syncthing folders returned to idle with
+the same file/byte counts and both peers connected. ASF logged back into Steam.
+Pomerium's components are ready, all five protected apps reach Pocket ID's login
+page, and embedded Envoy loads Nix libraries. Forgejo's database integrity,
+original record counts, repository refs, SSH host keys and Git access over SSH
+and HTTPS are intact. All nine origin HTTPS routes retain their trusted
+certificate. Repeat deployment passed the SSH, DNS and application continuity
+gates, all seven portable units are in the live boot dependency graph, and no
+units are failed. The validated host profile is
+`/nix/store/4ldk68y37a7p1465gav5lvi2qgrj3rbr-system-manager`.
+The user confirmed successful passkey logins after this migration. Git push and
+CI acceptance are recorded below; LFS remains unchecked, while the user will
+verify Pingvin upload/download and a fresh synchronized-file transfer. Backup
+restoration and rollback exercises are deferred
+at the user's request. The minimal NixOS ARM builder is retained; cross-compilation
+work is not required for this migration.
+
+Keep Unbound, Tailscale, Netdata, Backrest, the Forgejo runner and its Podman
+engine native for their host/network/data/socket integration. Keep Pingvin Share X
+on its pinned upstream OCI image. Firewalls, accounts, SOPS and maintenance units
+also remain host services.
+
+### Deployment and reboot acceptance (2026-10-18)
+
+Profile used for reboot acceptance:
+`/nix/store/4g0if6hqqm909mzm66zf6x4sjs39y1zz-system-manager`.
+The shared attachment hook now compares the image, persistent unit path and
+profile contents before reattaching. Both a hook-only deployment and a repeated
+deployment preserved all seven portable PIDs and activation timestamps. Changed
+native units still restart normally; unchanged images are still checked for
+readiness and enabled/started when needed.
+
+The first authorized reboot exposed native file-only resolver mounts reverting
+to the host stub when resolved replaced its runtime files. Native applications
+now bind a private resolver directory instead. After a second reboot, boot ID
+`66473e04-fbaa-4a89-b291-014c5afd29b0`, all seven portable services started without
+manual attachment/start commands, both SSH paths returned to the same machine,
+all twelve application resolver contexts and both rootless container DNS paths
+passed, and no units were failed. Applications were allowed to finish startup;
+the runner automatically retried until Forgejo was ready. Syncthing's two peers
+use Tailscale IPv6 primary connections, and all five folders are idle with zero
+pending items or errors. All nine HTTPS routes, redirects and the original
+certificate/ACME state remain intact. This supersedes the reboot limitations in
+the individual migration checkpoints above.
+
+The user confirmed passkey login. Backup restore/rollback exercises are deferred
+at their request, and the minimal NixOS ARM builder is retained unchanged.
+Certificate issuance has not been forced: a separate temporary Traefik instance
+can use the same Unbound/Cloudflare DNS-01 path with Let's Encrypt's staging CA
+and separate ACME storage, leaving production certificates and routes intact.
+That would verify fresh issuance, rather than the existing certificate alone.
+See [Traefik ACME configuration](https://github.com/traefik/traefik/blob/master/docs/content/reference/install-configuration/tls/certificate-resolvers/acme.md).
+
+### Git push and CI acceptance (2026-10-18)
+
+With explicit user approval, pushed existing commit `3fb6a9a` to temporary branch
+`verification/mashu-20261018T211938Z` over Forgejo SSH23 and verified the remote
+ref. Its [Gitleaks workflow](https://git.maxice8.com/max/ansible/actions/runs/746)
+passed. Reran the existing [Infrastructure Checks workflow](https://git.maxice8.com/max/ansible/actions/runs/745)
+on the same committed source: checkout, package downloads, Python lint/format,
+bootstrap syntax, component mappings and actual Mashu Nix evaluation all passed
+on the deployed rootless runner. The Nix evaluation step took eight seconds;
+the persistent public-input cache was reused. No CI build or deployment was added.
+
+Removed the temporary branch after both workflows succeeded and verified remote
+master still points to `3fb6a9a`. No migration changes were committed or pushed;
+these runs verify the current VPS's Git/CI operation against committed source,
+not CI validation of the uncommitted migration changes. LFS was excluded by the
+user, who will verify Pingvin upload/download and a fresh Syncthing transfer.
+
+## Forgejo and runner
+
+Preserve repositories, database, hook paths and SSH host keys. The Forgejo service
+regenerates hooks against its selected Nix executable at startup. Public SSH23
+redirects to its unprivileged 2222 listener; administrator OpenSSH stays on 22.
+
+Create an instance runner registration token through Forgejo administration and
+store it with `make secret service=forgejo-runner`. Existing `.runner` identity
+is reused: rotating the registration token does not re-register that runner.
+Do not delete an active identity merely to rotate an enrollment credential.
+
+The runner agent accesses a dedicated rootless Podman API socket. Job storage is
+disposable and separated from application data. Its systemd sandbox alone is not
+a substitute for inspecting job containers. Validate a representative workflow
+when changing the engine, runner version, labels or socket configuration.
+
+## Tailscale
+
+Initial enrollment uses a non-ephemeral auth key requesting `tag:server`. The
+helper enables Tailscale SSH and accepts routes and tailnet DNS. Tailnet policy
+must permit the tag and the `ubuntu` login. Store the key through
+`make secret service=tailscale`; already-enrolled nodes reconcile preferences
+without replacing their identity. Never clone the live node state into a VM.
+
+Keep the independent key-only SSH22 path working before changing networking or
+the Tailscale daemon. Tailscale owns its own packet-filter tables; the host
+firewall deliberately owns only `inet hostfilter`.
+
+On 2026-10-18, profile `/nix/store/g246h834icrin55kknhzfgm9bxysbsrs-system-manager`
+removed UDP 21027 (Syncthing local discovery) from general host ingress. The
+loopback/Tailscale allowances and TCP/UDP 22000 transfer ports remain intact.
+Live rule inspection, both SSH paths, DNS and application health passed; both
+Syncthing peers stayed connected over Tailscale IPv6. Tailscale and all twelve
+application PIDs were unchanged. All application egress rules are unchanged;
+ASF and CI retain broad public TCP/UDP access for their external workloads.
 
 ## Backrest and application recovery
 
@@ -333,3 +468,11 @@ stops coordinated writers when required. Do not start it as an incidental deploy
 check. Stop the affected service before restoring its data; preserve ownership,
 verify the restored identity/schema and then restart. Routine deployment does
 not perform a backup or restore.
+
+## Optional Ubuntu administration
+
+Ubuntu owns APT updates, trim, base networking and OpenSSH. Automatic OS reboot
+is disabled; schedule and verify reboots deliberately. Existing Ubuntu Pro/USG
+reports and audit configuration are retained host administration, not installed
+by the application bootstrap. `scripts/serve-usg-reports` can view retained reports
+over an SSH tunnel; installed packages alone do not establish release support.
