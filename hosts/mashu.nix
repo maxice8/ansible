@@ -3,6 +3,7 @@
 { ... }: {
   imports = [
     ../services/base.nix
+    ../services/tailscale
     ../services/host-policy.nix
     ../services/unbound
     ../services/application-dns.nix

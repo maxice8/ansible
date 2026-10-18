@@ -20,5 +20,6 @@ Never copy local age identities into the Nix store.
 `hosts/mashu.nix` composes these service modules:
 
 - `unbound`
+- `tailscale`
 
 Each module declares its service configuration and credential requirements.

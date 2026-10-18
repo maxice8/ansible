@@ -10,6 +10,7 @@ table inet hostfilter {
     ct state invalid drop
     meta l4proto { icmp, ipv6-icmp } accept
     tcp dport { 22 } accept
+    udp dport { 41641 } accept
   }
   chain forward {
     # This host consumes overlay routes; it advertises neither subnets nor an exit node.
