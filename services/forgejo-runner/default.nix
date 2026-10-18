@@ -10,7 +10,8 @@ let
     cache.enabled = false;
     container = { network = ""; privileged = false; enable_ipv6 = false;
       options = "--cap-drop=ALL --security-opt=no-new-privileges";
-      valid_volumes = []; docker_host = "unix:///run/runner-engine/podman.sock"; force_pull = false; };
+      # Workflows may share this disposable public cache; host bind mounts stay forbidden.
+      valid_volumes = [ "ansible-nix-ci" ]; docker_host = "unix:///run/runner-engine/podman.sock"; force_pull = false; };
     host.workdir_parent = "/var/cache/forgejo-runner/work";
   };
 in {
@@ -63,6 +64,7 @@ in {
   systemd.services.forgejo-runner-network = import ../firewall.nix { inherit pkgs; name = "forgejo-runner"; uid = 5012; };
   systemd.services.forgejo-runner = {
     wantedBy = [ "system-manager.target" ];
+    restartTriggers = [ config.environment.etc."forgejo-runner/config.json".source ];
     after = [ "network-online.target" "userborn.service" "forgejo.service" "runner-engine.service" "forgejo-runner-network.service" "sops-install-secrets.service" ];
     requires = [ "runner-engine.service" "forgejo-runner-network.service" "sops-install-secrets.service" ];
     partOf = [ "forgejo-runner-network.service" ];

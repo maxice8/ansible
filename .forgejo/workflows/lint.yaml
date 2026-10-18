@@ -11,9 +11,13 @@ jobs:
     # Relative /var/run symlinks avoid Podman 5.8.7's archive-copy regression.
     container:
       image: node:20-alpine
+      volumes:
+        # Disposable public-input cache; never mount the host's deployment store.
+        - ansible-nix-ci:/tmp/nix
     env:
-      # Evaluate in a writable job-local store without requiring host privileges.
+      # Retain store contents and fetch metadata across jobs without host privileges.
       NIX_REMOTE: "local?root=/tmp/nix"
+      XDG_CACHE_HOME: /tmp/nix/cache
       NIX_CONFIG: |
         experimental-features = nix-command flakes
         build-users-group =
