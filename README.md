@@ -27,5 +27,6 @@ Never copy local age identities into the Nix store.
 - `syncthing`
 - `forgejo`
 - `forgejo-runner`
+- `argus`
 
 See [SERVICES.md](SERVICES.md) for service configuration and credentials.

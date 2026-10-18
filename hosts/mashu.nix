@@ -14,6 +14,7 @@
     ../services/app-users.nix
     ../services/rootless-containers.nix
     ../services/forgejo
+    ../services/argus
     ../services/forgejo-runner
   ];
   nixpkgs.hostPlatform = "aarch64-linux";

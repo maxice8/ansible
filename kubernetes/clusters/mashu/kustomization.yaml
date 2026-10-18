@@ -9,7 +9,6 @@ resources:
   - public-gateway.yaml
   - cert-manager.yaml
   - sops-secrets-operator.yaml
-  - argus.yaml
   - certificate-issuers.yaml
   - staging-certificate.yaml
   - production-certificate.yaml
