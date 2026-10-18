@@ -20,7 +20,7 @@ table inet hostfilter {
     meta l4proto { icmp, ipv6-icmp } accept
     tcp dport { 22, 80, 443, 22000 } accept
     ct original proto-dst 23 tcp dport 2222 accept
-    udp dport { 21027, 22000, 41641 } accept
+    udp dport { 22000, 41641 } accept
   }
   chain forward {
     # This host consumes overlay routes; it advertises neither subnets nor an exit node.

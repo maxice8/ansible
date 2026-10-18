@@ -8,9 +8,14 @@ policy, service accounts, credentials and hardened systemd services.
 Application state lives under **`/var/lib/data/<service>`**. Pingvin Share X and
 CI jobs use separate rootless Podman runtimes; other applications run directly
 under systemd. Caches, images and CI workspaces under `/var/cache` are disposable.
-Release Argus, Pocket ID and Traefik run from Nix-built `argus.raw`,
-`pocket-id.raw` and `traefik.raw` portable images. Deployment uses `portablectl` to
-persistently attach their units and host systemd starts them at boot. No attachment wrapper runs at boot.
+Argus, Pocket ID, Traefik, Syncthing, ArchiSteamFarm, Pomerium and Forgejo run
+from Nix-built portable images with stable names such as `forgejo.raw`.
+Deployment uses `portablectl` to persistently attach their units and host systemd
+starts them at boot. No attachment wrapper runs at boot.
+
+Applications use the host-local Unbound resolver, including MagicDNS forwarding
+to Tailscale. The host retains systemd-resolved and Tailscale's DNS configuration;
+see [application DNS details](SERVICES.md#host-dns-service).
 
 ## Development environment
 

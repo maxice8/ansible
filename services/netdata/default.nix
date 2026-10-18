@@ -87,12 +87,13 @@ in {
     requires = [ "sops-install-secrets.service" "netdata-network.service" ];
     environment.CURL_CA_BUNDLE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
     script = ''
-      ${pkgs.curl}/bin/curl -fsS --max-time 10 --output /dev/null http://127.0.0.1:19999/api/v1/info
       ${pkgs.curl}/bin/curl -fsS --max-time 10 --output /dev/null --proto '=https' \
         --variable "heartbeat@$CREDENTIALS_DIRECTORY/url" --expand-url '{{heartbeat:trim}}'
     '';
     serviceConfig = import ../hardening.nix // {
       Type = "oneshot"; User = "netdata"; Group = "netdata";
+      # Skip external pings while the collector is paused for maintenance.
+      ExecCondition = "${pkgs.curl}/bin/curl -fsS --max-time 10 --output /dev/null http://127.0.0.1:19999/api/v1/info";
       LoadCredential = [ "url:${config.sops.secrets.netdata-heartbeat-url.path}" ]; TimeoutStartSec = 30;
     };
   };

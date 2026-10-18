@@ -7,7 +7,7 @@ table inet traefik_egress {
     meta skuid 5002 ct state established,related accept
     meta skuid 5002 ip daddr 127.0.0.1 tcp dport { 1411, 3000, 3001, 8080 } accept
     meta skuid 5002 ip6 daddr ::1 tcp dport { 1411, 3000, 3001, 8080 } accept
-    meta skuid 5002 ip daddr 127.0.0.53 meta l4proto { tcp, udp } th dport 53 accept
+    meta skuid 5002 ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
     meta skuid 5002 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } reject
     meta skuid 5002 ip6 daddr { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } reject
     # HTTPS is needed for ACME/Cloudflare; DNS also queries authoritative servers.

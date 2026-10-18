@@ -52,8 +52,7 @@ in {
       NoNewPrivileges = false; ProtectHome = true; PrivateTmp = true;
       # Keep DNS helpers in this cgroup instead of requesting a separate user scope.
       TemporaryFileSystem = [ "/run/systemd:ro" ];
-      # /etc/resolv.conf points into resolved's runtime directory on Ubuntu.
-      BindReadOnlyPaths = [ "/run/systemd/resolve" ];
+      # application-dns.nix supplies a private resolver directory inside /run/systemd.
       # Rootless networking must write tunables in its own network namespace.
       # The host namespace remains protected by ordinary UID/capability checks.
       # A visible parent /proc is required for the container runtime to mount its own.

@@ -1,6 +1,6 @@
 # UID-scoped firewall unit shared by native apps and isolated container runtimes.
 # Public peer ports may vary; private/host destinations require explicit local ports.
-{ pkgs, name, uid, localTCP ? [], localUDP ? [], publicTCP ? [ 443 ], publicUDP ? [], publicDNS ? [] }:
+{ pkgs, name, uid, localTCP ? [], localUDP ? [], publicTCP ? [ 443 ], publicUDP ? [] }:
 let
   lib = pkgs.lib;
   # Keep existing table names so updates replace the same rules.
@@ -17,8 +17,7 @@ let
       chain output {
         type filter hook output priority filter; policy accept;
         meta skuid ${toString uid} ct state established,related accept
-        meta skuid ${toString uid} ip daddr 127.0.0.53 meta l4proto { tcp, udp } th dport 53 accept
-        ${lib.optionalString (publicDNS != []) "meta skuid ${toString uid} ip daddr { ${lib.concatStringsSep ", " publicDNS} } meta l4proto { tcp, udp } th dport 53 accept"}
+        meta skuid ${toString uid} ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
         ${rule "ip" "127.0.0.1" "tcp" localTCP}
         ${rule "ip6" "::1" "tcp" localTCP}
         ${rule "ip" "127.0.0.1" "udp" localUDP}

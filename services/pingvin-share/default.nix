@@ -7,7 +7,6 @@ let
 in {
   systemd.services.pingvin-share-network = import ../firewall.nix {
     inherit pkgs; name = "pingvin-share"; uid = "{ 5006, 600000-665535 }";
-    publicDNS = [ "1.1.1.1" "1.0.0.1" ];
   };
   systemd.services.pingvin-share = {
     wantedBy = [ "system-manager.target" ];

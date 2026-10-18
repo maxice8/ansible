@@ -6,6 +6,7 @@
     ../services/tailscale
     ../services/host-policy.nix
     ../services/unbound
+    ../services/application-dns.nix
     ../services/traefik
     ../services/pomerium
     ../services/syncthing

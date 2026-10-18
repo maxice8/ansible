@@ -49,7 +49,7 @@ in {
     certificatesResolvers.letsencrypt.acme = {
       email = "thinkabit.ukim@gmail.com";
       storage = "/var/lib/data/traefik/acme.json";
-      dnsChallenge = { provider = "cloudflare"; resolvers = [ "1.1.1.1:53" "1.0.0.1:53" ]; };
+      dnsChallenge = { provider = "cloudflare"; resolvers = [ "127.0.0.1:53" ]; };
     };
   };
   dynamic = {

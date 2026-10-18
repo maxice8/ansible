@@ -1,6 +1,9 @@
 # Host-local caching DNS forwarder; Ubuntu/resolved and Tailscale keep DNS ownership.
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
+  # Preserve MagicDNS, shared ts.net names and reverse lookups for both tailnet ranges.
+  tailscaleZones = [ "ts.net." "0.e.1.a.c.5.1.1.a.7.d.f.ip6.arpa." ]
+    ++ lib.genList (index: "${toString (index + 64)}.100.in-addr.arpa.") 64;
   configFile = pkgs.writeText "unbound.conf" ''
     server:
       interface: 127.0.0.1
@@ -21,6 +24,11 @@ let
       cache-max-ttl: 600
       auto-trust-anchor-file: "/var/lib/unbound/root.key"
       verbosity: 1
+      # Private MagicDNS answers are unsigned and override default empty reverse zones.
+      ${lib.concatMapStringsSep "\n" (zone: ''
+        domain-insecure: "${zone}"
+        local-zone: "${zone}" transparent
+      '') tailscaleZones}
 
     forward-zone:
       name: "."
@@ -29,6 +37,14 @@ let
       forward-addr: 9.9.9.9
       forward-addr: 8.8.8.8
       forward-addr: 208.67.222.222
+
+    ${lib.concatMapStringsSep "\n" (zone: ''
+      forward-zone:
+        name: "${zone}"
+        forward-tcp-upstream: yes
+        forward-first: no
+        forward-addr: 100.100.100.100
+    '') tailscaleZones}
   '';
 in {
   environment.etc."unbound/unbound.conf".source = configFile;
@@ -46,7 +62,7 @@ in {
     description = "Host-local Unbound caching DNS forwarder";
     wantedBy = [ "system-manager.target" ];
     wants = [ "network-online.target" ];
-    after = [ "network-online.target" "userborn.service" "unbound-network.service" ];
+    after = [ "network-online.target" "userborn.service" "unbound-network.service" "tailscaled.service" ];
     requires = [ "unbound-network.service" ];
     partOf = [ "unbound-network.service" ];
     restartTriggers = [ configFile ];

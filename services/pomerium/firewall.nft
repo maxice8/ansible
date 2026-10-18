@@ -11,7 +11,7 @@ table inet pomerium_egress {
     # if future workloads require isolation from those ephemeral host listeners.
     meta skuid 5003 ip daddr 127.0.0.1 tcp dport 32768-60999 accept
     meta skuid 5003 ip6 daddr ::1 tcp dport 32768-60999 accept
-    meta skuid 5003 ip daddr 127.0.0.53 meta l4proto { tcp, udp } th dport 53 accept
+    meta skuid 5003 ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
     meta skuid 5003 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } reject
     meta skuid 5003 ip6 daddr { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } reject
     meta skuid 5003 tcp dport 443 accept

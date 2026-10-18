@@ -58,8 +58,8 @@ in {
   environment.etc."containers/containers.conf".text = ''
     [containers]
     cgroups = "disabled"
-    # Podman otherwise copies Oracle/overlay DNS addresses that our egress policy denies.
-    dns_servers = ["1.1.1.1", "1.0.0.1"]
+    # slirp forwards this virtual DNS endpoint through its service's Unbound resolver.
+    dns_servers = ["10.0.2.3"]
     [network]
     default_rootless_network_cmd = "slirp4netns"
     [engine]
