@@ -1,6 +1,7 @@
 # Configure System Manager, secrets and the service data directory.
 # Modules receive flake inputs through specialArgs.
 { inputs, ... }: {
+  imports = [ inputs.sops-nix.nixosModules.sops ];
 
   # Keep Ubuntu's Nix daemon, SSH and privilege tools.
   nix.enable = false;
@@ -10,6 +11,9 @@
   services.openssh.enable = false;
   # Expose the managed profile at /run/current-system.
   system-manager.linkCurrentSystem = true;
+
+  # Reference a root-provisioned identity; never embed its contents in the Nix store.
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
 
   # Refuse activation on hosts lacking the systemd/cgroup baseline used by our units.
   system-manager.preActivationAssertions.hostBaseline = {
@@ -28,5 +32,6 @@
   # A quoted attribute keeps the slash in one filename; toJSON serializes metadata.
   environment.etc."homelab/base.json".text = builtins.toJSON {
     dataRoot = "/var/lib/data";
+    secretIdentity = "/var/lib/sops-nix/key.txt";
   };
 }
