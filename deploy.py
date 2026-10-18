@@ -2,7 +2,6 @@
 """Build Mashu's final Nix configuration locally and deploy its store closure over SSH."""
 
 import argparse
-import hashlib
 import json
 import re
 import shutil
@@ -11,44 +10,15 @@ import sys
 import tempfile
 from pathlib import Path
 
+from tests.test_vps import RECOVERY_HOST, TAILSCALE_HOST, check_access, check_health
 from tests.vm import DEFAULT_DIRECTORY, NixVM
 
 ROOT = Path(__file__).resolve().parent
-UNITS = [
-    "tailscaled",
-    "traefik",
-    "pomerium",
-    "pocket-id",
-    "syncthing",
-    "forgejo",
-    "argus",
-    "archisteamfarm",
-    "pingvin-share",
-    "netdata",
-    "forgejo-runner",
-    "runner-engine",
-    "backrest",
-]
-# System Manager can return success despite a failed service start. Check actual readiness.
-READINESS = (
-    """import subprocess, urllib.request
-units = """
-    + repr(UNITS)
-    + """
-subprocess.run(['systemctl', 'is-active', *units], check=True)
-for port, path in [(9080, '/ping'), (28080, '/readyz'), (1411, '/.well-known/openid-configuration'),
-                   (8384, '/'), (3000, '/api/healthz'), (8081, '/api/v1/healthcheck'),
-                   (1242, '/'), (3001, '/'), (19999, '/api/v1/info'), (9898, '/')]:
-    with urllib.request.urlopen(f'http://127.0.0.1:{port}{path}', timeout=10) as response:
-        assert response.status == 200, (port, response.status)
-print('All native units and ten application health endpoints passed')
-"""
-)
 
 
 def snapshot(destination: Path) -> None:
     """Copy public deployment inputs only; ignored workstation identities never enter Nix."""
-    for name in ["flake.nix", "flake.lock", "bootstrap.py", "deploy.py"]:
+    for name in ["flake.nix", "flake.lock", "bootstrap.sh", "deploy.py"]:
         source = ROOT / name
         if source.is_symlink():
             raise RuntimeError(f"refusing symlinked deployment input: {source}")
@@ -168,63 +138,16 @@ def prepare_vm(source: Path, vm: NixVM) -> None:
     vm.prepare(image)
 
 
-def acceptance(source: Path, profile: str, vm: NixVM, *, force: bool = False) -> None:
-    """Reuse successful shared-base checks only for identical inputs and the VM image."""
-    digest = hashlib.sha256(profile.encode())
-    for path in sorted(source.rglob("*")):
-        if path.is_file():
-            digest.update(str(path.relative_to(source)).encode() + b"\0")
-            digest.update(hashlib.sha256(path.read_bytes()).digest())
-    key = digest.hexdigest()
-    record = vm.directory / "base-acceptance.json"
-    if (
-        not force
-        and record.is_file()
-        and json.loads(record.read_text()).get("key") == key
-    ):
-        print(
-            "Shared-base VM acceptance already passed for these exact inputs",
-            flush=True,
-        )
-        return
-    tools = build(source, "vm-tools", "none")
-    prepare_vm(source, vm)
-    cli = build(source, "system-manager", "none")
-    # The existing destructive fixture refuses any work directory outside /tmp.
-    work = Path(tempfile.mkdtemp(prefix="mashu-vm-test-"))
-    (work / "vm").symlink_to(vm.directory, target_is_directory=True)
-    environment = vm.environment | {
-        "PATH": cli + "/bin:" + tools + "/bin:" + vm.environment["PATH"],
-        "PYTHONUNBUFFERED": "1",
-    }
-    print(f"Running shared-base VM acceptance; retained logs: {work}", flush=True)
-    with (work / "suite.log").open("w") as log:
-        result = subprocess.run(
-            [sys.executable, str(source / "tests/test_base.py"), str(work)],
-            env=environment,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-    if result.returncode:
-        raise RuntimeError(f"VM acceptance failed; inspect {work / 'suite.log'}")
-    temporary = record.with_suffix(".tmp")
-    temporary.write_text(
-        json.dumps(
-            {"key": key, "profile": profile, "suite": "shared-base", "logs": str(work)},
-            indent=2,
-        )
-        + "\n"
-    )
-    temporary.replace(record)
-    print(f"Shared-base VM acceptance passed; logs: {work}", flush=True)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["build", "test", "deploy", "vm-image"])
-    parser.add_argument("--target-host", default="mashu")
+    parser.add_argument("--target-host", default=TAILSCALE_HOST)
+    parser.add_argument("--tailscale-host", default=TAILSCALE_HOST)
+    parser.add_argument("--recovery-host", default=RECOVERY_HOST)
     parser.add_argument("--ssh-option", action="append", default=[])
+    parser.add_argument(
+        "--output", default="systemConfigs.mashu", help="Nix output for build only"
+    )
     parser.add_argument(
         "--builders",
         default="auto",
@@ -241,10 +164,11 @@ def main() -> int:
         help="deploy a previously built/rooted profile, including for rollback",
     )
     args = parser.parse_args()
-    if not re.fullmatch(
-        r"[A-Za-z0-9_@.:[\]-]+", args.target_host
-    ) or args.target_host.startswith("-"):
-        parser.error("invalid SSH target")
+    if args.output != "systemConfigs.mashu" and args.action != "build":
+        parser.error("--output is only for build")
+    for host in [args.target_host, args.tailscale_host, args.recovery_host]:
+        if not re.fullmatch(r"[A-Za-z0-9_@.:[\]-]+", host) or host.startswith("-"):
+            parser.error("invalid SSH target")
     if args.store_path and not re.fullmatch(
         r"/nix/store/[0-9a-z]{32}-[A-Za-z0-9+._=-]+", args.store_path
     ):
@@ -253,6 +177,15 @@ def main() -> int:
         parser.error("--store-path is only for deploy")
     registration_started = False
     try:
+        if args.action == "test":
+            check_access(
+                args.target_host,
+                args.tailscale_host,
+                args.recovery_host,
+                args.ssh_option,
+            )
+            check_health(args.target_host, args.ssh_option)
+            return 0
         with (
             NixVM(args.vm_dir) as vm,
             tempfile.TemporaryDirectory(prefix="mashu-nix-source-") as directory,
@@ -279,15 +212,9 @@ def main() -> int:
                         check=True,
                     )
                 return 0
-            profile = args.store_path or build(
-                source, "systemConfigs.mashu", args.builders, vm
-            )
-            print(f"Profile: {profile}", flush=True)
+            profile = args.store_path or build(source, args.output, args.builders, vm)
+            print(f"Build output: {profile}", flush=True)
             if args.action == "build":
-                return 0
-            if not args.store_path:
-                acceptance(source, profile, vm, force=args.action == "test")
-            if args.action == "test":
                 return 0
             cli = (
                 Path(build(source, "system-manager", args.builders, vm))
@@ -295,20 +222,41 @@ def main() -> int:
             )
             command = [str(cli), "--target-host", args.target_host]
             command += [f"--ssh-option={option}" for option in args.ssh_option]
-            registration_started = True
-            for action in ["register", "activate"]:
-                subprocess.run(
-                    command + [action, "--store-path", profile, "--sudo"], check=True
-                )
-            ssh = ["ssh", "-o", "BatchMode=yes", *args.ssh_option, args.target_host]
-            subprocess.run(
-                ssh + ["sudo -n /usr/bin/python3 -"],
-                input=READINESS,
-                text=True,
-                check=True,
+            machine = check_access(
+                args.target_host,
+                args.tailscale_host,
+                args.recovery_host,
+                args.ssh_option,
+                allow_partial=bool(args.store_path),
             )
-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+            registration_started = True
+            try:
+                for action in ["register", "activate"]:
+                    subprocess.run(
+                        command + [action, "--store-path", profile, "--sudo"],
+                        check=True,
+                    )
+            finally:
+                # A failed activation may still have changed the running host.
+                check_access(
+                    args.target_host,
+                    args.tailscale_host,
+                    args.recovery_host,
+                    args.ssh_option,
+                    expected=machine,
+                )
+                check_health(args.target_host, args.ssh_option)
+    except (
+        OSError,
+        RuntimeError,
+        AssertionError,
+        ValueError,
+        KeyError,
+        subprocess.SubprocessError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError):
+            print(error.stderr or error.stdout or "", file=sys.stderr)
         if registration_started:
             print(
                 "Inspect readiness and deploy the previous profile explicitly if needed; "

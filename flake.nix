@@ -1,4 +1,4 @@
-# Entry point for Mashu's deployment configuration and local deployment/test tools.
+# Entry point for Mashu's deployment configuration and local build tools.
 # flake.lock fixes the exact input revisions used to reproduce builds.
 {
   description = "Mashu's Ubuntu systemd services, built and deployed with Nix";
@@ -38,12 +38,7 @@
         let pkgs = nixpkgs.legacyPackages.${system};
         in {
           system-manager = system-manager.packages.${system}.default;
-          # Combine existing tool packages into one PATH-friendly store directory.
-          vm-tools = pkgs.buildEnv {
-            name = "mashu-vm-tools";
-            # `with pkgs` lets this list refer to package names without repeating pkgs.
-            paths = with pkgs; [ age sops openssh ];
-          };
+          argus-canary = import ./services/argus/canary.nix { inherit pkgs; };
         } // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
           vm-image = inputs.self.nixosConfigurations.builder.config.system.build.vm;
         });

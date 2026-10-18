@@ -3,21 +3,22 @@
 { ... }: {
   imports = [
     ../services/base.nix
-    ../services/tailscale.nix
+    ../services/tailscale
     ../services/host-policy.nix
-    ../services/traefik.nix
-    ../services/pomerium.nix
-    ../services/syncthing.nix
-    ../services/pocket-id.nix
+    ../services/unbound
+    ../services/traefik
+    ../services/pomerium
+    ../services/syncthing
+    ../services/pocket-id
     ../services/app-users.nix
     ../services/rootless-containers.nix
-    ../services/forgejo.nix
-    ../services/argus.nix
-    ../services/pingvin-share.nix
-    ../services/archisteamfarm.nix
-    ../services/netdata.nix
-    ../services/forgejo-runner.nix
-    ../services/backrest.nix
+    ../services/forgejo
+    ../services/argus
+    ../services/pingvin-share
+    ../services/archisteamfarm
+    ../services/netdata
+    ../services/forgejo-runner
+    ../services/backrest
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
 }

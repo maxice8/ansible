@@ -145,7 +145,7 @@ def validate() -> None:
             if releases and len(releases) != 2:
                 raise RuntimeError(f"{component}: expected two architecture pins")
     selected = (
-        (ROOT / "services/argus.nix")
+        (ROOT / "services/argus/default.nix")
         .read_text()
         .split("  selected = {", 1)[1]
         .split("\n  };", 1)[0]

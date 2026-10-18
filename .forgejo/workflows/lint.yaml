@@ -1,4 +1,4 @@
-name: Pyinfra Lint
+name: Infrastructure Checks
 on:
   push:
     branches: ["master"]
@@ -7,23 +7,41 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: alpine
+    # Relative /var/run symlinks avoid Podman 5.8.7's archive-copy regression.
+    container:
+      image: node:20-alpine
+    env:
+      NIX_REMOTE: local
+      NIX_CONFIG: |
+        experimental-features = nix-command flakes
+        build-users-group =
+        sandbox = false
     steps:
-      # Forgejo's checkout action (already working properly via data.forgejo.org)
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Install validation tools
+        shell: sh
+        run: apk add --no-cache bash git python3 nix
 
-      # Explicitly pull Ruff from GitHub
-      - name: Lint Python Code (Ruff)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Lint Python
         uses: https://github.com/astral-sh/ruff-action@v3
         with:
+          version: "0.16.1"
+          github-token: ""
           args: "check ."
 
-      # Explicitly pull Ruff from GitHub
-      - name: Check Code Formatting (Ruff)
-        uses: https://github.com/astral-sh/ruff-action@v3
-        with:
-          args: "format --check ."
+      - name: Check Python formatting
+        run: ruff format --check .
 
-      - name: Validate Component Update Mappings
+      - name: Check bootstrap syntax
+        run: bash -n bootstrap.sh
+
+      - name: Validate component update mappings
         run: python3 scripts/update_component.py --check
+
+      - name: Evaluate Mashu configuration
+        run: nix eval --no-write-lock-file --raw .#systemConfigs.mashu.drvPath

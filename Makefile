@@ -2,6 +2,7 @@ PYTHON ?= python3
 
 builders ?= auto
 VM_FLAGS = $(if $(vm_dir),--vm-dir "$(vm_dir)")
+ACCESS_FLAGS = $(if $(tailscale_host),--tailscale-host '$(tailscale_host)') $(if $(recovery_host),--recovery-host '$(recovery_host)')
 
 DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
@@ -9,10 +10,11 @@ DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
 help:
 	@printf '%s\n' \
-		'Bootstrap Ubuntu prerequisites: make bootstrap' \
+		'Bootstrap Ubuntu prerequisites: make bootstrap host=mashu-admin' \
 		'Build the ARM profile: make build' \
+		'Build the ARM portable canary: make build output=packages.aarch64-linux.argus-canary' \
 		'Deploy over SSH: make deploy host=mashu' \
-		'Run managed NixOS VM acceptance: make test' \
+		'Check live VPS access and health (read-only): make test' \
 		'Build/cache the NixOS guest: make vm-image' \
 		'Forbid VM builds: make build builders=none' \
 		'' \
@@ -44,16 +46,16 @@ secret:
 
 # Only the local NixOS VM is selected automatically; no production builder.
 bootstrap:
-	pyinfra inventory.py bootstrap.py --sudo --diff
+	./bootstrap.sh "$(host)"
 
 build:
-	$(PYTHON) deploy.py build --builders '$(builders)' $(VM_FLAGS)
+	$(PYTHON) deploy.py build --output '$(or $(output),systemConfigs.mashu)' --builders '$(builders)' $(VM_FLAGS)
 
 deploy:
-	$(PYTHON) deploy.py deploy --target-host '$(or $(host),mashu)' --builders '$(builders)' $(VM_FLAGS)
+	$(PYTHON) deploy.py deploy --target-host '$(or $(host),mashu)' --builders '$(builders)' $(VM_FLAGS) $(ACCESS_FLAGS)
 
 test:
-	$(PYTHON) deploy.py test --builders '$(builders)' $(VM_FLAGS)
+	$(PYTHON) deploy.py test --target-host '$(or $(host),mashu)' $(ACCESS_FLAGS)
 
 vm-image:
 	$(PYTHON) deploy.py vm-image --builders '$(builders)' $(VM_FLAGS)

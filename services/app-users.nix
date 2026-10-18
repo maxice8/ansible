@@ -1,9 +1,11 @@
 # Dedicated application identities and non-overlapping rootless container ID ranges.
 # Userborn merges these managed accounts with Ubuntu's existing account databases.
+# IDs 5000-5999 are reserved for our services; host policy caps ordinary IDs at 4999.
 { lib, pkgs, ... }:
 let
-  ids = { forgejo = 62005; argus = 911; archisteamfarm = 976; netdata = 201;
-    forgejo-runner = 974; backrest = 62008; runner-engine = 62009; pingvin-share = 62006; };
+  ids = { forgejo = 5005; argus = 5007; archisteamfarm = 5013; netdata = 5011;
+    forgejo-runner = 5012; backrest = 5008; runner-engine = 5009; pingvin-share = 5006;
+    unbound = 5010; };
   ranges = { runner-engine = 500000; pingvin-share = 600000; };
 in {
   services.userborn.enable = lib.mkForce true;

@@ -1,0 +1,20 @@
+# Pomerium UID 5003: application ports, internal loopback RPC, DNS and public OIDC HTTPS.
+# Own only this table; the proxy has no permission to change firewall rules itself.
+destroy table inet pomerium_egress
+table inet pomerium_egress {
+  chain output {
+    type filter hook output priority filter; policy accept;
+    meta skuid 5003 ct state established,related accept
+    meta skuid 5003 ip daddr 127.0.0.1 tcp dport { 1242, 5443, 8080, 8081, 8384, 9898, 19999, 28080 } accept
+    # Upstream allocates seven internal ports with bind(0); refuse other port ranges.
+    # Other loopback services in this range are reachable; use a network namespace
+    # if future workloads require isolation from those ephemeral host listeners.
+    meta skuid 5003 ip daddr 127.0.0.1 tcp dport 32768-60999 accept
+    meta skuid 5003 ip6 daddr ::1 tcp dport 32768-60999 accept
+    meta skuid 5003 ip daddr 127.0.0.53 meta l4proto { tcp, udp } th dport 53 accept
+    meta skuid 5003 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } reject
+    meta skuid 5003 ip6 daddr { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } reject
+    meta skuid 5003 tcp dport 443 accept
+    meta skuid 5003 reject
+  }
+}

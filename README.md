@@ -1,8 +1,8 @@
 # Mashu: Ubuntu + Nix
 
 This repository describes Mashu's bootstrap and final state. Ubuntu supplies the
-kernel, networking, OpenSSH, Nix daemon and OS updates. Pyinfra installs only the
-Nix prerequisites through `bootstrap.py`. Nix and System Manager manage host
+kernel, networking, OpenSSH, Nix daemon and OS updates. `bootstrap.sh` installs the
+Nix and portable-service prerequisites over SSH. Nix and System Manager manage host
 policy, service accounts, credentials and hardened systemd services.
 
 Application state lives under **`/var/lib/data/<service>`**. Pingvin Share X and
@@ -19,7 +19,7 @@ devenv shell
 
 `devenv.nix` installs the workstation tools and the pinned Python requirements
 into its managed environment. With direnv, run `direnv allow` once. Keep local
-commands, including Pyinfra and pre-commit, inside this environment.
+commands, including Nix deployment helpers and pre-commit, inside this environment.
 
 ## Access and external infrastructure
 
@@ -61,15 +61,18 @@ Point the maintained names at Mashu's public A/AAAA addresses: `git.maxice8.com`
 
 ## Bootstrap a fresh host
 
-Review `inventory.py` and run:
+Use the independent administrator SSH alias and run:
 
 ```sh
-pyinfra inventory.py bootstrap.py --sudo --diff --dry
-make bootstrap
+./bootstrap.sh mashu-admin
+# Or: make bootstrap host=mashu-admin
 ```
 
-Bootstrap installs Ubuntu's multi-user Nix, UID mapping helpers and unattended
-updates, enables Nix features and trusts the deployment administrator. It does
+Bootstrap checks for Ubuntu 26.04, installs Ubuntu's multi-user Nix, UID mapping
+helpers, unattended updates and `systemd-container` (including `portablectl` and
+`systemd-portabled`), enables Nix features and trusts the connecting administrator.
+It preserves Ubuntu's Nix configuration, enables/restarts the Nix daemon and starts
+the D-Bus-activated portable-service daemon. It does
 not deploy applications or provision SSH keys. Keep public SSH22 available.
 
 Follow [SERVICES.md](SERVICES.md) to provision the SOPS age identity and verify
@@ -79,8 +82,17 @@ the private age identity on the workstation; the target decrypts credentials.
 ## Build and deploy
 
 Versions come from `flake.lock` and the verified releases under `pkgs/`.
-`hosts/mashu.nix` composes the final configuration; `services/` owns systemd units,
-hardening, ingress/egress policy and application configuration.
+`hosts/mashu.nix` composes the final configuration. Each service lives under
+`services/<name>/`, with `default.nix` as its module and its configuration, network
+policy and helpers alongside it. Shared modules such as `base.nix`, `hardening.nix`,
+`firewall.nix`, host policy, application accounts and rootless-container support stay
+directly under `services/`. Service-local settings use `settings.nix`, and nftables
+policies use `firewall.nft`; these firewalls also restrict outbound connectivity.
+
+Service UIDs/GIDs are reserved in **5000–5999**. Ubuntu's `adduser`/`addgroup` and
+`useradd`/`groupadd` automatically allocate ordinary accounts only in 1000–4999;
+system accounts retain their normal range below 1000. Rootless container subordinate
+IDs are separate and retain their explicit allocations.
 
 ```sh
 make build
@@ -89,22 +101,22 @@ make deploy host=mashu-admin
 
 `deploy.py` creates a temporary allowlisted snapshot and asks Nix which jobs
 remain after cache lookup. Cached ARM outputs need no VM. Uncached ARM jobs start
-the local **minimal NixOS ARM VM** automatically; the same guest runs the shared
-service lifecycle/hardening acceptance suite. A normal deployment requires a
-successful suite result for the exact source/profile inputs. The suite is a base
-and sandbox check, not full application coverage or proof of Ubuntu compatibility.
+the local **minimal NixOS ARM VM** automatically as a builder. Deployment checks
+fresh Tailscale and public recovery SSH connections before activation and again
+afterward, followed by live service, DNS and public HTTPS health checks. These
+checks run against Ubuntu on Mashu; synthetic VM acceptance is no longer required.
 
 ```sh
 make build                         # build only; boot the VM only for ARM cache misses
-make test                          # run the shared-base VM suite explicitly
-make deploy host=mashu-admin        # reuse matching acceptance, or run it before SSH deploy
+make test                          # read-only access and health checks on Mashu
+make deploy host=mashu              # build, check access, activate, check access/health
 make build builders=none            # forbid remote/VM build jobs
 make vm-image                      # refresh and root the managed guest image
 ```
 
-The guest has Nix, SSH and fixture tools, no desktop, cloud-init, APT, automatic
+The builder guest has Nix and SSH, no desktop, cloud-init, APT, automatic
 upgrades or host Nix-store mount. Its only host share is a read-only public SSH
-key. Builds and tests use synthetic guest identities. Production state and private
+key. Builds use a guest-only identity. Production state and private
 keys are never copied into it. Whole-system QEMU uses TCG; no workstation binfmt
 handler or persistent Nix-daemon builder configuration is installed.
 
@@ -133,10 +145,10 @@ uses your normal account. Production is never selected as an automatic builder.
 
 **Do not run `nix build path:.` in this checkout.** Ignored identities must not
 enter the Nix store. The helper snapshots public modules/tools/tests plus encrypted
-service secrets. Runtime tests use their own synthetic credentials; application
-passkeys, synchronization and complete CI pipelines need separate acceptance.
+service secrets. Live continuity checks are read-only; application passkeys,
+synchronization and complete CI pipelines need separate acceptance.
 
-For a custom SSH configuration or a retained profile (rollback bypasses current-source builds/VM tests):
+For a custom SSH configuration or a retained profile (rollback skips building current sources but still checks access and health):
 
 ```sh
 python deploy.py deploy --target-host mashu-admin \
@@ -216,9 +228,12 @@ make check-updates
 ruff check .
 ```
 
-Use focused VM checks in [tests/README.md](tests/README.md) when changing
-hardening or service behavior. Do not copy production credentials or databases
-into the test VM. Host-side policy still requires checks on Mashu's actual kernel.
+Use `make test` for the read-only checks in [tests/README.md](tests/README.md).
+It opens fresh Tailscale and public SSH connections, verifies services and DNS,
+and checks public HTTPS. The default recovery address is the public IPv6 address
+above; `recovery_host=mashu-admin` selects your configured recovery alias.
+Deployment checks detect access loss but do not provide automatic rollback if
+both access paths are blocked. No check reboots the VPS.
 
 Enable hooks after each clone and inspect changes before committing:
 
