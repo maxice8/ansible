@@ -49,6 +49,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Release Argus | `argus_github_token`, `argus_discord_token`, `argus_discord_webhook_id` | `argus` (approval/release state) |
 | Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
+| ArchiSteamFarm | Configure Steam credentials through its private state/UI | `archisteamfarm` |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
 service ownership/modes are part of the deployment; do not change them globally.
@@ -197,6 +198,12 @@ OIDC changes. Loopback readiness checks alone do not exercise a browser login.
 | Service | Image | State and special runtime requirements |
 | --- | --- | --- |
 | Forgejo 17.0.0 | `forgejo.raw` | UID/GID 5005; database, repositories, LFS and SSH host keys remain under `/var/lib/data/forgejo`. The image includes Git/LFS/SSH, signing/compression helpers, `/bin/sh`, `/usr/bin/env` and a minimal Forgejo account database for subprocesses. |
+
+## ArchiSteamFarm
+
+| Service | Image | State and special runtime requirements |
+| --- | --- | --- |
+| ArchiSteamFarm 6.3.10.6 | `archisteamfarm.raw` | UID/GID 5013; bot configuration/session state remains under `/var/lib/data/archisteamfarm`. The image includes .NET, plugins and the UI, preserving its state-directory symlink. JIT and executable private temporary files remain allowed. |
 
 ## Pomerium
 

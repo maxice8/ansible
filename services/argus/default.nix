@@ -5,6 +5,7 @@ let
   selected = {
     traefik-image = { repo = "traefik/traefik"; version = (pkgs.callPackage ../../pkgs/traefik.nix {}).version; };
     argus = { repo = "release-argus/Argus"; version = argus.version; };
+    asf = { repo = "JustArchiNET/ArchiSteamFarm"; version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix {}).version; };
     forgejo-runner = { repo = "forgejo/runner"; version = pkgs.forgejo-runner.version; };
     pocket-id = { repo = "pocket-id/pocket-id"; version = (pkgs.callPackage ../../pkgs/pocket-id.nix {}).version; };
     pomerium = { repo = "pomerium/pomerium"; version = (pkgs.callPackage ../../pkgs/pomerium.nix {}).version; };
@@ -82,6 +83,10 @@ let
       forgejo-runner = manual.forgejo-runner // {
         # Change only the upstream query; its selected Nix version remains manual.
         latest_version = forgejoLatest "runner";
+      };
+      asf = manual.asf // {
+        # ASF uses four-part versions, outside SemVer's three-part format.
+        options.semantic_versioning = false;
       };
     };
   };

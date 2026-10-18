@@ -18,7 +18,6 @@ resources:
   - platform-routes.yaml
   - whoami.yaml
   - pingvin-share.yaml
-  - asf.yaml
   - netdata.yaml
 
 patches:
