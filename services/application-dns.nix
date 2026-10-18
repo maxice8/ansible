@@ -7,7 +7,7 @@ let
     { name = "stub-resolv.conf"; path = resolver; }
     { name = "resolv.conf"; path = resolver; }
   ];
-  native = [ "syncthing-heartbeat" ];
+  native = [ "forgejo-runner" "runner-engine" "syncthing-heartbeat" ];
 in {
   environment.etc."homelab/resolv.conf".text = ''
     nameserver 127.0.0.1

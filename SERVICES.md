@@ -46,6 +46,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
 | Syncthing heartbeat | `syncthing_heartbeat_url` | `syncthing` (device/configuration/database and synchronized data) |
 | Forgejo | `forgejo_app_ini` | `forgejo` (database, repositories, attachments, SSH identity) |
+| Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
@@ -207,3 +208,13 @@ OIDC changes. Loopback readiness checks alone do not exercise a browser login.
 Preserve repositories, database, hook paths and SSH host keys. The Forgejo service
 regenerates hooks against its selected Nix executable at startup. Public SSH23
 redirects to its unprivileged 2222 listener; administrator OpenSSH stays on 22.
+
+Create an instance runner registration token through Forgejo administration and
+store it with `make secret service=forgejo-runner`. Existing `.runner` identity
+is reused: rotating the registration token does not re-register that runner.
+Do not delete an active identity merely to rotate an enrollment credential.
+
+The runner agent accesses a dedicated rootless Podman API socket. Job storage is
+disposable and separated from application data. Its systemd sandbox alone is not
+a substitute for inspecting job containers. Validate a representative workflow
+when changing the engine, runner version, labels or socket configuration.
