@@ -4,14 +4,6 @@ creation_rules:
   - path_regex: secrets/.*\.sops\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
 
-  - path_regex: vars/.*\.sops\.yaml$
-    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
-
-  # Encrypt Kubernetes Secret values, but keep their structure visible.
-  - path_regex: kubernetes/.*\.sops\.yaml$
-    encrypted_regex: ^(data|stringData)$
-    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
-
   # Catch-all for any other .env files in the root
   - path_regex: \.env$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
