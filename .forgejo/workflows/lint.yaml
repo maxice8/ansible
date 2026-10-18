@@ -20,19 +20,21 @@ jobs:
     steps:
       - name: Install validation tools
         shell: sh
-        run: apk add --no-cache bash git python3 nix
+        run: apk add --no-cache bash git python3 py3-pip nix
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      - name: Install Ruff
+        run: |
+          python3 -m venv /tmp/ci-tools
+          /tmp/ci-tools/bin/pip install ruff==0.16.1
+          echo /tmp/ci-tools/bin >> "$GITHUB_PATH"
+
       - name: Lint Python
-        uses: https://github.com/astral-sh/ruff-action@v3
-        with:
-          version: "0.16.1"
-          github-token: ""
-          args: "check ."
+        run: ruff check .
 
       - name: Check Python formatting
         run: ruff format --check .
