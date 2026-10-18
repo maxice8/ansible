@@ -7,6 +7,7 @@ let
     argus = { repo = "release-argus/Argus"; version = argus.version; };
     asf = { repo = "JustArchiNET/ArchiSteamFarm"; version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix {}).version; };
     forgejo-runner = { repo = "forgejo/runner"; version = pkgs.forgejo-runner.version; };
+    pingvin-share = { repo = "smp46/pingvin-share-x"; version = lib.removePrefix "v" (pkgs.callPackage ../../pkgs/pingvin-share-image.nix {}).imageTag; };
     pocket-id = { repo = "pocket-id/pocket-id"; version = (pkgs.callPackage ../../pkgs/pocket-id.nix {}).version; };
     pomerium = { repo = "pomerium/pomerium"; version = (pkgs.callPackage ../../pkgs/pomerium.nix {}).version; };
     syncthing = { repo = "syncthing/syncthing"; version = (pkgs.callPackage ../../pkgs/syncthing.nix {}).version; };

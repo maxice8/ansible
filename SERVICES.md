@@ -50,6 +50,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 | ArchiSteamFarm | Configure Steam credentials through its private state/UI | `archisteamfarm` |
+| Pingvin Share X | Configure users/OIDC through its state/UI | `pingvin-share` |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
 service ownership/modes are part of the deployment; do not change them globally.
@@ -305,3 +306,8 @@ approval/skipping state. Approval does not update Git or deploy a package.
 Discord webhook URL, storing the webhook ID/token separately. Deploy the change,
 then verify delivery before revoking old credentials. Update packages through
 `make update`, review/build them and explicitly deploy; no GitOps controller runs.
+
+## Pingvin Share X
+
+The pinned upstream OCI image runs under a dedicated rootless identity.
+Persistent state lives under `/var/lib/data/pingvin-share`; runtime images are disposable.

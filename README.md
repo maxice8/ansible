@@ -29,5 +29,6 @@ Never copy local age identities into the Nix store.
 - `forgejo-runner`
 - `argus`
 - `archisteamfarm`
+- `pingvin-share`
 
 See [SERVICES.md](SERVICES.md) for service configuration and credentials.
