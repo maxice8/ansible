@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {
     "argus": "release-argus",
     "asf": "archisteamfarm",
+    "backrest": "backrest",
     "forgejo": "forgejo",
     "pocket-id": "pocket-id",
     "pomerium": "pomerium",

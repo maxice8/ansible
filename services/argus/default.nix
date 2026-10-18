@@ -20,6 +20,10 @@ let
       repo = "JustArchiNET/ArchiSteamFarm";
       version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix { }).version;
     };
+    backrest = {
+      repo = "garethgeorge/backrest";
+      version = (pkgs.callPackage ../../pkgs/backrest.nix { }).version;
+    };
     forgejo-runner = {
       repo = "forgejo/runner";
       version = pkgs.forgejo-runner.version;

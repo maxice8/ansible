@@ -19,6 +19,7 @@
     ../services/archisteamfarm
     ../services/netdata
     ../services/forgejo-runner
+    ../services/backrest
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
 }
