@@ -26,5 +26,6 @@ Never copy local age identities into the Nix store.
 - `pomerium`
 - `syncthing`
 - `forgejo`
+- `forgejo-runner`
 
 Each module declares its service configuration and credential requirements.

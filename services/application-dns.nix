@@ -19,7 +19,11 @@ let
       path = resolver;
     }
   ];
-  native = [ "syncthing-heartbeat" ];
+  native = [
+    "forgejo-runner"
+    "runner-engine"
+    "syncthing-heartbeat"
+  ];
 in
 {
   environment.etc."homelab/resolv.conf".text = ''
