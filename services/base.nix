@@ -13,6 +13,7 @@
   system-manager.linkCurrentSystem = false;
 
 
+  environment.etc."systemd/portable/profile/mashu/service.conf".text = import ./portable-profile.nix;
 
   # Refuse activation on hosts lacking the systemd/cgroup baseline used by our units.
   system-manager.preActivationAssertions.hostBaseline = {

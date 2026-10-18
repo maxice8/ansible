@@ -3,8 +3,10 @@
 # IDs 5000-5999 are reserved for our services; host policy caps ordinary IDs at 4999.
 { lib, pkgs, ... }:
 let
-  ids = { unbound = 5010; };
-  ranges = {};
+  ids = { forgejo = 5005; argus = 5007; archisteamfarm = 5013; netdata = 5011;
+    forgejo-runner = 5012; backrest = 5008; runner-engine = 5009; pingvin-share = 5006;
+    unbound = 5010; };
+  ranges = { runner-engine = 500000; pingvin-share = 600000; };
 in {
   services.userborn.enable = lib.mkForce true;
   users.users = lib.mkForce (lib.mapAttrs (name: uid: {

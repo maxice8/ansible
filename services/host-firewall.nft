@@ -1,0 +1,21 @@
+# Own only this table; Tailscale maintains its own routing/netfilter rules.
+destroy table inet hostfilter
+table inet hostfilter {
+  chain input {
+    type filter hook input priority -10; policy drop;
+    iifname "lo" accept
+    iifname "tailscale0" accept
+    ct state established,related accept
+    udp sport 547 udp dport 546 accept
+    ct state invalid drop
+    meta l4proto { icmp, ipv6-icmp } accept
+    tcp dport { 22 } accept
+  }
+  chain forward {
+    # This host consumes overlay routes; it advertises neither subnets nor an exit node.
+    type filter hook forward priority -10; policy drop;
+  }
+  chain output {
+    type filter hook output priority -10; policy accept;
+  }
+}

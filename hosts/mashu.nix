@@ -3,8 +3,11 @@
 { ... }: {
   imports = [
     ../services/base.nix
+    ../services/host-policy.nix
     ../services/unbound
+    ../services/application-dns.nix
     ../services/app-users.nix
+    ../services/rootless-containers.nix
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
 }
