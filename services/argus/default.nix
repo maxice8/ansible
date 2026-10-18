@@ -40,6 +40,10 @@ let
       repo = "syncthing/syncthing";
       version = (pkgs.callPackage ../../pkgs/syncthing.nix { }).version;
     };
+    netdata-agent = {
+      repo = "netdata/netdata";
+      version = pkgs.netdata.version;
+    };
     forgejo = {
       repo = "forgejo/forgejo";
       version = (pkgs.callPackage ../../pkgs/forgejo.nix { }).version;
@@ -131,6 +135,15 @@ let
       forgejo-runner = manual.forgejo-runner // {
         # Change only the upstream query; its selected Nix version remains manual.
         latest_version = forgejoLatest "runner";
+      };
+      netdata-agent = manual.netdata-agent // {
+        comment = "Running native host collector HTTP version";
+        deployed_version = {
+          type = "url";
+          url = "http://127.0.0.1:19999/api/v1/info";
+          json = "version";
+          regex = "^v?([0-9.]+)";
+        };
       };
       asf = manual.asf // {
         # ASF uses four-part versions, outside SemVer's three-part format.

@@ -30,5 +30,6 @@ Never copy local age identities into the Nix store.
 - `argus`
 - `archisteamfarm`
 - `pingvin-share`
+- `netdata`
 
 Each module declares its service configuration and credential requirements.

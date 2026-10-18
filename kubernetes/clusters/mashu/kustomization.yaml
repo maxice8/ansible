@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - gateway-system-namespace.yaml
-  - netdata-namespace.yaml
   - sops-secrets-operator-namespace.yaml
   - gateway-api.yaml
   - public-gateway.yaml
@@ -17,7 +16,6 @@ resources:
   - rancher-compliance.yaml
   - platform-routes.yaml
   - whoami.yaml
-  - netdata.yaml
 
 patches:
   - target:

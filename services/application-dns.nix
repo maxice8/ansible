@@ -20,6 +20,8 @@ let
     }
   ];
   native = [
+    "netdata"
+    "netdata-heartbeat"
     "forgejo-runner"
     "runner-engine"
     "pingvin-share"
