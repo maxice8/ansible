@@ -19,7 +19,7 @@ let
       path = resolver;
     }
   ];
-  native = [ ];
+  native = [ "syncthing-heartbeat" ];
 in
 {
   environment.etc."homelab/resolv.conf".text = ''

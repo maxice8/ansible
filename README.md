@@ -24,5 +24,6 @@ Never copy local age identities into the Nix store.
 - `traefik`
 - `pocket-id`
 - `pomerium`
+- `syncthing`
 
 Each module declares its service configuration and credential requirements.
