@@ -1,496 +1,261 @@
 #!/usr/bin/env python3
-"""Update pinned host, chart, and container versions."""
+"""Update pinned Nix releases and checksums; commit only the selected package file."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import subprocess
 import sys
-import urllib.error
-import urllib.parse
 import urllib.request
-from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION_PATTERN = re.compile(r"[0-9]+(?:\.[0-9]+)+(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?")
-
-
-@dataclass(frozen=True)
-class Edit:
-    path: str
-    pattern: str
-    matches: int = 1
-
-
-@dataclass(frozen=True)
-class Component:
-    edits: tuple[Edit, ...]
-    suffix: str = ""
-    commit_scope: str = ""
-    commit_target: str = ""
-
-
-def image(path: str, repository: str, matches: int = 1) -> Edit:
-    return Edit(path, rf"({re.escape(repository)}:)([^\s]+)", matches)
-
-
-def chart(path: str, repository: str, name: str) -> Edit:
-    return Edit(
-        path,
-        rf"(repoURL: {re.escape(repository)}\s+chart: {re.escape(name)}"
-        rf"\s+targetRevision:\s+)([^\s]+)",
-    )
-
-
-COMPONENTS = {
-    "argocd": Component(
-        (
-            Edit(
-                "inventory.py",
-                r'("argocd":\s*\{[^}]*?"version":\s*")([^"]+)',
-            ),
-        ),
-    ),
-    "k3s": Component(
-        (
-            Edit(
-                "inventory.py",
-                r'("k3s":\s*\{[^}]*?"version":\s*")([^"]+)',
-            ),
-        ),
-    ),
-    "gateway-api": Component(
-        (
-            Edit(
-                "kubernetes/platform/gateway-api/kustomization.yaml",
-                r"(releases/download/v)([^/\s]+)(?=/standard-install\.yaml)",
-            ),
-        ),
-    ),
-    "rancher": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/rancher.yaml",
-                "https://releases.rancher.com/server-charts/latest",
-                "rancher",
-            ),
-        )
-    ),
-    "rancher-compliance": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/rancher-compliance.yaml",
-                "https://charts.rancher.io",
-                "rancher-compliance-crd",
-            ),
-            chart(
-                "kubernetes/clusters/mashu/rancher-compliance.yaml",
-                "https://charts.rancher.io",
-                "rancher-compliance",
-            ),
-        )
-    ),
-    "traefik-chart": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/traefik.yaml",
-                "https://traefik.github.io/charts",
-                "traefik",
-            ),
-        ),
-        commit_scope="traefik",
-        commit_target="chart",
-    ),
-    "traefik-image": Component(
-        (
-            Edit(
-                "kubernetes/clusters/mashu/traefik.yaml",
-                r"(image:\s+tag:\s+)([^\s]+)",
-            ),
-        ),
-        commit_scope="traefik",
-        commit_target="image",
-    ),
-    "cert-manager": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/cert-manager.yaml",
-                "https://charts.jetstack.io",
-                "cert-manager",
-            ),
-        ),
-    ),
-    "sops-secrets-operator": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/sops-secrets-operator.yaml",
-                "https://isindir.github.io/sops-secrets-operator",
-                "sops-secrets-operator",
-            ),
-        )
-    ),
-    "netdata": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/netdata.yaml",
-                "https://netdata.github.io/helmchart/",
-                "netdata",
-            ),
-        )
-    ),
-    "argus": Component(
-        (
-            image(
-                "kubernetes/apps/argus/deployment.yaml", "docker.io/releaseargus/argus"
-            ),
-        )
-    ),
-    "asf": Component(
-        (
-            image(
-                "kubernetes/apps/asf/deployment.yaml",
-                "docker.io/justarchi/archisteamfarm",
-                matches=2,
-            ),
-        )
-    ),
-    "backrest": Component(
-        (
-            image(
-                "kubernetes/platform/backrest/deployment.yaml",
-                "ghcr.io/garethgeorge/backrest",
-            ),
-        ),
-    ),
-    "forgejo-chart": Component(
-        (
-            chart(
-                "kubernetes/clusters/mashu/forgejo.yaml",
-                "code.forgejo.org/forgejo-helm",
-                "forgejo",
-            ),
-        ),
-        commit_scope="forgejo",
-        commit_target="chart",
-    ),
-    "forgejo": Component(
-        (
-            Edit(
-                "kubernetes/clusters/mashu/forgejo.yaml",
-                r"(image:\s+tag:\s+)([^\s]+)",
-            ),
-        ),
-        commit_scope="forgejo",
-        commit_target="image",
-    ),
-    "forgejo-runner": Component(
-        (
-            image(
-                "kubernetes/apps/forgejo-runner/deployment.yaml",
-                "code.forgejo.org/forgejo/runner",
-            ),
-        )
-    ),
-    "docker-dind": Component(
-        (
-            Edit(
-                "kubernetes/apps/forgejo-runner/deployment.yaml",
-                r"(docker\.io/library/docker:)([^\s]+)",
-            ),
-        ),
-        suffix="-dind",
-    ),
-    "pingvin-share": Component(
-        (
-            image(
-                "kubernetes/apps/pingvin-share/deployment.yaml",
-                "docker.io/smp46/pingvin-share-x",
-            ),
-        ),
-    ),
-    "pocket-id": Component(
-        (
-            image(
-                "kubernetes/apps/pocket-id/deployment.yaml",
-                "ghcr.io/pocket-id/pocket-id",
-            ),
-        ),
-    ),
-    "pomerium": Component(
-        (
-            image(
-                "kubernetes/apps/pomerium/deployment.yaml",
-                "docker.io/pomerium/pomerium",
-            ),
-        ),
-    ),
-    "syncthing": Component(
-        (
-            image(
-                "kubernetes/apps/syncthing/deployment.yaml",
-                "docker.io/syncthing/syncthing",
-            ),
-        )
-    ),
-    "whoami": Component(
-        (image("kubernetes/apps/whoami/deployment.yaml", "docker.io/traefik/whoami"),),
-    ),
-    "yq": Component(
-        (
-            image(
-                "kubernetes/platform/backrest/deployment.yaml", "docker.io/mikefarah/yq"
-            ),
-        )
-    ),
+PACKAGES = {
+    "argus": "release-argus",
+    "asf": "archisteamfarm",
+    "backrest": "backrest",
+    "forgejo": "forgejo",
+    "pocket-id": "pocket-id",
+    "pomerium": "pomerium",
+    "syncthing": "syncthing",
+    "tailscale": "tailscale",
+    "traefik": "traefik",
 }
-
+LOCKED = {"forgejo-runner", "netdata"}
 ALIASES = {
     "archisteamfarm": "asf",
-    "cert-manager-chart": "cert-manager",
-    "netdata-chart": "netdata",
-    "rancher-chart": "rancher",
-    "rancher-compliance-chart": "rancher-compliance",
-    "sops-secrets-operator-chart": "sops-secrets-operator",
+    "traefik-image": "traefik",
+    "netdata-agent": "netdata",
 }
+COMPONENTS = set(PACKAGES) | LOCKED | {"pingvin-share"}
+VERSION = re.compile(r'(\bversion = ")([^"\n]+)(")')
+RELEASE = re.compile(
+    r'((?:aarch64|x86_64)-linux = \{ arch = "([^"]+)"; sha256 = ")([a-f0-9]{64})(")'
+)
 
-ARGUS_CONFIG = ROOT / "kubernetes/apps/argus/config.yml"
 
-
-def normalize_version(raw_version: str, component: Component) -> str:
-    version = raw_version.removeprefix("v")
-    if not VERSION_PATTERN.fullmatch(version):
-        raise ValueError(f"invalid version: {raw_version!r}")
-    if component.suffix and version.endswith(component.suffix):
-        version = version[: -len(component.suffix)]
-    return version
+def replace_one(text: str, pattern: str, value: str) -> str:
+    """Require the exact pin layout rather than silently editing the wrong field."""
+    regex = re.compile(pattern)
+    if len(regex.findall(text)) != 1:
+        raise RuntimeError(f"expected one match for {pattern!r}")
+    return regex.sub(lambda m: m[1] + value + m[3], text)
 
 
 def download_sha256(url: str) -> str:
+    digest = hashlib.sha256()
     request = urllib.request.Request(
         url, headers={"User-Agent": "homelab-version-updater"}
     )
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return hashlib.sha256(response.read()).hexdigest()
-    except (OSError, urllib.error.URLError) as error:
-        raise RuntimeError(f"failed to download {url}: {error}") from error
+    with urllib.request.urlopen(request, timeout=60) as response:
+        while block := response.read(1024 * 1024):
+            digest.update(block)
+    return digest.hexdigest()
 
 
-def replace_matches(
-    contents: dict[Path, str],
-    edit: Edit,
-    value: str | Callable[[str], str],
-) -> tuple[str, str]:
-    path = ROOT / edit.path
-    try:
-        text = contents.setdefault(path, path.read_text())
-    except OSError as error:
-        raise RuntimeError(f"failed to read {edit.path}: {error.strerror}") from error
-    regex = re.compile(edit.pattern, re.MULTILINE)
-    matches = list(regex.finditer(text))
-    if len(matches) != edit.matches:
-        raise RuntimeError(
-            f"expected {edit.matches} version match(es) in {edit.path}, "
-            f"found {len(matches)}"
-        )
-    old_values = {match.group(2) for match in matches}
-    if len(old_values) != 1:
-        raise RuntimeError(
-            f"expected matching versions in {edit.path}, found "
-            f"{', '.join(sorted(old_values))}"
-        )
-    old_value = old_values.pop()
-    new_value = value(old_value) if callable(value) else value
-    contents[path] = regex.sub(
-        lambda match: f"{match.group(1)}{new_value}", text, count=edit.matches
+def package_update(text: str, version: str) -> str:
+    """Resolve the package's own release URL for both supported architectures."""
+    text = replace_one(text, VERSION.pattern, version)
+    urls = re.findall(r'\burl = "([^"\n]+)"', text)
+    if len(urls) != 1:
+        raise RuntimeError("expected one upstream release URL")
+    url = urls[0].replace("${version}", version)
+    releases = list(RELEASE.finditer(text))
+    if releases:
+        if len(releases) != 2:
+            raise RuntimeError("expected ARM64 and x86_64 release checksums")
+        hashes = {}
+        for match in releases:
+            resolved = url.replace("${release.arch}", match[2])
+            if "${" in resolved:
+                raise RuntimeError(f"unresolved release URL: {resolved}")
+            hashes[match[2]] = download_sha256(resolved)
+        return RELEASE.sub(lambda m: m[1] + hashes[m[2]] + m[4], text)
+    if "${" in url:
+        raise RuntimeError(f"unresolved release URL: {url}")
+    return replace_one(text, r'(\bsha256 = ")([a-f0-9]{64})(")', download_sha256(url))
+
+
+def image_update(text: str, version: str) -> str:
+    """Prefetch the pinned upstream ARM64 image, never the workstation architecture."""
+    image = re.search(r'imageName = "([^"]+)"', text)
+    if image is None:
+        raise RuntimeError("missing upstream image name")
+    result = subprocess.run(
+        [
+            "nix-prefetch-docker",
+            "--image-name",
+            image[1],
+            "--image-tag",
+            f"v{version}",
+            "--arch",
+            "arm64",
+            "--os",
+            "linux",
+            "--json",
+            "--quiet",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
-    return old_value, new_value
+    pin = json.loads(result.stdout)
+    if pin.get("imageName") != image[1] or pin.get("finalImageTag") != f"v{version}":
+        raise RuntimeError("prefetch returned a different image or tag")
+    if not re.fullmatch(r"sha256:[a-f0-9]{64}", pin["imageDigest"]):
+        raise RuntimeError("invalid upstream image digest")
+    # Accept Nix base32 or SRI hashes returned by the pinned prefetch tool.
+    if not re.fullmatch(r"[0-9a-z]{52}|sha256-[A-Za-z0-9+/]{43}=", pin["hash"]):
+        raise RuntimeError("invalid image archive hash")
+    for key, value in {
+        "imageDigest": pin["imageDigest"],
+        "hash": pin["hash"],
+        "finalImageTag": f"v{version}",
+    }.items():
+        text = replace_one(text, rf'({key} = ")([^"\n]+)(")', value)
+    return text
+
+
+def path_for(component: str) -> Path:
+    name = (
+        "pingvin-share-image" if component == "pingvin-share" else PACKAGES[component]
+    )
+    return ROOT / "pkgs" / f"{name}.nix"
 
 
 def validate() -> None:
-    errors: list[str] = []
-    for component_name, component in COMPONENTS.items():
-        for edit in component.edits:
-            try:
-                replace_matches({}, edit, lambda current: current)
-            except RuntimeError as error:
-                errors.append(f"{component_name}: {error}")
-
-    try:
-        argus_config = ARGUS_CONFIG.read_text()
-    except OSError as error:
-        errors.append(
-            f"failed to read {ARGUS_CONFIG.relative_to(ROOT)}: {error.strerror}"
-        )
-    else:
-        _, separator, services_config = argus_config.partition("\nservice:\n")
-        if not separator:
-            errors.append("could not find the top-level Argus service map")
+    for component in sorted(set(PACKAGES) | {"pingvin-share"}):
+        text = path_for(component).read_text()
+        if component == "pingvin-share":
+            for key in ["imageDigest", "hash", "finalImageTag"]:
+                replace_one(text, rf'({key} = ")([^"\n]+)(")', "validation-only")
+            if 'arch = "arm64"' not in text:
+                raise RuntimeError("Pingvin image must select ARM64")
         else:
-            argus_services = set(
-                re.findall(r"^  ([a-z0-9][a-z0-9-]*):$", services_config, re.MULTILINE)
+            replace_one(text, VERSION.pattern, "validation-only")
+            releases = RELEASE.findall(text)
+            if (
+                not releases
+                and len(re.findall(r'\bsha256 = "[a-f0-9]{64}"', text)) != 1
+            ):
+                raise RuntimeError(f"{component}: missing release checksums")
+            if releases and len(releases) != 2:
+                raise RuntimeError(f"{component}: expected two architecture pins")
+    selected = (
+        (ROOT / "services/argus.nix")
+        .read_text()
+        .split("  selected = {", 1)[1]
+        .split("\n  };", 1)[0]
+    )
+    names = {
+        ALIASES.get(name, name)
+        for name in re.findall(r"^    ([a-z0-9-]+) =", selected, re.MULTILINE)
+    }
+    if names != COMPONENTS - {"tailscale"}:
+        raise RuntimeError(
+            f"Argus/updater mapping mismatch: {names ^ (COMPONENTS - {'tailscale'})}"
+        )
+    print(
+        f"Validated {len(COMPONENTS)} Nix component mappings; {', '.join(sorted(LOCKED))} use flake.lock"
+    )
+
+
+def update(component: str, version: str, dry_run: bool) -> None:
+    if component in LOCKED:
+        raise RuntimeError(
+            f"{component} is provided by locked Nixpkgs; update the system-manager input deliberately, then rebuild and verify the selected package version"
+        )
+    version = version.removeprefix("v")
+    if not re.fullmatch(
+        r"[0-9]+(?:\.[0-9]+)+(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?", version
+    ):
+        raise ValueError(f"invalid version: {version!r}")
+    path = path_for(component)
+    text = path.read_text()
+    pattern = (
+        r'finalImageTag = "v([^"\n]+)"'
+        if component == "pingvin-share"
+        else VERSION.pattern
+    )
+    match = re.search(pattern, text)
+    if match is None:
+        raise RuntimeError(f"missing version in {path.relative_to(ROOT)}")
+    current = match[1] if component == "pingvin-share" else match[2]
+    if current == version:
+        print(f"{component} is already at {version}")
+        return
+    relative = str(path.relative_to(ROOT))
+    if not dry_run:
+        status = subprocess.check_output(
+            ["git", "status", "--short", "--", relative], cwd=ROOT, text=True
+        )
+        if status:
+            raise RuntimeError(
+                f"refusing to overwrite or commit pre-existing component changes:\n{status.rstrip()}"
             )
-            component_names = set(COMPONENTS)
-            if argus_services != component_names:
-                errors.append(
-                    f"Argus-only services: {', '.join(sorted(argus_services - component_names)) or 'none'}; "
-                    f"updater-only services: {', '.join(sorted(component_names - argus_services)) or 'none'}"
-                )
-
-    if errors:
-        raise RuntimeError("\n".join(errors))
-
-    print(f"Validated {len(COMPONENTS)} component mappings and matching Argus services")
-
-
-def git_run(
-    arguments: list[str], *, capture_output: bool = False
-) -> subprocess.CompletedProcess[str]:
-    try:
-        return subprocess.run(
-            ["git", *arguments],
-            cwd=ROOT,
-            check=True,
-            capture_output=capture_output,
-            text=True,
-        )
-    except OSError as error:
-        raise RuntimeError(f"failed to run Git: {error}") from error
-    except subprocess.CalledProcessError as error:
-        raise RuntimeError(
-            f"Git command failed with exit status {error.returncode}"
-        ) from error
-
-
-def ensure_clean_component_paths(changed_paths: list[Path]) -> list[str]:
-    relative_paths = [str(path.relative_to(ROOT)) for path in changed_paths]
-    status = git_run(["status", "--short", "--", *relative_paths], capture_output=True)
-    if status.stdout:
-        raise RuntimeError(
-            "refusing to overwrite or commit pre-existing component changes:\n"
-            f"{status.stdout.rstrip()}"
-        )
-    return relative_paths
-
-
-def update(component_name: str, raw_version: str, dry_run: bool) -> None:
-    component_name = ALIASES.get(component_name, component_name)
-    component = COMPONENTS[component_name]
-    plain_version = normalize_version(raw_version, component)
-    contents: dict[Path, str] = {}
-    changes: list[tuple[str, str, str]] = []
-
-    for edit in component.edits:
-        old, new = replace_matches(
-            contents,
-            edit,
-            lambda current: (
-                f"{'v' if current.startswith('v') else ''}"
-                f"{plain_version}{component.suffix}"
-            ),
-        )
-        changes.append((edit.path, old, new))
-
-    if component_name == "argocd":
-        url = (
-            "https://raw.githubusercontent.com/argoproj/argo-cd/"
-            f"v{plain_version}/manifests/install.yaml"
-        )
-        checksum = download_sha256(url)
-        checksum_edit = Edit(
-            "inventory.py",
-            r'("argocd":\s*\{[^}]*?"manifest_sha256":\s*")([0-9a-f]{64})',
-        )
-        old, new = replace_matches(contents, checksum_edit, checksum)
-        changes.append((checksum_edit.path, old, new))
-
-    if component_name == "k3s":
-        encoded_version = urllib.parse.quote(f"v{plain_version}", safe="")
-        url = (
-            f"https://raw.githubusercontent.com/k3s-io/k3s/{encoded_version}/install.sh"
-        )
-        checksum = download_sha256(url)
-        checksum_edit = Edit(
-            "inventory.py",
-            r'("k3s":\s*\{[^}]*?"installer_sha256":\s*")([0-9a-f]{64})',
-        )
-        old, new = replace_matches(contents, checksum_edit, checksum)
-        changes.append((checksum_edit.path, old, new))
-
-    changed_paths = [
-        path for path, new_text in contents.items() if new_text != path.read_text()
-    ]
-    if not changed_paths:
-        print(f"{component_name} is already at {changes[0][2]}")
-        return
-
+    changed = (
+        image_update(text, version)
+        if component == "pingvin-share"
+        else package_update(text, version)
+    )
+    print(
+        f"{'Would update' if dry_run else 'Updated'} {relative}: {current} -> {version} (including release checksums)"
+    )
     if dry_run:
-        for path, old, new in changes:
-            if old != new:
-                print(f"Would update {path}: {old} -> {new}")
         return
-
-    relative_paths = ensure_clean_component_paths(changed_paths)
-    for path in changed_paths:
-        path.write_text(contents[path])
-    for path, old, new in changes:
-        if old != new:
-            print(f"Updated {path}: {old} -> {new}")
-
-    scope = component.commit_scope or component_name
-    target = f"{component.commit_target} " if component.commit_target else ""
-    message = f"chore({scope}): update {target}to {changes[0][2]}"
-    sys.stdout.flush()
-    git_run(["commit", "--only", "-m", message, "--", *relative_paths])
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("component", nargs="?", metavar="COMPONENT")
-    parser.add_argument("version", nargs="?", metavar="VERSION")
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--check", action="store_true")
-    parser.add_argument("--list", action="store_true")
-    args = parser.parse_args()
-    if args.list or args.check:
-        return args
-    if not args.component:
-        parser.error(
-            "missing service. Use: make update service=<component> version=<version>. "
-            "Run 'make list' for available services."
-        )
-    if args.component not in COMPONENTS and args.component not in ALIASES:
-        parser.error(
-            f"unknown service {args.component!r}. "
-            f"Available services: {', '.join(sorted(COMPONENTS))}"
-        )
-    if not args.version:
-        parser.error(
-            f"missing version. Use: make update service={args.component} version=<version>"
-        )
-    return args
+    # All downloads and validation finish before any source file is changed.
+    path.write_text(changed)
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "--only",
+            "-m",
+            f"chore({component}): update to {version}",
+            "--",
+            relative,
+        ],
+        cwd=ROOT,
+        check=True,
+    )
 
 
 def main() -> int:
-    args = parse_args()
-    if args.check:
-        try:
-            validate()
-        except RuntimeError as error:
-            print(f"error: {error}", file=sys.stderr)
-            return 1
-        return 0
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("component", nargs="?")
+    parser.add_argument("version", nargs="?")
+    parser.add_argument("--list", action="store_true")
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
     if args.list:
-        for component in sorted(COMPONENTS):
-            print(f"  {component}")
+        for name in sorted(COMPONENTS):
+            print(f"  {name}" + (" (flake.lock)" if name in LOCKED else ""))
         return 0
+    if not args.check and (
+        ALIASES.get(args.component, args.component) not in COMPONENTS
+        or not args.version
+    ):
+        parser.error(
+            "use make update service=<component> version=<version>; make list shows supported components"
+        )
     try:
-        update(args.component, args.version, args.dry_run)
-    except (RuntimeError, ValueError) as error:
+        if args.check:
+            validate()
+        else:
+            update(
+                ALIASES.get(args.component, args.component), args.version, args.dry_run
+            )
+    except (
+        OSError,
+        RuntimeError,
+        ValueError,
+        KeyError,
+        subprocess.CalledProcessError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     return 0

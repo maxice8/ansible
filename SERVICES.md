@@ -1,708 +1,161 @@
-# Service Setup
+# Service setup and credentials
 
-This document contains the secret procedures and manual setup actions for the
-host and its services. Complete only the sections that apply to a new install
-or a credential change.
+Run local commands inside the [devenv environment](README.md#development-environment).
+Nix owns final service configuration; applications own their mutable state under
+`/var/lib/data`. The repository contains no cutover scripts.
 
-Set these variables before you use the commands:
+## SOPS identity
 
-```bash
-export HOSTNAME="host"
-export DOMAIN="example.com"
+All active service credentials live in `secrets/mashu.sops.yaml`. SOPS encrypts
+values; field names remain visible. On Mashu, sops-nix decrypts them using
+`/var/lib/sops-nix/key.txt`, then systemd supplies private service credentials.
+Plaintext credentials and identities must never enter Git, the Nix store or logs.
+
+Restore the existing `.age-key.txt` from the password manager. Generate a new
+identity only for an intentionally new installation, and update the public
+recipient in `.sops.yaml` before encrypting its credentials. Keep the identity,
+administrator SSH key, backup passwords and recovery codes separately recoverable.
+
+For a **fresh host only**, provision the identity over the independent SSH path:
+
+```sh
+ssh mashu-admin 'sudo install -d -m 0700 /var/lib/sops-nix &&
+  sudo sh -c "set -C; umask 077; cat > /var/lib/sops-nix/key.txt"' < .age-key.txt
 ```
 
-## Secret Rules
+The command refuses to overwrite an existing identity. Preserve Mashu's current
+identity on redeployment. The local file is ignored; deployments do not copy it
+into their source snapshot. Keep it locally only when needed for secret editing.
 
-SOPS encrypts Kubernetes secrets and host settings in this repository. The
-SOPS Secrets Operator decrypts Kubernetes secrets in the cluster. Pyinfra
-decrypts `vars/settings.sops.yaml` locally when Tailscale needs enrollment.
+List/edit secrets and validate decryption without printing values:
 
-Keep these recovery items in a password manager and in a secure backup:
-
-- The Age identity
-- The administrator SSH private key
-- Application administrator passwords
-- Account recovery codes
-- Storage and backup account credentials
-
-Do not put a plain secret in the repository. Do not decrypt a secret to a
-temporary file in the repository. Do not show a decrypted secret in terminal
-output.
-
-### Create the Age identity
-
-Create one Age identity:
-
-```bash
-age-keygen -o .age-key.txt
-age-keygen -y .age-key.txt
+```sh
+python scripts/update_secret.py --list
+make secret service=traefik
+SOPS_AGE_KEY_FILE=.age-key.txt sops --decrypt secrets/mashu.sops.yaml >/dev/null
 ```
 
-Set the public recipient in `.sops.yaml`. The recipient is not a secret.
-
-Do not commit `.age-key.txt`. Store the file in a password manager and in a
-secure offline backup. Pyinfra copies this identity to the host so that the
-SOPS Secrets Operator can use it.
-
-After a successful bootstrap, you can remove the local `.age-key.txt` copy.
-Later Argo CD deployments proceed without it while the cluster contains the
-`sops-age-identity` Secret and its `keys.txt` entry. Restore the file from the
-password manager before editing encrypted secrets, rotating the identity, or
-recovering a cluster where that Secret is unavailable.
-
-### Edit an encrypted secret
-
-Use the Makefile helper for a supported service. It uses hidden, shell-neutral
-prompts and leaves a value unchanged when you submit an empty response:
-
-```bash
-make secret service=<service>
-```
-
-List the supported services with:
-
-```bash
-make help
-```
-
-Backrest contains multiline values, so its target opens the SOPS editor.
-Save and close the editor to encrypt the changes.
-
-Confirm that SOPS can decrypt the file. Discard the plain output:
-
-```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --decrypt <secret-file>.sops.yaml >/dev/null
-```
-
-### Add an encrypted secret
-
-Create a `SopsSecret` resource with its required `data` or `stringData`
-fields. Encrypt these fields in place:
-
-```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --encrypt --in-place <secret-file>.sops.yaml
-```
-
-Add the file to the applicable `kustomization.yaml` file.
-
-## External Infrastructure
-
-### DNS records
-
-Create DNS-only A and AAAA records for the public service names. Point the A
-records to the public IPv4 address. Point the AAAA records to the public IPv6
-address.
-
-The current manifests use these name patterns:
-
-- `*.${HOSTNAME}.${DOMAIN}`
-- `git.${DOMAIN}`
-- `id.${DOMAIN}`
-- `rancher.${DOMAIN}`
-
-Change the manifests if you use different names.
-
-### Network ingress
-
-Open the core ports in [README.md](README.md). Open an additional port only
-when a service section below requires it.
-
-## cert-manager and Cloudflare
-
-cert-manager uses a Cloudflare API token to complete DNS-01 challenges. Use a
-token that can read the required zone and edit its DNS records.
-
-### Create the API token
-
-Use the current
-[Cloudflare token procedure](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
-and the
-[cert-manager permission requirements](https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/):
-
-1. Sign in to the Cloudflare dashboard.
-2. Open **My Profile** and then **API Tokens**.
-3. Select **Create Token**.
-4. Use the **Edit zone DNS** template, or create a custom token.
-5. Set one permission to **Zone**, **DNS**, and **Edit**.
-6. Set a second permission to **Zone**, **Zone**, and **Read**.
-7. Include only the DNS zone for `$DOMAIN`.
-8. Review the summary and create the token.
-9. Copy the token when Cloudflare shows it. Cloudflare does not show it again.
-
-Do not save the token in `.cloudflare-api-token` or another plain-text file.
-
-### Store the API token
-
-Store it directly in the existing encrypted resource:
-
-```bash
-make secret service=cert-manager
-```
-
-Commit only the encrypted `.sops.yaml` file.
-
-Confirm that the secret is valid and wait for Argo CD to apply it:
-
-```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --decrypt \
-  kubernetes/platform/certificate-issuers/cloudflare-api-token.sops.yaml \
-  >/dev/null
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n cert-manager get sopssecret,secret'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get certificate,certificaterequest,challenge -A'
-```
-
-Revoke the old token in the Cloudflare dashboard after the certificates are
-ready.
-
-## Argo CD
-
-Create a local tunnel if the public route is not ready:
-
-```bash
-ssh -L 8080:127.0.0.1:8080 "$HOSTNAME" \
-  'sudo k3s kubectl -n argocd port-forward \
-  service/argocd-server 8080:443 --address 127.0.0.1'
-```
-
-Get the initial administrator password:
-
-```bash
-ssh "$HOSTNAME" \
-  "sudo k3s kubectl -n argocd get secret \
-  argocd-initial-admin-secret \
-  -o jsonpath='{.data.password}' | base64 -d; echo"
-```
-
-Open `https://localhost:8080` and sign in as `admin`. Change the password and
-store it in a password manager. After the public route is ready, use
-`https://argocd.${HOSTNAME}.${DOMAIN}`.
-
-The public GitHub mirror does not require a repository credential. If the
-repository becomes private, create a read-only repository credential and
-store it as a SOPS-encrypted Kubernetes secret.
-
-## Argus
-
-Open `https://argus.${HOSTNAME}.${DOMAIN}` after the Argus and Pomerium
-Applications are healthy. Pocket ID protects the route through Pomerium.
-
-Argus compares upstream releases with the versions in the public GitHub
-mirror. Its inventory is in `kubernetes/apps/argus/config.yml`. Add or remove
-services there and let Argo CD reconcile the ConfigMap. The inventory
-is read-only in the web interface, while approval and skipped-release state is
-stored in the `argus-data` volume.
-
-### Configure the GitHub token
-
-Argus reads the GitHub token from the SOPS-managed `argus-credentials` Secret
-through `ARGUS_SERVICE_LATEST_VERSION_ACCESS_TOKEN`. For this public inventory,
-use a GitHub personal access token with read-only public access, an expiration
-date, and no write scopes. Never place it in `config.yml` or another plain
-file. A token rotation requires recreating the
-Argus pod after the Secret reconciles because environment variables are read
-only when the container starts.
-
-```bash
-make secret service=argus
-```
-
-### Configure Discord notifications
-
-Create a Discord webhook and copy its URL. Argus sends a notification when it
-finds a new release for any tracked component. The same Argus secret target
-accepts the complete webhook URL and stores its ID and token separately:
-
-```bash
-make secret service=argus
-```
-
-After Argo CD deploys the Secret, restart Argus and test the notifier:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argus rollout restart deployment/argus && \
-  sudo k3s kubectl -n argus rollout status deployment/argus --timeout=120s'
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argus exec deployment/argus -- \
-  /usr/bin/argus -config.file=/app/config.yml -test.notify discord'
-```
-
-No commands or update webhooks are configured. Approving a release records the
-decision in Argus but does not change Git or the cluster. Use the matching
-Makefile target, review its diff, then commit and push it. Argus clears the
-version difference after the GitHub mirror receives the new revision.
-
-### Update applications
-
-Applications are the workloads under `kubernetes/apps` and application-like
-platform workloads such as Backrest. Argo CD owns their live Kubernetes
-resources. Update the pinned image with its Makefile target; do not run a
-direct, non-dry-run `kubectl apply`.
-
-For example:
-
-```bash
-make update service=pomerium version=v0.33.1
-```
-
-Validate the YAML, render both the application and cluster, and ask the live
-API server to validate the rendered resources without saving them:
-
-```bash
-yq '.' kubernetes/apps/<application>/deployment.yaml >/dev/null
-
-kubectl kustomize kubernetes/apps/<application> >/dev/null
-kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
-
-kubectl kustomize kubernetes/apps/<application> |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl apply --dry-run=server \
-    -n <namespace> -f -'
-
-kubectl kustomize kubernetes/apps/<application> |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl diff --server-side \
-    -n <namespace> -f -'
-
-git diff --check
-pre-commit run --all-files
-git diff
-```
-
-Commit and push after reviewing the diff. Argo CD deploys the commit. Monitor
-the child Application and workload rather than applying the render manually:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argocd get application <application> --watch'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n <namespace> rollout status \
-  deployment/<application> --timeout=300s'
-```
-
-### Update system applications
-
-System applications include Gateway API, Traefik, cert-manager, Rancher, and
-the other child Applications under `kubernetes/clusters/$HOSTNAME`. Argo CD
-owns them, but changes to CRDs, controllers, and charts can affect every
-application. Update and verify one system application per commit.
-
-For a Helm-backed system application, change `targetRevision` and any
-explicit image tag or values that must move with the chart:
-
-```bash
-make update service=traefik-chart version=<new-chart-version>
-make update service=traefik-image version=<compatible-image-version>
-```
-
-```yaml
-# kubernetes/clusters/<host>/<application>.yaml
-spec:
-  source:
-    repoURL: <official-chart-repository>
-    chart: <chart>
-    targetRevision: <new-chart-version>
-    helm:
-      values: |
-        image:
-          tag: <compatible-image-version>
-```
-
-Forgejo and Netdata are multi-source Applications. For those, update the Helm
-entry in `spec.sources[]`, not a nonexistent `spec.source`. Select the entry by
-its chart name when extracting its values; do not rely on its array position:
-
-```bash
-yq -r '.spec.sources[] | select(.chart == "forgejo") | .helm.values' \
-  "kubernetes/clusters/${HOSTNAME}/forgejo.yaml" |
-  helm template forgejo forgejo \
-    --repo https://code.forgejo.org/forgejo-helm \
-    --version '<new-chart-version>' \
-    --namespace forgejo \
-    --kube-version '<current-kubernetes-version>' \
-    --values - >/dev/null
-```
-
-First validate the child Application object itself:
-
-```bash
-yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" >/dev/null
-
-yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl apply --dry-run=server -n argocd -f -'
-```
-
-That check does not render the remote chart. Render the chart with the exact
-repository, version, Kubernetes version, and values. This Traefik example
-shows the pattern for an Application whose values are stored as a YAML block:
-
-```bash
-NEW_CHART_VERSION='<new-chart-version>'
-
-helm show chart traefik \
-  --repo https://traefik.github.io/charts \
-  --version "$NEW_CHART_VERSION"
-
-yq -r '.spec.source.helm.values' \
-  "kubernetes/clusters/${HOSTNAME}/traefik.yaml" |
-  helm template traefik traefik \
-    --repo https://traefik.github.io/charts \
-    --version "$NEW_CHART_VERSION" \
-    --namespace traefik \
-    --kube-version '<current-kubernetes-version>' \
-    --values - >/dev/null
-```
-
-For a Kustomize-backed system application such as Gateway API, render its
-actual resources. Use Argo CD's field manager when testing server-side CRD
-updates so the dry run follows the live ownership model:
-
-```bash
-kubectl kustomize kubernetes/platform/gateway-api >/dev/null
-
-kubectl kustomize kubernetes/platform/gateway-api |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl apply --server-side --dry-run=server \
-    --field-manager=argocd-controller -f -'
-```
-
-Finally render the root configuration, run the repository checks, and review
-the change:
-
-```bash
-kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
-git diff --check
-pre-commit run --all-files
-git diff
-```
-
-After pushing, wait for the changed system Application to become `Synced` and
-`Healthy`. Check dependent resources before starting the next system update:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argocd get applications'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get gateway,httproute -A'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get certificate,certificaterequest -A'
-```
-
-### Update Argo CD
-
-Pyinfra bootstraps and upgrades Argo CD. Update its version and manifest
-checksum together, then run an Argo CD-only Pyinfra dry run. The Makefile
-downloads the exact tagged manifest and calculates its checksum:
-
-```bash
-make update service=argocd version=<new-version>
-```
-
-Commit the values before the maintenance window; the Git commit does not
-upgrade Argo CD. Apply it explicitly and run the same dry run again to confirm
-idempotency:
-
-```bash
-TASKS=argocd \
-  uv run pyinfra inventory.py deploy.py \
-  --diff --dry --sudo --limit "$HOSTNAME"
-```
-
-### Update K3s system components
-
-Pyinfra owns K3s. The Makefile updates `k3s["version"]` and
-`k3s["installer_sha256"]` together and derives the installer URL from the
-version:
-
-```bash
-make update service=k3s version=v<new-kubernetes-version>+k3s<revision>
-```
-
-Before changing the Kubernetes minor version, check the Rancher and K3s
-support matrices and the release notes for Rancher, K3s, Traefik, cert-manager,
-and Gateway API. If Rancher needs a newer version for the target Kubernetes
-minor, update Rancher first and wait for it to become `Synced` and `Healthy`
-before applying the K3s update.
-
-Confirm that the tagged binary exists and run the static checks:
-
-```bash
-K3S_VERSION='v<new-kubernetes-version>+k3s<revision>'
-curl -fsSIL \
-  "https://github.com/k3s-io/k3s/releases/download/${K3S_VERSION}/k3s" \
-  >/dev/null
-
-ruff check inventory.py tasks/k3s.py
-git diff --check
-pre-commit run --all-files
-git diff
-```
-
-Inspect cluster health, save an etcd snapshot, and run a K3s-only Pyinfra dry
-run before applying the update:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get nodes -o wide && \
-  sudo k3s kubectl get pods -A'
-
-ssh "$HOSTNAME" \
-  'sudo k3s etcd-snapshot save --name pre-k3s-update && \
-  sudo k3s etcd-snapshot list'
-
-TASKS=k3s \
-  uv run pyinfra inventory.py deploy.py \
-  --diff --dry --sudo --limit "$HOSTNAME"
-```
-
-Review the Pyinfra operations and commit the pins. The Git commit does not
-upgrade K3s; run the following only during the maintenance window:
-
-```bash
-TASKS=k3s \
-  uv run pyinfra inventory.py deploy.py \
-  --diff --sudo --limit "$HOSTNAME"
-```
-
-Afterward, verify the node, system pods, and Argo CD applications. Run the
-same Pyinfra command again with `--dry`; it should report no K3s changes.
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s --version && \
-  sudo k3s kubectl get nodes -o wide && \
-  sudo k3s kubectl get pods -A && \
-  sudo k3s kubectl -n argocd get applications'
-
-TASKS=k3s \
-  uv run pyinfra inventory.py deploy.py \
-  --diff --dry --sudo --limit "$HOSTNAME"
-```
-
-## Rancher
-
-Open `https://rancher.${DOMAIN}` after Argo CD reports that Rancher is healthy.
-Use the bootstrap password for the first sign-in:
-
-```bash
-ssh "$HOSTNAME" \
-  "sudo k3s kubectl -n cattle-system get secret bootstrap-secret \
-  -o jsonpath='{.data.bootstrapPassword}' | base64 -d; echo"
-```
-
-Set a permanent administrator password. Store the password in a password
-manager. Keep one local administrator account for recovery.
-
-### Rancher Compliance
-
-Rancher Compliance adds a **Compliance** tab to the local cluster in Rancher.
-The tab can run a manual scan or schedule recurring scans. Use
-`k3s-cis-1.12-profile` for Mashu and schedule it at midnight each day with
-`0 0 * * *`. Set a report retention count for the schedule.
-
-Available profiles:
-
-- `aks-profile-1.7`
-- `cis-1.9-profile`
-- `cis-1.10-profile`
-- `cis-1.11-profile`
-- `cis-1.12-profile`
-- `eks-profile-1.5.0`
-- `gke-profile-1.6.0`
-- `k3s-cis-1.9-profile`
-- `k3s-cis-1.10-profile`
-- `k3s-cis-1.11-profile`
-- `k3s-cis-1.12-profile`
-- `rke2-cis-1.9-profile`
-- `rke2-cis-1.10-profile`
-- `rke2-cis-1.11-profile`
-- `rke2-cis-1.12-profile`
-
-## Backrest
-
-The encrypted Backrest resource contains these values:
-
-- The Storage Box SSH private and public keys
-- The pinned SSH `known_hosts` data
-- The Restic repository password
-- The Discord webhook URL
-
-They are in
-`kubernetes/platform/backrest/credentials.sops.yaml`. The repository address,
-path, plan, schedule, and retention policy are in
-`kubernetes/platform/backrest/deployment.yaml`.
-
-Edit the Backrest secrets with SOPS:
-
-```bash
-make secret service=backrest
-```
-
-The target opens the SOPS editor because this resource contains multiline SSH
-keys and `known_hosts` data.
-
-Add the Backrest public key to the Storage Box account. Confirm that the
-repository path is unique to `$HOSTNAME`. Store the Storage Box credentials
-and the Restic repository password in a password manager.
-
-Open `https://backrest.${HOSTNAME}.${DOMAIN}`. Create the administrator account
-and the host instance. Store the administrator password in a password manager.
-
-Restart Backrest after it creates its initial configuration. The init
-container then adds the repository and plan from Git:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n backrest rollout restart deployment/backrest'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n backrest rollout status deployment/backrest'
-```
-
-Open the repository and list its snapshots. Run one backup and restore test.
-
-## Pocket ID
-
-The Pocket ID encryption key is in
-`kubernetes/apps/pocket-id/credentials.sops.yaml`. Keep the encryption key and
-the Pocket ID data volume together during a restore.
-
-Update the Pocket ID secret with a hidden prompt:
-
-```bash
-make secret service=pocket-id
-```
-
-For a new instance, complete the initial administrator setup at
-`https://id.${DOMAIN}`. Register a passkey and store the recovery information
-in a password manager.
-
-Create an OIDC client for Pomerium. Use this callback URL:
-
-```text
-https://pomerium.$DOMAIN/oauth2/callback
-```
-
-Copy the client ID and client secret to the Pomerium encrypted resource. Test
-the Pocket ID sign-in before you remove another recovery method.
-
-## Pomerium
-
-The Pomerium OIDC client ID, OIDC client secret, and cookie secret are in
-`kubernetes/apps/pomerium/credentials.sops.yaml`.
-
-Update the OIDC values and cookie secret with hidden prompts:
-
-```bash
-make secret service=pomerium
-```
-
-The routes and access policies are in
-`kubernetes/apps/pomerium/config-map.yaml`. Add a route there when a service
-must use Pocket ID authentication. Also add its Kubernetes `HTTPRoute` to
-`kubernetes/apps/pomerium/routes.yaml`.
-
-Test one protected service in a private browser window. Confirm that Pocket ID
-sign-in returns the browser to the service.
+Empty prompt responses keep existing values. Backrest's editor opens the shared
+encrypted document: edit only its intended fields. Use `make secret service=forgejo` for its structured INI credential as well. Deploy changes with the normal
+Nix command; rotation is not complete until the consumer is checked.
+
+## Required secrets and state
+
+| Service | Secret fields in the shared encrypted document | Durable directory |
+| --- | --- | --- |
+| Traefik | `cloudflare_dns_api_token` | `traefik` (including ACME account/certificates) |
+| Pomerium | `pomerium_cookie_secret`, `pomerium_shared_secret`, `pomerium_idp_client_id`, `pomerium_idp_client_secret` | `pomerium` (databroker/session state) |
+| Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
+| Syncthing heartbeat | `syncthing_heartbeat_url` | `syncthing` (device/configuration/database and synchronized data) |
+| Forgejo | `forgejo_app_ini` | `forgejo` (database, repositories, attachments, SSH identity) |
+| Release Argus | `argus_github_token`, `argus_discord_token`, `argus_discord_webhook_id` | `argus` (approval/release state) |
+| Forgejo Runner | `forgejo_runner_registration_token` | `forgejo-runner` (persistent runner identity) |
+| Netdata | `netdata_discord_url`, `netdata_heartbeat_url` | `netdata` (collector state and retained historical data) |
+| Backrest | `backrest_config_json`, `backrest_ssh_key`, `backrest_known_hosts`, `backrest_repository_password` | `backrest` (configuration/history) and `backup-capture` (consistent exports) |
+| Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
+| ArchiSteamFarm | Configure Steam credentials through its private state/UI | `archisteamfarm` |
+| Pingvin Share X | Configure users/OIDC through its state/UI | `pingvin-share` |
+
+All directory names in the last column are beneath `/var/lib/data`. Existing
+service ownership/modes are part of the deployment; do not change them globally.
+Backrest backs up this one root. Existing historical Netdata files are retained,
+but are not automatically displayed by the active host collector.
+
+## Public services
+
+| Address | Authentication / setup |
+| --- | --- |
+| `https://git.maxice8.com` | Forgejo's own accounts/OIDC; Git SSH uses `git.maxice8.com:23` |
+| `https://id.maxice8.com` | Pocket ID passkeys and OIDC administration |
+| `https://share.mashu.maxice8.com` | Pingvin's own accounts/OIDC |
+| `https://pomerium.maxice8.com` | Authentication gateway for protected applications |
+| `https://argus.mashu.maxice8.com` | Pomerium-protected release dashboard |
+| `https://asf.mashu.maxice8.com` | Pomerium-protected Steam account management |
+| `https://syncthing.mashu.maxice8.com` | Pomerium plus Syncthing GUI credentials |
+| `https://netdata.mashu.maxice8.com` | Pomerium-protected monitoring |
+| `https://backrest.mashu.maxice8.com` | Pomerium-protected backup administration |
+
+Create initial application administrators only on fresh datasets. Preserve
+existing accounts, passkeys, issuer URLs, OIDC clients and callbacks on upgrades.
+Do not replace Pocket ID's encryption key as a routine password rotation.
+
+## Traefik / Cloudflare
+
+Use a Cloudflare token limited to Zone DNS Edit and Zone Read for the required
+zone. Store it with `make secret service=traefik`. Traefik owns DNS-01 issuance;
+certificates and account state persist in its own data directory. Check issuance
+and HTTPS before revoking an old token. Required DNS names and ingress ports are
+listed in README.md. The retired cluster's Argo/Rancher/whoami routes are absent.
+
+## Pocket ID and Pomerium
+
+Keep Pocket ID's canonical issuer `https://id.maxice8.com` stable. Create or retain
+the Pomerium OIDC client with its exact callback URL shown by the provider. Store
+client/cookie/shared credentials through `make secret service=pomerium`. Preserve
+its databroker directory when maintaining existing sessions.
+
+Test a real passkey login and protected-application redirect after identity or
+OIDC changes. Loopback readiness checks alone do not exercise a browser login.
+
+## Argus and version updates
+
+Argus configuration is generated by `services/argus.nix`. It compares upstream
+releases with package versions selected by Nix; Forgejo and Netdata additionally
+have runtime HTTP version probes. Its dashboard is read-only except for release
+approval/skipping state. Approval does not update Git or deploy a package.
+
+`make secret service=argus` accepts a read-only public GitHub token and a complete
+Discord webhook URL, storing the webhook ID/token separately. Deploy the change,
+then verify delivery before revoking old credentials. Update packages through
+`make update`, review/build them and explicitly deploy; no GitOps controller runs.
+
+## Forgejo and runner
+
+Preserve repositories, database, hook paths and SSH host keys. The Forgejo service
+regenerates hooks against its selected Nix executable at startup. Public SSH23
+redirects to its unprivileged 2222 listener; administrator OpenSSH stays on 22.
+
+Create an instance runner registration token through Forgejo administration and
+store it with `make secret service=forgejo-runner`. Existing `.runner` identity
+is reused: rotating the registration token does not re-register that runner.
+Do not delete an active identity merely to rotate an enrollment credential.
+
+The runner agent accesses a dedicated rootless Podman API socket. Job storage is
+disposable and separated from application data. Its systemd sandbox alone is not
+a substitute for inspecting job containers. Validate a representative workflow
+when changing the engine, runner version, labels or socket configuration.
 
 ## Tailscale
 
-Run `make secret service=tailscale` to store the auth key in
-`vars/settings.sops.yaml` using the existing Age identity.
-The host task enrolls Mashu using that encrypted key, requests `tag:server`, and
-enables Tailscale SSH, accepted routes, and tailnet DNS; see
-[README.md](README.md#enroll-the-tailscale-client). Allow inbound UDP 41641 in
-the OCI security list for IPv4 and IPv6 to support direct peer connections.
-Tailscale uses its hosted control plane; it does not need a Kubernetes server
-or a Pocket ID client in this repository.
+Initial enrollment uses a non-ephemeral auth key requesting `tag:server`. The
+helper enables Tailscale SSH and accepts routes and tailnet DNS. Tailnet policy
+must permit the tag and the `ubuntu` login. Store the key through
+`make secret service=tailscale`; already-enrolled nodes reconcile preferences
+without replacing their identity. Never clone the live node state into a VM.
 
-## Forgejo and Forgejo Runner
+Keep the independent key-only SSH22 path working before changing networking or
+the Tailscale daemon. Tailscale owns its own packet-filter tables; the host
+firewall deliberately owns only `inet hostfilter`.
 
-### Required network access
+## Backrest and application recovery
 
-| Protocol | Destination port | Purpose |
-| --- | ---: | --- |
-| TCP | 23 | Forgejo SSH |
+Backrest's encrypted seed initializes a new installation; the UI-owned live
+configuration persists in its data directory afterward. Changing the seed does
+not overwrite an existing configuration. Preserve the repository identity,
+retention/schedule and one `/var/lib/data` source. Changing repository credentials
+requires checking the actual live configuration and access, not only editing the
+seed. Do not put a mutable database backup under `/var/cache`.
 
-Forgejo stores its application data, users, and administrator credentials in
-its data volume. For a fresh install, create the administrator account and
-store its password and recovery information in a password manager.
+The controlled capture service exports consistent database snapshots and briefly
+stops coordinated writers when required. Do not start it as an incidental deploy
+check. Stop the affected service before restoring its data; preserve ownership,
+verify the restored identity/schema and then restart. Routine deployment does
+not perform a backup or restore.
 
-Create an instance runner token in the Forgejo administrator interface. Open
-**Site Administration**, **Actions**, and **Runners**. Create a runner and copy
-its registration token.
+## Optional Ubuntu administration
 
-Store the token directly in the encrypted resource:
-
-```bash
-make secret service=forgejo-runner
-```
-
-The runner uses this token only when its persistent runner identity does not
-exist.
-
-After a token rotation, remove the old runner identity or register a new
-runner. Confirm that one test workflow completes.
-
-## Netdata
-
-Create a Discord webhook in the Discord server that receives alerts. Open
-**Server Settings**, **Integrations**, and **Webhooks**. Create the webhook and
-copy its URL.
-
-Store the URL directly in the encrypted resource:
-
-```bash
-make secret service=netdata
-```
-
-Revoke the old webhook after Argo CD deploys the new value.
-
-Open `https://netdata.${HOSTNAME}.${DOMAIN}`. Trigger and resolve one test
-alarm. Confirm that Discord receives both messages.
-
-## ArchiSteamFarm
-
-ArchiSteamFarm stores its configuration and account credentials in the
-`asf-config` volume. Use the protected interface at
-`https://asf.${HOSTNAME}.${DOMAIN}` to configure it. Do not put Steam
-credentials in Git. Back up the volume.
-
-## Pingvin Share
-
-Pingvin Share stores its users, configuration, uploads, and branding in its
-data and image volumes. Open `https://share.${HOSTNAME}.${DOMAIN}` and create
-the first administrator account. Store the administrator password in a
-password manager. Back up both volumes.
-
-## Syncthing
-
-### Required network access
-
-| Protocol | Destination port | Purpose |
-| --- | ---: | --- |
-| TCP | 22000 | Syncthing TCP transfers |
-| UDP | 22000 | Syncthing QUIC transfers |
-
-Syncthing stores its GUI credentials, device identity, peer configuration, and
-data in the `syncthing-data` volume. Open
-`https://syncthing.${HOSTNAME}.${DOMAIN}`. Set the GUI credentials and add the
-required devices and folders. Store the GUI password and recovery information
-in a password manager. Back up the volume when its identity or configuration
-must survive a rebuild.
-
-## Whoami
-
-Whoami has no secret or manual application setup. Use it to test public
-routing, TLS, IPv4, and IPv6.
+Ubuntu owns APT updates, trim, base networking and OpenSSH. Automatic OS reboot
+is disabled; schedule and verify reboots deliberately. Existing Ubuntu Pro/USG
+reports and audit configuration are retained host administration, not installed
+by the application bootstrap. `scripts/serve-usg-reports` can view retained reports
+over an SSH tunnel; installed packages alone do not establish release support.

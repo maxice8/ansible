@@ -1,11 +1,7 @@
 # .sops.yaml
 creation_rules:
-  - path_regex: vars/.*\.sops\.yaml$
-    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
-
-  # Encrypt Kubernetes Secret values, but keep their structure visible.
-  - path_regex: kubernetes/.*\.sops\.yaml$
-    encrypted_regex: ^(data|stringData)$
+  # Native service credentials are decrypted only on the target by sops-nix.
+  - path_regex: secrets/.*\.sops\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
 
   # Catch-all for any other .env files in the root

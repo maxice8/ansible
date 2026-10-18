@@ -1,597 +1,234 @@
-# Homelab Deployment Stack
+# Mashu: Ubuntu + Nix
 
-This repository manages one Ubuntu host and its K3s cluster.
+This repository describes Mashu's bootstrap and final state. Ubuntu supplies the
+kernel, networking, OpenSSH, Nix daemon and OS updates. Pyinfra installs only the
+Nix prerequisites through `bootstrap.py`. Nix and System Manager manage host
+policy, service accounts, credentials and hardened systemd services.
 
-Pyinfra manages the host, K3s, and the Argo CD bootstrap. Argo CD manages the
-platform components and applications in Kubernetes.
+Application state lives under **`/var/lib/data/<service>`**. Pingvin Share X and
+CI jobs use separate rootless Podman runtimes; other applications run directly
+under systemd. Caches, images and CI workspaces under `/var/cache` are disposable.
 
-## Requirements
+## Development environment
 
-With Nix and [devenv](https://devenv.sh/) installed, run `devenv shell` to
-load the local tools and install the pinned Python requirements into a managed
-virtual environment. The manual setup below remains available without Nix.
+Install Nix and [devenv](https://devenv.sh/), then run:
 
-### Python and Pyinfra
-
-Use [uv](https://github.com/astral-sh/uv) to install the Python packages from
-`requirements.txt`.
-
-```bash
-uv pip sync requirements.txt
+```sh
+devenv shell
 ```
 
-### SSH
+`devenv.nix` installs the workstation tools and the pinned Python requirements
+into its managed environment. With direnv, run `direnv allow` once. Keep local
+commands, including Pyinfra and pre-commit, inside this environment.
 
-Install an SSH client. Add a local SSH configuration entry for the target
-host. The entry must use the administrator and SSH key from `inventory.py`.
-Pyinfra uses the local SSH configuration. Configure the host alias, user, key,
-and host-key policy before you run Pyinfra. The connection must not require
-interactive input.
+## Access and external infrastructure
 
-Mashu's inventory sets its public IPv6 address as the Pyinfra connection
-target, so deployments also work before the overlay client is enrolled.
-For interactive Tailscale access, use `tailscale ssh ubuntu@100.91.248.66`.
+Configure both Tailscale access and an independent public SSH22 alias. For example:
 
-This command must connect without a password prompt:
+```sshconfig
+Host mashu
+  HostName 100.91.248.66
+  User ubuntu
 
-```bash
-ssh "$HOSTNAME"
+Host mashu-admin
+  HostName 2603:c025:4005:8f7e:0:b837:618:268c
+  Port 22
+  User ubuntu
 ```
 
-### Age and SOPS
+Add your administrator identity, agent and strict host-key settings to both
+entries. Verify the host key independently before accepting it. Both connections
+must work without a password prompt. Public SSH remains key-only; Tailscale SSH
+is the normal interactive path. Port **23 is Forgejo Git SSH**, not an admin shell.
 
-Install [Age](https://github.com/FiloSottile/age) and
-[SOPS](https://github.com/getsops/sops). For example, use this command on Arch
-Linux:
+Create an Ubuntu 26.04 ARM64 VPS with the existing `ubuntu` administrator and
+passwordless sudo. The modules target Mashu's `enp0s6` interface and systemd 259+
+with cgroup v2; edit the explicit host configuration before using another image.
 
-```bash
-sudo pacman -S age sops
+In OCI ingress, use stateful rules and source port range All. Permit these
+required destination ports for both IPv4 and IPv6:
+
+| Protocol | Ports | Purpose |
+| --- | --- | --- |
+| TCP | 22, 23 | Recovery administration and Forgejo Git SSH |
+| TCP | 80, 443 | Public web ingress |
+| TCP and UDP | 22000 | Syncthing transfers |
+| UDP | 41641 | Tailscale direct connections |
+
+Point the maintained names at Mashu's public A/AAAA addresses: `git.maxice8.com`,
+`id.maxice8.com`, `pomerium.maxice8.com` and the application names under
+`*.mashu.maxice8.com`. Traefik obtains certificates through Cloudflare DNS-01.
+
+## Bootstrap a fresh host
+
+Review `inventory.py` and run:
+
+```sh
+pyinfra inventory.py bootstrap.py --sudo --diff --dry
+make bootstrap
 ```
 
-### Kubernetes tools
+Bootstrap installs Ubuntu's multi-user Nix, UID mapping helpers and unattended
+updates, enables Nix features and trusts the deployment administrator. It does
+not deploy applications or provision SSH keys. Keep public SSH22 available.
 
-Install `kubectl` and `yq` on the local system. The `kubectl kustomize` command
-renders Kustomize resources. The `yq` command validates and selects YAML data.
+Follow [SERVICES.md](SERVICES.md) to provision the SOPS age identity and verify
+credentials before the first Nix activation. Normal redeployments do not need
+the private age identity on the workstation; the target decrypts credentials.
 
-## Configuration
+## Build and deploy
 
-Set these shell variables before you use the commands in this document:
+Versions come from `flake.lock` and the verified releases under `pkgs/`.
+`hosts/mashu.nix` composes the final configuration; `services/` owns systemd units,
+hardening, ingress/egress policy and application configuration.
 
-```bash
-export HOSTNAME="host"
-export DOMAIN="example.com"
+```sh
+make build
+make deploy host=mashu-admin
 ```
 
-`inventory.py` contains the host-managed component versions and SSH settings.
-The Kubernetes manifests contain the Argo CD-managed chart and image versions.
-This repository intentionally describes Mashu directly rather than providing a
-generic multi-host framework.
+`deploy.py` creates a temporary allowlisted snapshot and asks Nix which jobs
+remain after cache lookup. Cached ARM outputs need no VM. Uncached ARM jobs start
+the local **minimal NixOS ARM VM** automatically; the same guest runs the shared
+service lifecycle/hardening acceptance suite. A normal deployment requires a
+successful suite result for the exact source/profile inputs. The suite is a base
+and sandbox check, not full application coverage or proof of Ubuntu compatibility.
 
-The current K3s configuration uses the private IPv4 address and the public
-IPv6 address as node addresses. Do not use the Tailscale address as a node
-address.
-
-## Secret Management
-
-SOPS encrypts secret values in files that have the `.sops.yaml` suffix. The
-file structure, resource names, and field names remain visible.
-
-The SOPS Secrets Operator decrypts Kubernetes secrets in the cluster. Pyinfra
-installs the Age identity that the operator uses.
-
-See [SERVICES.md](SERVICES.md) for the Age identity procedure, each encrypted
-secret, and each manual service setup action. Do not create plain-text secret
-files in the repository.
-
-## Host Deployment
-
-### Prepare the host
-
-Create an Ubuntu ARM64 host. In the OCI security list, keep each rule stateful
-and set **Source Port Range** to **All**.
-
-Create each required port rule twice:
-
-| IP version | Source CIDR |
-| --- | --- |
-| IPv4 | `0.0.0.0/0` |
-| IPv6 | `::/0` |
-
-Create these core ingress rules:
-
-| Protocol | Destination port | Purpose |
-| --- | ---: | --- |
-| TCP | 22 | Public SSH |
-| TCP | 80 | HTTP and HTTPS redirects |
-| TCP | 443 | Public HTTPS services |
-
-See [SERVICES.md](SERVICES.md) for service-specific ports.
-
-Point the required DNS records to the public IPv4 and IPv6 addresses. Pyinfra
-discovers the public interface from the host's default IPv4 route.
-
-### Deploy the host baseline
-
-Deploy the baseline before you install K3s:
-
-```bash
-TASKS=user,ssh,tailscale,kernel,services,firewall \
-  uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
+```sh
+make build                         # build only; boot the VM only for ARM cache misses
+make test                          # run the shared-base VM suite explicitly
+make deploy host=mashu-admin        # reuse matching acceptance, or run it before SSH deploy
+make build builders=none            # forbid remote/VM build jobs
+make vm-image                      # refresh and root the managed guest image
 ```
 
-### Attach Ubuntu Pro
+The guest has Nix, SSH and fixture tools, no desktop, cloud-init, APT, automatic
+upgrades or host Nix-store mount. Its only host share is a read-only public SSH
+key. Builds and tests use synthetic guest identities. Production state and private
+keys are never copied into it. Whole-system QEMU uses TCG; no workstation binfmt
+handler or persistent Nix-daemon builder configuration is installed.
 
-As of 2026-09-15, Pro works on Mashu's Ubuntu 26.04.1, but Canonical still
-reports USG as unavailable for this release. `deploy.py` skips USG on Mashu.
-Check `sudo pro status --all` before removing that skip. The retained USG
-24.04 packages and active audit timer do not establish Ubuntu 26.04 support.
-The procedure below applies when USG is available for the host release.
+The VM is started lazily, shared by the operation and shut down on success or
+failure. An already-running managed guest is reused and left running. A session
+lock prevents simultaneous use of one disk. Unexpected shutdown inhibitors are
+reported rather than bypassed. Temporary boot images are removed after shutdown.
+Persistent disks and Nix caches live under
+`$XDG_CACHE_HOME/mashu-nix/vm` (normally `~/.cache/mashu-nix/vm`); a new boot image
+gets its own disk. Use `vm_dir=/absolute/path` to select a separate cache.
 
-USG requires Ubuntu Pro. Attach Mashu before the full deployment. The free
-personal subscription is sufficient.
+The first guest image needs an ARM builder once, because NixOS generates native
+ARM activation/configuration derivations. This workstation's initial image was
+bootstrapped with the retained emulated builder. Its `image` symlink is a Nix GC
+root. Later image updates boot the retained NixOS image to build its replacement.
+For a fresh workstation, restore a built image closure/cache or explicitly supply
+a one-time ARM builder:
 
-```bash
-ssh "$HOSTNAME"
-sudo pro attach
-exit
+```sh
+make vm-image builders='<SSH builder specification>'
 ```
 
-Pyinfra enables USG, installs it, and enables `usg-audit.timer`. The timer runs
-each day at 00:00. It keeps 90 days of HTML and XML reports in `/var/lib/usg`.
-The deployment does not start an audit outside the timer schedule.
+Local Nix commands use `sudo -n` so the daemon honors temporary builder settings;
+the workstation needs passwordless sudo for these Nix operations. Deployment SSH
+uses your normal account. Production is never selected as an automatic builder.
 
-### Enroll the Tailscale client
+**Do not run `nix build path:.` in this checkout.** Ignored identities must not
+enter the Nix store. The helper snapshots public modules/tools/tests plus encrypted
+service secrets. Runtime tests use their own synthetic credentials; application
+passkeys, synchronization and complete CI pipelines need separate acceptance.
 
-Pyinfra installs Tailscale, configures UDP 41641, and enrolls Mashu with an
-**auth key** decrypted locally from `vars/settings.sops.yaml`. It enables Tailscale SSH, accepts
-advertised subnet routes and tailnet DNS, and requests `tag:server`.
-Configure OCI ingress for UDP 41641 on IPv4 and IPv6.
+For a custom SSH configuration or a retained profile (rollback bypasses current-source builds/VM tests):
 
-Create a non-ephemeral auth key with `tag:server` in the Tailscale admin
-console. Use a pre-approved key if device approval is enabled. The tailnet
-policy must permit that tag and SSH access to Mashu as `ubuntu`.
-
-Restore the existing `.age-key.txt` from your password manager, then store the
-key through the existing SOPS helper:
-
-```bash
-make secret service=tailscale
-TASKS=tailscale,firewall .venv/bin/pyinfra inventory.py deploy.py \
-  --diff --dry --sudo --limit "$HOSTNAME"
-TASKS=tailscale,firewall .venv/bin/pyinfra inventory.py deploy.py \
-  --diff --sudo --limit "$HOSTNAME"
+```sh
+python deploy.py deploy --target-host mashu-admin \
+  --ssh-option=-F --ssh-option=/absolute/path/to/ssh_config \
+  --store-path /nix/store/<previous-or-built-profile>
 ```
 
-The helper updates `tailscale.auth_key` in `vars/settings.sops.yaml`. The file
-uses the existing Age recipient and initially contains an encrypted placeholder.
-Pyinfra decrypts it in memory for enrollment, masks the key in output, and
-passes it through a temporary root-only file on Mashu that is removed on
-success or failure. No auth-key environment variable is needed from you.
+Record and retain the current profile before deploying:
 
-Initial enrollment requires a working local SOPS identity and a configured
-key. Pyinfra starts the daemon before checking enrollment and decrypts the key
-only if login is needed. An enrolled host can recover a stopped daemon without
-local secrets or reauthentication. Deployment previews do not decrypt or
-validate the auth key; these checks run during actual enrollment.
-
-Keep Tailscale's default netfilter mode enabled. Accepting routes does not
-advertise Mashu's networks or make it an exit node. Verify tailnet DNS and
-accepted routes against K3s.
-Tailscale SSH handles tailnet connections; public OpenSSH remains the
-recovery path.
-
-
-### Install K3s and Argo CD
-
-Run the full deployment:
-
-```bash
-uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
+```sh
+ssh mashu-admin 'sudo readlink -f /nix/var/nix/profiles/system-manager-profiles/system-manager'
 ```
 
-Run it again. The second run must report no changes:
+Inspect units and application behavior after activation. System Manager can
+report success even when a unit fails; the helper checks actual readiness.
+Registration controls the boot profile. To roll back, redeploy the retained
+previous profile with `--store-path`, which registers and activates it. Binary
+rollback cannot undo application database migrations. Never restart an old
+writer against incompatible new data.
 
-```bash
-uv run pyinfra inventory.py deploy.py --diff --sudo --limit "$HOSTNAME"
-```
+If removing a unit, explicitly stop it while its old unit file still exists:
+System Manager otherwise removes the file before it can run its old `ExecStop`.
+Nix upgrades and garbage collection are manual; retain recovery profile roots.
 
-Pyinfra installs the selected K3s and Argo CD versions.
+## Versions and secrets
 
-### View the Ubuntu CIS reports
-
-Run the local helper. It starts a report server on Mashu, binds the server to
-the remote loopback interface, and forwards it through SSH:
-
-```bash
-scripts/serve-usg-reports
-```
-
-Open `http://127.0.0.1:8000`. Press Ctrl-C to stop the server and tunnel. Pass
-a different local port as the first argument if port 8000 is in use:
-
-```bash
-scripts/serve-usg-reports 8080
-```
-
-## Updating component versions
-
-The Makefile updates every component tracked by Argus. List the available
-targets with:
-
-```bash
+```sh
 make help
-```
-
-Pass the service and version explicitly. Versions can include or omit their
-usual leading `v`:
-
-```bash
-make update service=argocd version=3.5.1
-make update service=k3s version=v1.36.4+k3s1
-make update service=pomerium version=v0.33.1
-```
-
-The Argo CD and K3s targets download the versioned upstream file and update its
-SHA-256 pin automatically. Preview any update without writing files with:
-
-```bash
-make update service=pomerium version=v0.33.1 dry_run=1
-```
-
-Successful updates commit only the component files using the repository's
-`chore(<service>): update to <version>` convention. Chart and image targets for
-the same service include that distinction in the subject. The updater refuses
-to modify a component file that already has staged or unstaged changes, while
-unrelated worktree changes remain untouched. Dry runs and no-op updates do not
-create commits.
-
-Validate every updater file, version pattern, and Argus service name with:
-
-```bash
 make check-updates
+make update service=pomerium version=<version> dry_run=1
+make update service=pomerium version=<version>
+make secret service=pomerium
 ```
 
-Update a SOPS-managed service secret through hidden prompts that work in any
-shell:
+The release updater downloads both architecture archives and updates their
+checksums, or prefetched ARM64 image digest/archive pins for Pingvin. Dry runs
+fetch and verify the proposed artifacts but write nothing. A real update refuses
+dirty package files and creates a commit containing only that package. Inspect
+its diff and build/test the result before deployment; an upstream download hash
+is not a substitute for reviewing release provenance. The updater never pushes
+or deploys. Argus derives configured release versions from those package pins.
 
-```bash
-make secret service=argus
+Netdata, Forgejo Runner and runtime dependencies come from locked Nixpkgs. Their
+updater targets explain that they require a deliberate shared-input update;
+they do not silently change the lock or unrelated dependencies. Review the
+whole resulting package set when updating System Manager/Nixpkgs.
+
+Secret prompts update `secrets/mashu.sops.yaml`; Backrest and Forgejo open the
+SOPS editor for structured configuration and multiline credentials. Deploy the encrypted
+change to install it. See [SERVICES.md](SERVICES.md) before rotating identity,
+passkey/database encryption keys or service credentials.
+
+## Backups and recovery
+
+Backrest has one backup source: **`/var/lib/data`**. Keep the existing repository,
+schedule, retention and encryption credentials. The controlled capture unit
+coordinates consistent database copies; caches and CI workspaces are excluded
+by placing them outside this root. Normal deployments do not trigger a backup.
+
+For restoration, stop the affected service and any cooperating writers first.
+Restore its directory, preserve ownership/mode, then start it and verify its
+identity and application behavior before proceeding to another service. Do not
+apply recursive blanket permissions across the shared root.
+
+Keep the SOPS identity, administrator SSH key, backup encryption credentials and
+application recovery information separately accessible. Restoring the Tailscale
+directory restores a node identity; never run two copies of that identity.
+
+## Verification and repository hygiene
+
+```sh
+ssh mashu-admin 'sudo systemctl --failed; sudo nft list table inet hostfilter'
+ssh mashu 'sudo systemctl is-active tailscaled forgejo syncthing'
+curl -4 --fail https://git.maxice8.com/api/healthz
+curl -6 --fail https://git.maxice8.com/api/healthz
+make check-updates
+ruff check .
 ```
 
-Submit an empty response to keep the existing value. The Backrest target
-opens the SOPS editor because it contains multiline values. Run
-`make help` to list all supported services.
-
-## Argo CD
-
-### Open the user interface
-
-Use the initial sign-in procedure in [SERVICES.md](SERVICES.md). After the
-public route is healthy, use this address:
-
-```text
-https://argocd.$HOSTNAME.$DOMAIN
-```
-
-### Automatic synchronization
-
-The root Application and all child Applications use automatic sync. Argo CD
-also uses pruning and self-healing. Do not sync the applications in a manual
-order.
-
-Monitor the applications during the first deployment:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argocd get applications --watch'
-```
-
-Some applications can show `Progressing` while a required controller or CRD
-starts. Wait for Argo CD to retry. Use a hard refresh if an Application does
-not detect the current Git revision.
-
-Automatic pruning deletes live resources that Git no longer defines.
-Self-healing restores live changes to the values in Git. Review each change
-before you push it.
-
-Argo CD does not restore manual replica changes for these applications:
-
-- ASF
-- Forgejo
-- Pingvin Share
-- Pocket ID
-- Syncthing
-
-Argo CD restores manual replica changes for system services and stateless
-applications.
-
-## Backrest
-
-Use the credential and initial setup procedures in
-[SERVICES.md](SERVICES.md). Confirm that Backrest can open the repository and
-list its snapshots.
-
-## Restore Application Data
-
-Treat the K3s control plane as disposable. Pyinfra, Git, Argo CD, and SOPS
-recreate it. Restore only the application volumes that contain required data.
-
-Scale one stateful application to zero replicas. Confirm that its PVC and PV
-exist:
-
-```bash
-ssh "$HOSTNAME"
-sudo k3s kubectl -n <namespace> scale deployment/<application> --replicas=0
-sudo k3s kubectl -n <namespace> get pvc
-sudo k3s kubectl get pv
-```
-
-Restore the volume from Backrest or Restic. Set the required owner and mode.
-Keep the workload at zero replicas during the restore.
-
-```bash
-sudo chown -R <user>:<group> <volume-path>
-sudo chmod -R <mode> <volume-path>
-sudo k3s kubectl -n <namespace> scale deployment/<application> --replicas=1
-sudo k3s kubectl -n <namespace> rollout status deployment/<application>
-```
-
-Restore and verify one application before you restore the next application.
-
-## Verification
-
-Check the cluster and the host firewall:
-
-```bash
-ssh "$HOSTNAME" 'sudo k3s kubectl get pods -A'
-ssh "$HOSTNAME" 'sudo k3s kubectl -n argocd get applications'
-ssh "$HOSTNAME" 'sudo nft list table inet hostfilter'
-```
-
-Test one public service with IPv4 and IPv6:
-
-```bash
-curl -4 --fail "https://whoami.${HOSTNAME}.${DOMAIN}/"
-curl -6 --fail "https://whoami.${HOSTNAME}.${DOMAIN}/"
-```
-
-Reboot the host. Run the full Pyinfra deployment again. It must report no
-changes.
-
-## Routine Changes
-
-Use Pyinfra for host changes. Use Kubernetes manifests and Argo CD for cluster
-changes.
-
-### ConfigMaps and generated ConfigMaps
-
-Use a regular ConfigMap when consumers reload its values themselves or when a
-change must not restart a workload:
-
-- Feature flags read through the Kubernetes API on every request.
-- Settings watched and reloaded by the application.
-- Shared values whose update should be independent from a pod rollout.
-
-```yaml
-# kustomization.yaml
-resources:
-  - config-map.yaml
-```
-
-Use `configMapGenerator` for configuration read when a pod starts, especially
-files mounted with `subPath`. Kustomize adds a content hash to the ConfigMap
-name and updates the workload reference, which triggers a rollout whenever the
-file changes:
-
-- Web server, proxy, or application configuration loaded only at startup.
-- Startup scripts mounted into a container.
-- Configuration files mounted with `subPath`.
-
-```yaml
-# kustomization.yaml
-configMapGenerator:
-  - name: application-config
-    files:
-      - config.yaml
-```
-
-```yaml
-# deployment.yaml
-volumes:
-  - name: config
-    configMap:
-      name: application-config
-```
-
-Keep the unhashed base name in the Deployment and do not disable the generator
-name suffix when a configuration change should restart the pod.
-
-### Check a host change
-
-Pyinfra manages the firewall policy in `/etc/nftables.conf`. The
-`homelab-firewall` service loads it at boot. Pyinfra also loads it when the
-managed policy or service file changes, but does not compare or repair live
-rule changes. To restore the policy from disk manually:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo nft --check -f /etc/nftables.conf && sudo systemctl reload-or-restart homelab-firewall.service'
-```
-
-Run a Pyinfra dry run before you deploy a host change:
-
-```bash
-uv run pyinfra inventory.py deploy.py --diff --dry --sudo --limit "$HOSTNAME"
-```
-
-Use `TASKS` when you must limit the dry run to one or more tasks:
-
-```bash
-TASKS=firewall \
-  uv run pyinfra inventory.py deploy.py --diff --dry --sudo --limit "$HOSTNAME"
-```
-
-A dry run does not prove that every remote command is safe. Review the
-generated operations before you run the deployment without `--dry`.
-
-### Render Kubernetes resources
-
-Render one application with Kustomize:
-
-```bash
-kubectl kustomize kubernetes/apps/<application>
-```
-
-Render the complete cluster configuration:
-
-```bash
-kubectl kustomize "kubernetes/clusters/${HOSTNAME}" >/dev/null
-```
-
-The cluster render validates the root Kustomization. It does not render the
-source of each child Argo CD Application. Render a changed application path
-separately.
-
-### Run a server-side dry run
-
-Send the rendered resources to the Kubernetes API without changing the
-cluster:
-
-```bash
-kubectl kustomize kubernetes/apps/<application> |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl apply --dry-run=server -f -'
-```
-
-This command checks the live API schema, installed CRDs, and admission rules.
-It does not save the resources.
-
-Validate a child Argo CD Application definition in the same way:
-
-```bash
-yq '.' "kubernetes/clusters/${HOSTNAME}/<application>.yaml" |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl apply --dry-run=server -f -'
-```
-
-Use `kubectl diff` to compare rendered resources with live resources:
-
-```bash
-kubectl kustomize kubernetes/apps/<application> |
-  ssh "$HOSTNAME" \
-    'sudo k3s kubectl diff --server-side -f -'
-```
-
-`kubectl diff` returns status 1 when it finds a difference. This status does
-not mean that the command failed.
-
-### Check a secret
-
-Confirm that SOPS can decrypt each changed secret. Do not show the plain value:
-
-```bash
-SOPS_AGE_KEY_FILE=.age-key.txt \
-  sops --decrypt <secret-file>.sops.yaml >/dev/null
-```
-
-### Review and deploy
-
-Use this sequence for a cluster change:
-
-1. Edit the manifest or the encrypted secret.
-2. Run `git diff --check`.
-3. Render each changed Kustomization.
-4. Run a server-side dry run.
-5. Review `git diff`.
-6. Stage the required files.
-7. Review `git diff --cached`.
-8. Commit and push the change.
-9. Wait for the repository mirror.
-10. Confirm that Argo CD reports `Synced` and `Healthy`.
-
-Check Argo CD and the changed workload after the push:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl -n argocd get applications'
-
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get pods -A'
-```
-
-Check recent warning events if a workload is not healthy:
-
-```bash
-ssh "$HOSTNAME" \
-  'sudo k3s kubectl get events -A \
-  --field-selector type=Warning --sort-by=.lastTimestamp'
-```
-
-Do not push a change that must not reach the live cluster. Automatic sync can
-apply it after the mirror updates.
-
-## Public Repository Security
-
-SOPS ciphertext can be public if the Age identity stays private. The Age
-recipient in `.sops.yaml` is public information.
-
-The repository exposes host names, public addresses, user names, service
-versions, paths, firewall rules, and secret field names. This information can
-help an attacker.
-
-Git keeps old ciphertext and any plain secret that enters its history. If an
-attacker gets the Age identity, the attacker can decrypt current and saved
-ciphertext. Create a new Age identity, encrypt the files again, and rotate all
-affected credentials.
-
-### Enable pre-commit
-
-This repository uses [pre-commit](https://pre-commit.com/) to manage its Git
-hooks. `requirements.txt` installs the framework. Enable it after each clone:
-
-```bash
-uv run pre-commit install --install-hooks
-```
-
-Run the hooks for all tracked files:
-
-```bash
-uv run pre-commit run --all-files
-```
-
-The configured hooks block these items:
-
-- The Age identity file
-- Private keys
-- Secrets that Gitleaks detects in staged changes
-
-The Gitleaks pre-commit hook scans staged changes. It does not audit all Git
-history. Use a separate full-history scan in CI when you need that control.
-
-Run the checks against staged changes without a commit:
-
-```bash
-uv run pre-commit run
-```
-
-Do not use `git commit --no-verify`. Git hooks are local controls. A user can
-disable or bypass them. Add the same Gitleaks scan to CI if multiple users can
-push to the repository.
-
-Inspect staged changes before each commit:
-
-```bash
+Use focused VM checks in [tests/README.md](tests/README.md) when changing
+hardening or service behavior. Do not copy production credentials or databases
+into the test VM. Host-side policy still requires checks on Mashu's actual kernel.
+
+Enable hooks after each clone and inspect changes before committing:
+
+```sh
+pre-commit install --install-hooks
+pre-commit run --all-files
+git diff --check
 git diff --cached
-uv run pre-commit run
 ```
 
-Give each token only the permissions that it needs.
-
-## Code Quality and Static Analysis
-
-Use Ruff to check and format the Python code:
-
-```bash
-uvx ruff check .
-uvx ruff format .
-```
+Hooks check private keys, local identity files, formatting and secrets. They do
+not replace credential review or a full-history scan. Do not bypass them with
+`--no-verify`. Keep credentials and unrelated work out of commits.

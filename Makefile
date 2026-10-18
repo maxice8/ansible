@@ -1,12 +1,22 @@
 PYTHON ?= python3
 
+builders ?= auto
+VM_FLAGS = $(if $(vm_dir),--vm-dir "$(vm_dir)")
+
 DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
-.PHONY: help list check-updates update secret
+.PHONY: help bootstrap build deploy test vm-image list check-updates update secret
 
 help:
 	@printf '%s\n' \
-		'Update and commit a component:' \
+		'Bootstrap Ubuntu prerequisites: make bootstrap' \
+		'Build the ARM profile: make build' \
+		'Deploy over SSH: make deploy host=mashu' \
+		'Run managed NixOS VM acceptance: make test' \
+		'Build/cache the NixOS guest: make vm-image' \
+		'Forbid VM builds: make build builders=none' \
+		'' \
+		'Update and commit a pinned release (Nixpkgs packages use flake.lock):' \
 		'  make update service=<component> version=<version>' \
 		'' \
 		'Preview without writing:' \
@@ -31,3 +41,19 @@ update:
 
 secret:
 	@$(PYTHON) scripts/update_secret.py "$(service)"
+
+# Only the local NixOS VM is selected automatically; no production builder.
+bootstrap:
+	pyinfra inventory.py bootstrap.py --sudo --diff
+
+build:
+	$(PYTHON) deploy.py build --builders '$(builders)' $(VM_FLAGS)
+
+deploy:
+	$(PYTHON) deploy.py deploy --target-host '$(or $(host),mashu)' --builders '$(builders)' $(VM_FLAGS)
+
+test:
+	$(PYTHON) deploy.py test --builders '$(builders)' $(VM_FLAGS)
+
+vm-image:
+	$(PYTHON) deploy.py vm-image --builders '$(builders)' $(VM_FLAGS)

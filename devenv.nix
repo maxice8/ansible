@@ -1,3 +1,4 @@
+# Workstation tools for Ubuntu bootstrap, Nix deployments and encrypted secret editing.
 { pkgs, ... }:
 {
   languages.python = {
@@ -16,9 +17,7 @@
     curl
     age
     sops
-    kubectl
-    kubernetes-helm
-    yq-go
+    nix-prefetch-docker
     ruff
     gitleaks
   ];
