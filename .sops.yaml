@@ -1,5 +1,9 @@
 # .sops.yaml
 creation_rules:
+  # Native service credentials are decrypted only on the target by sops-nix.
+  - path_regex: secrets/.*\.sops\.yaml$
+    age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
+
   - path_regex: vars/.*\.sops\.yaml$
     age: age1dcdy9jdwvq6nrsxdtvgs05fuyd9fgfx3x788aky3zcsfc6kmhajqt0d86w
 

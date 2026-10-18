@@ -2,6 +2,7 @@
 # Ubuntu retains responsibility for its daemon, accounts, SSH and privilege tools.
 # The module function receives inputs through makeSystemConfig's specialArgs.
 { inputs, ... }: {
+  imports = [ inputs.sops-nix.nixosModules.sops ];
 
   # Ubuntu owns these until a separately tested handover.
   nix.enable = false;
@@ -12,6 +13,8 @@
   # Avoid claiming /run/current-system, which another host management tool may own.
   system-manager.linkCurrentSystem = false;
 
+  # Reference a root-provisioned identity; never embed its contents in the Nix store.
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
 
   environment.etc."systemd/portable/profile/mashu/service.conf".text = import ./portable-profile.nix;
 
@@ -32,5 +35,6 @@
   # A quoted attribute keeps the slash in one filename; toJSON serializes metadata.
   environment.etc."homelab/base.json".text = builtins.toJSON {
     dataRoot = "/var/lib/data";
+    secretIdentity = "/var/lib/sops-nix/key.txt";
   };
 }

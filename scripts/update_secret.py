@@ -14,55 +14,59 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parent.parent
 AGE_KEY = ROOT / ".age-key.txt"
 
+# Every native service consumes a key from this encrypted file.
 SECRETS = {
     "tailscale": {
-        "file": "vars/settings.sops.yaml",
-        "fields": (("Tailscale auth key", "auth_key"),),
-        "index_prefix": '["tailscale"]',
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("Tailscale auth key", "tailscale_auth_key"),),
     },
     "argus": {
-        "file": "kubernetes/apps/argus/credentials.sops.yaml",
-        "fields": (("GitHub token", "GITHUB_TOKEN"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("GitHub token", "argus_github_token"),),
         "discord_webhook": True,
     },
-    "backrest": {
-        "file": "kubernetes/platform/backrest/credentials.sops.yaml",
+    "forgejo": {
+        "file": "secrets/mashu.sops.yaml",
         "fields": (),
         "editor": True,
     },
-    "cert-manager": {
-        "file": (
-            "kubernetes/platform/certificate-issuers/cloudflare-api-token.sops.yaml"
-        ),
-        "fields": (("Cloudflare API token", "api-token"),),
+    "backrest": {
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (),
+        "editor": True,
+    },
+    "traefik": {
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("Cloudflare API token", "cloudflare_dns_api_token"),),
     },
     "forgejo-runner": {
-        "file": "kubernetes/apps/forgejo-runner/credentials.sops.yaml",
-        "fields": (("Forgejo runner token", "FORGEJO_RUNNER_TOKEN"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("Forgejo runner token", "forgejo_runner_registration_token"),),
     },
     "netdata": {
-        "file": "kubernetes/apps/netdata/notifications.sops.yaml",
-        "fields": (("Discord webhook URL", "NETDATA_DISCORD_WEBHOOK_URL"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("Discord webhook URL", "netdata_discord_url"),),
     },
     "netdata-heartbeat": {
-        "file": "kubernetes/apps/netdata/heartbeat.sops.yaml",
-        "fields": (("HetrixTools heartbeat URL", "HETRIXTOOLS_HEARTBEAT_URL"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("HetrixTools heartbeat URL", "netdata_heartbeat_url"),),
     },
     "pocket-id": {
-        "file": "kubernetes/apps/pocket-id/credentials.sops.yaml",
-        "fields": (("Encryption key", "ENCRYPTION_KEY"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("Encryption key", "pocket_id_encryption_key"),),
     },
     "pomerium": {
-        "file": "kubernetes/apps/pomerium/credentials.sops.yaml",
+        "file": "secrets/mashu.sops.yaml",
         "fields": (
-            ("Pocket ID client ID", "IDP_CLIENT_ID"),
-            ("Pocket ID client secret", "IDP_CLIENT_SECRET"),
-            ("Cookie secret", "COOKIE_SECRET"),
+            ("Pocket ID client ID", "pomerium_idp_client_id"),
+            ("Pocket ID client secret", "pomerium_idp_client_secret"),
+            ("Cookie secret", "pomerium_cookie_secret"),
+            ("Shared secret", "pomerium_shared_secret"),
         ),
     },
     "syncthing-heartbeat": {
-        "file": "kubernetes/apps/syncthing/heartbeat.sops.yaml",
-        "fields": (("HetrixTools heartbeat URL", "HETRIXTOOLS_HEARTBEAT_URL"),),
+        "file": "secrets/mashu.sops.yaml",
+        "fields": (("HetrixTools heartbeat URL", "syncthing_heartbeat_url"),),
     },
 }
 
@@ -80,9 +84,8 @@ def set_secret(
     key: str,
     value: str,
     environment: dict[str, str],
-    index_prefix: str = '["spec"]["secretTemplates"][0]["stringData"]',
 ) -> None:
-    index = f'{index_prefix}["{key}"]'
+    index = f'["{key}"]'
     subprocess.run(
         ["sops", "set", "--value-stdin", str(path), index],
         input=json.dumps(value),
@@ -139,14 +142,11 @@ def update(service: str) -> None:
         webhook_url = getpass.getpass("Discord webhook URL (leave empty to keep): ")
         if webhook_url:
             webhook_id, webhook_token = parse_discord_webhook(webhook_url)
-            updates["DISCORD_WEBHOOK_ID"] = webhook_id
-            updates["DISCORD_TOKEN"] = webhook_token
+            updates["argus_discord_webhook_id"] = webhook_id
+            updates["argus_discord_token"] = webhook_token
 
-    options = {}
-    if "index_prefix" in secret:
-        options["index_prefix"] = secret["index_prefix"]
     for key, value in updates.items():
-        set_secret(path, key, value, environment, **options)
+        set_secret(path, key, value, environment)
 
     if updates:
         print(f"Updated {secret['file']}")

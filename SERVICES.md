@@ -2,6 +2,51 @@
 
 Nix declares service configuration; durable application state lives under `/var/lib/data`.
 
+## SOPS identity
+
+All active service credentials live in `secrets/mashu.sops.yaml`. SOPS encrypts
+values; field names remain visible. On Mashu, sops-nix decrypts them using
+`/var/lib/sops-nix/key.txt`, then systemd supplies private service credentials.
+Plaintext credentials and identities must never enter Git, the Nix store or logs.
+
+Restore the existing `.age-key.txt` from the password manager. Generate a new
+identity only for an intentionally new installation, and update the public
+recipient in `.sops.yaml` before encrypting its credentials. Keep the identity,
+administrator SSH key, backup passwords and recovery codes separately recoverable.
+
+For a **fresh host only**, provision the identity over the independent SSH path:
+
+```sh
+ssh mashu-admin 'sudo install -d -m 0700 /var/lib/sops-nix &&
+  sudo sh -c "set -C; umask 077; cat > /var/lib/sops-nix/key.txt"' < .age-key.txt
+```
+
+The command refuses to overwrite an existing identity. Preserve Mashu's current
+identity on redeployment. The local file is ignored; deployments do not copy it
+into their source snapshot. Keep it locally only when needed for secret editing.
+
+List/edit secrets and validate decryption without printing values:
+
+```sh
+python scripts/update_secret.py --list
+make secret service=traefik
+SOPS_AGE_KEY_FILE=.age-key.txt sops --decrypt secrets/mashu.sops.yaml >/dev/null
+```
+
+Empty prompt responses keep existing values. Backrest's editor opens the shared
+encrypted document: edit only its intended fields. Use `make secret service=forgejo` for its structured INI credential as well. Deploy changes with the normal
+Nix command; rotation is not complete until the consumer is checked.
+
+## Required secrets and state
+
+| Service | Secret fields in the shared encrypted document | Durable directory |
+| --- | --- | --- |
+
+All directory names in the last column are beneath `/var/lib/data`. Existing
+service ownership/modes are part of the deployment; do not change them globally.
+Backrest backs up this one root. Existing historical Netdata files are retained,
+but are not automatically displayed by the active host collector.
+
 ## Host DNS service
 
 `services/unbound/default.nix` declares a hardened resolver on `127.0.0.1:53`
