@@ -42,6 +42,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Service | Secret fields in the shared encrypted document | Durable directory |
 | --- | --- | --- |
 | Traefik | `cloudflare_dns_api_token` | `traefik` (including ACME account/certificates) |
+| Pomerium | `pomerium_cookie_secret`, `pomerium_shared_secret`, `pomerium_idp_client_id`, `pomerium_idp_client_secret` | `pomerium` (databroker/session state) |
 | Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
@@ -170,3 +171,19 @@ deployment passed. SSH, DNS, application health and public HTTPS checks also pas
 The backup and native rollback profile are in
 `/var/backups/pocket-id-before-portable-20261018T185106Z`. A full reboot was not
 exercised; browser passkey authentication requires a user check.
+
+## Pocket ID and Pomerium
+
+Keep Pocket ID's canonical issuer `https://id.maxice8.com` stable. Create or retain
+the Pomerium OIDC client with its exact callback URL shown by the provider. Store
+client/cookie/shared credentials through `make secret service=pomerium`. Preserve
+its databroker directory when maintaining existing sessions.
+
+Test a real passkey login and protected-application redirect after identity or
+OIDC changes. Loopback readiness checks alone do not exercise a browser login.
+
+## Pomerium
+
+| Service | Image | State and special runtime requirements |
+| --- | --- | --- |
+| Pomerium 0.33.4 | `pomerium.raw` | UID/GID 5003; the original databroker persists, and four credentials enter through `LoadCredential`. Embedded Envoy uses Nix glibc via conventional loader paths, executable private temporary files and the existing loopback RPC range. |

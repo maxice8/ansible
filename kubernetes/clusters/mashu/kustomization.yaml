@@ -23,7 +23,6 @@ resources:
   - whoami.yaml
   - pingvin-share.yaml
   - asf.yaml
-  - pomerium.yaml
   - netdata.yaml
 
 patches:

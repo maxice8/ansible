@@ -23,5 +23,6 @@ Never copy local age identities into the Nix store.
 - `tailscale`
 - `traefik`
 - `pocket-id`
+- `pomerium`
 
 See [SERVICES.md](SERVICES.md) for service configuration and credentials.
