@@ -115,6 +115,39 @@ its databroker directory when maintaining existing sessions.
 Test a real passkey login and protected-application redirect after identity or
 OIDC changes. Loopback readiness checks alone do not exercise a browser login.
 
+### Pocket ID portable service
+
+`services/pocket-id/default.nix` packages the pinned application and embedded UI
+into `pocket-id.raw`. The existing UID/GID 5004, issuer URL, encryption key,
+database/uploads under `/var/lib/data/pocket-id`, firewall and loopback listeners
+remain unchanged. The Francis task runtime still uses UDP 1414 on loopback;
+public web traffic reaches TCP 1411 through Traefik/Pomerium.
+
+Deployment attaches/replaces the image and enables `pocket-id.service` under
+`system-manager.target`. The shared profile in `services/portable-profile.nix`
+exposes host DNS, machine identity and logging; runtime systemd credentials
+supply the encryption key. The image contains no key or user database.
+
+```sh
+ssh mashu 'sudo -n portablectl inspect pocket-id; systemctl is-enabled pocket-id'
+ssh mashu 'systemctl show pocket-id -p RootImage -p User -p CapabilityBoundingSet'
+ssh mashu 'curl --fail http://127.0.0.1:1411/.well-known/openid-configuration'
+```
+
+Before rollback to a native Pocket ID generation, run
+`sudo systemctl disable --now pocket-id` and `sudo portablectl detach pocket-id`,
+then deploy the retained native profile. Detachment retains identity data;
+never use `--clean` for this rollback.
+
+Validated on Mashu on 2026-10-18 using the same 2.18.0 binary: the existing user,
+two passkeys, five OIDC clients, uploads, issuer metadata, signing keys and runtime
+encryption key are unchanged. Database integrity, original state mount/ownership,
+capability restrictions, login-page delivery, persistent boot enablement and repeat
+deployment passed. SSH, DNS, application health and public HTTPS checks also passed.
+The backup and native rollback profile are in
+`/var/backups/pocket-id-before-portable-20261018T185106Z`. A full reboot was not
+exercised; browser passkey authentication requires a user check.
+
 ## Argus and version updates
 
 ### Portable execution
@@ -130,12 +163,13 @@ attachment under `/etc/systemd/system.attached`. The service is enabled under
 `system-manager.target`, so host systemd starts it at boot without an attachment
 wrapper or a continuously running `systemd-portabled` daemon.
 
-Nix supplies `bin/activate-portables` in the built host profile. After activating
-the host configuration, `deploy.py` runs this script over SSH: it attaches a fresh
+Each portable application supplies `bin/activate-portable-<name>` in the built
+host profile, using `services/activate-portable.nix`. After activating the host
+configuration, `deploy.py` runs these scripts over SSH: each attaches a fresh
 installation or uses `portablectl reattach --now` to replace the current image
 and restart Argus. It then enables the unit through host `systemctl`, creating
 the normal boot dependency. `make deploy` remains the complete deployment command.
-The script and image are retained by the Nix profile for reproducibility and
+The scripts and images are retained by the Nix profile for reproducibility and
 rollback. Calling System Manager directly does not run this extra deployment step.
 
 The Nix-declared `mashu` portable profile exposes machine identity, host DNS and
@@ -170,8 +204,8 @@ the native rollback generation. The separate canary definition and build output
 have been retired in favor of this production application.
 
 Validated on Mashu on 2026-10-18: first attachment, replacement between distinct
-immutable image paths, and repeat deployment all passed. Only `argus` appears in
-the portable inventory, its normal systemd boot link is enabled, and all 11
+immutable image paths, and repeat deployment all passed. `argus` has a single entry
+in the portable inventory, its normal systemd boot link is enabled, and all 11
 approval records, credential mounts and state ownership are preserved. SSH,
 DNS, application and public HTTPS continuity checks passed. A full reboot was
 not exercised. The migration backup, including retired canary state, is at
@@ -196,12 +230,11 @@ outage impact even when their image is simple; migrate one application at a time
 
 | Order | Service | Main work beyond the Argus pattern |
 | --- | --- | --- |
-| 1 | Pocket ID | One binary, SQLite/uploads and a runtime encryption key; verify existing passkeys and OIDC clients. |
-| 2 | Traefik | One binary and config, ACME state, DNS credential and low-port capability; validate public ingress and certificate renewal. |
-| 3 | Syncthing | Bind synchronized folders and identity/config state; verify peer connections, discovery and real transfers. |
-| 4 | ArchiSteamFarm | Include .NET and UI assets, preserve bot state and allow JIT; verify Steam connectivity without parallel bot sessions. |
-| 5 | Pomerium | Embedded Envoy, executable temporary files and internal RPC listeners; verify login, callbacks and existing sessions. |
-| 6 | Forgejo | Git/LFS/SSH and helper closure, generated hooks, repository/database state; verify push, clone, SSH and jobs. |
+| 1 | Traefik | One binary and config, ACME state, DNS credential and low-port capability; validate public ingress and certificate renewal. |
+| 2 | Syncthing | Bind synchronized folders and identity/config state; verify peer connections, discovery and real transfers. |
+| 3 | ArchiSteamFarm | Include .NET and UI assets, preserve bot state and allow JIT; verify Steam connectivity without parallel bot sessions. |
+| 4 | Pomerium | Embedded Envoy, executable temporary files and internal RPC listeners; verify login, callbacks and existing sessions. |
+| 5 | Forgejo | Git/LFS/SSH and helper closure, generated hooks, repository/database state; verify push, clone, SSH and jobs. |
 
 Keep Unbound, Tailscale, Netdata, Backrest, the Forgejo runner and its Podman
 engine native for their host/network/data/socket integration. Keep Pingvin Share X

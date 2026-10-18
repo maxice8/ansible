@@ -1,4 +1,4 @@
-# Keep hardening in the image unit; expose only DNS, machine identity and logging.
+# Keep hardening in each image unit; expose only DNS, machine identity and logging.
 ''
   [Service]
   MountAPIVFS=yes

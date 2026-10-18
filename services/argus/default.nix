@@ -161,20 +161,10 @@ in {
   sops.secrets = lib.mapAttrs' (name: key: lib.nameValuePair "argus-${name}" {
     sopsFile = ../../secrets/mashu.sops.yaml; inherit key; restartUnits = [ "argus.service" ];
   }) credentials;
-  environment.etc."systemd/portable/profile/mashu/service.conf".text = import ./profile.nix;
   systemd.services.argus-network = import ../firewall.nix { inherit pkgs; name = "argus"; uid = 5007; localTCP = [ 3000 19999 ]; };
-  # Run at deployment, not at boot; portablectl exclusively owns the enabled unit.
-  build.scripts.portables = pkgs.writeShellScript "activate-portables" ''
-    set -euo pipefail
-    state=$(/usr/bin/portablectl is-attached '${image}/argus.raw')
-    action=attach
-    # is-attached exits successfully even when its reported state is detached.
-    if [ "$state" != detached ]; then
-      action=reattach
-    fi
-    /usr/bin/portablectl "$action" --profile=mashu --now '${image}/argus.raw'
-    /usr/bin/systemctl enable argus.service
-    /usr/bin/curl --fail --silent --show-error --retry 10 --retry-delay 1 \
-      --retry-connrefused --max-time 5 http://127.0.0.1:8081/api/v1/healthcheck
-  '';
+  build.scripts.argus = import ../activate-portable.nix {
+    inherit pkgs image;
+    name = "argus";
+    healthURL = "http://127.0.0.1:8081/api/v1/healthcheck";
+  };
 }

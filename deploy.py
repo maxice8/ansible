@@ -242,8 +242,9 @@ def main() -> int:
                         command + [action, "--store-path", profile, "--sudo"],
                         check=True,
                     )
-                portables = Path(profile) / "bin/activate-portables"
-                if portables.exists():
+                for portable in sorted(
+                    (Path(profile) / "bin").glob("activate-portable*")
+                ):
                     subprocess.run(
                         [
                             "ssh",
@@ -251,7 +252,7 @@ def main() -> int:
                             *args.ssh_option,
                             "--",
                             args.target_host,
-                            f"sudo -n {portables}",
+                            f"sudo -n {portable}",
                         ],
                         check=True,
                     )
