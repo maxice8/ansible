@@ -9,6 +9,7 @@
     ../services/application-dns.nix
     ../services/traefik
     ../services/pomerium
+    ../services/syncthing
     ../services/pocket-id
     ../services/app-users.nix
     ../services/rootless-containers.nix

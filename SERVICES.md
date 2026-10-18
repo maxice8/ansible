@@ -44,6 +44,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Traefik | `cloudflare_dns_api_token` | `traefik` (including ACME account/certificates) |
 | Pomerium | `pomerium_cookie_secret`, `pomerium_shared_secret`, `pomerium_idp_client_id`, `pomerium_idp_client_secret` | `pomerium` (databroker/session state) |
 | Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
+| Syncthing heartbeat | `syncthing_heartbeat_url` | `syncthing` (device/configuration/database and synchronized data) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
@@ -181,6 +182,12 @@ its databroker directory when maintaining existing sessions.
 
 Test a real passkey login and protected-application redirect after identity or
 OIDC changes. Loopback readiness checks alone do not exercise a browser login.
+
+## Syncthing
+
+| Service | Image | State and special runtime requirements |
+| --- | --- | --- |
+| Syncthing 2.1.6 | `syncthing.raw` | UID/GID 5001; device keys, index and all five synchronized folders stay under `/var/lib/data/syncthing`. The host heartbeat remains native. New synchronized folders must be inside that state root to be visible in the image. |
 
 ## Pomerium
 

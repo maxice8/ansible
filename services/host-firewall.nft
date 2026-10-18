@@ -9,8 +9,8 @@ table inet hostfilter {
     udp sport 547 udp dport 546 accept
     ct state invalid drop
     meta l4proto { icmp, ipv6-icmp } accept
-    tcp dport { 22, 80, 443 } accept
-    udp dport { 41641 } accept
+    tcp dport { 22, 80, 443, 22000 } accept
+    udp dport { 22000, 41641 } accept
   }
   chain forward {
     # This host consumes overlay routes; it advertises neither subnets nor an exit node.

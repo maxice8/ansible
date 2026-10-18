@@ -10,7 +10,6 @@ resources:
   - cert-manager.yaml
   - sops-secrets-operator.yaml
   - argus.yaml
-  - syncthing.yaml
   - certificate-issuers.yaml
   - forgejo.yaml
   - forgejo-runner.yaml
