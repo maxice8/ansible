@@ -117,53 +117,65 @@ OIDC changes. Loopback readiness checks alone do not exercise a browser login.
 
 ## Argus and version updates
 
-### Portable canary (prepared separately)
+### Portable execution
 
-`services/argus/canary.nix` builds `argus-canary.service` and its complete runtime
-closure with `pkgs.portableService`. It uses the same pinned Argus version as
-production, serves only `127.0.0.1:18081`, has separate state at
-`/var/lib/argus-canary`, and uses a dynamic user. Its one dashboard entry is
-inactive: no release polling, notifications or production credentials. Systemd
-permits loopback networking only. It shares neither production Argus state nor
-its unit name, and no public proxy route is added.
+Production Argus is built with `pkgs.portableService` in
+`services/argus/default.nix`. Its image contains the executable, dependencies,
+CA bundle and non-secret YAML configuration. Argus requires YAML for service
+ordering; JSON previously decoded but left the monitoring order empty.
 
-Build the ARM image through the normal public-source snapshot and local builder:
+The image is always named `argus.raw`; only its immutable Nix store directory
+changes with a new build. `portablectl` owns `argus.service` and its persistent
+attachment under `/etc/systemd/system.attached`. The service is enabled under
+`system-manager.target`, so host systemd starts it at boot without an attachment
+wrapper or a continuously running `systemd-portabled` daemon.
 
-```sh
-make build output=packages.aarch64-linux.argus-canary
-```
+Nix supplies `bin/activate-portables` in the built host profile. After activating
+the host configuration, `deploy.py` runs this script over SSH: it attaches a fresh
+installation or uses `portablectl reattach --now` to replace the current image
+and restart Argus. It then enables the unit through host `systemctl`, creating
+the normal boot dependency. `make deploy` remains the complete deployment command.
+The script and image are retained by the Nix profile for reproducibility and
+rollback. Calling System Manager directly does not run this extra deployment step.
 
-The output directory contains `argus-canary_0.39.0.raw`. The image is not imported
-by `hosts/mashu.nix`; a normal deployment neither attaches nor starts it.
-`portablectl` exclusively owns its attached unit. For the first canary, use a
-runtime attachment so it disappears at reboot. From the workstation, after
-reviewing the built image:
-
-```sh
-image_dir=/nix/store/REPLACE-WITH-THE-PRINTED-argus-canary-img-0.39.0
-image="$image_dir/argus-canary_0.39.0.raw"
-nix copy --to ssh://mashu "$image_dir"
-ssh mashu "sudo -n nix-store --add-root /nix/var/nix/gcroots/argus-canary --realise '$image_dir'"
-ssh mashu "sudo -n portablectl inspect --cat '$image'"
-ssh mashu "sudo -n portablectl attach --runtime --profile=default --now '$image'"
-ssh mashu 'curl --fail http://127.0.0.1:18081/api/v1/healthcheck'
-ssh mashu 'systemctl cat argus-canary; systemctl show argus-canary -p RootImage -p User -p DynamicUser -p CapabilityBoundingSet -p IPAddressDeny -p IPAddressAllow'
-```
-
-The installed portable `default` profile adds its own settings and host bind
-mounts. Inspect the combined unit and actual process permissions after attachment;
-the image's unit alone is not the effective host configuration. Before considering
-a production move, check startup, the real HTTP endpoint, state ownership, access
-after restart, and fresh public/Tailscale SSH. This canary does not establish that
-production credentials, notification delivery or release polling work in an image.
-It is not required by the normal VPS checks while attachment remains optional.
-
-To stop and detach it, retaining its isolated state:
+The Nix-declared `mashu` portable profile exposes machine identity, host DNS and
+logging. Hardening stays in the image unit. UID/GID 5007, the egress firewall,
+`127.0.0.1:8081`, runtime SOPS credentials and `/var/lib/data/argus` are preserved.
+The image has a pre-created state mountpoint because SquashFS is read-only.
 
 ```sh
-ssh mashu "sudo -n portablectl detach --runtime --now '$image'"
-ssh mashu 'sudo -n rm /nix/var/nix/gcroots/argus-canary'
+ssh mashu 'sudo -n portablectl list; sudo -n portablectl is-attached argus'
+ssh mashu 'systemctl status argus; systemctl is-enabled argus'
+ssh mashu 'systemctl show argus -p RootImage -p User -p CapabilityBoundingSet'
+ssh mashu 'sudo -n systemctl restart argus'
+ssh mashu 'curl --fail http://127.0.0.1:8081/api/v1/healthcheck'
 ```
+
+Deploy a retained portable generation with
+`python deploy.py deploy --store-path /nix/store/…`; its deployment script selects
+that generation's image. Before reverting to an old native/runtime-wrapper
+generation or removing Argus from the host configuration, detach it explicitly:
+
+```sh
+ssh mashu 'sudo -n systemctl disable --now argus; sudo -n portablectl detach argus'
+```
+
+Detachment retains application data. Never use `--clean` for an ordinary upgrade
+or rollback. Database backups are separate from profile rollback; restoring an
+old database also discards release decisions made since that backup.
+
+The pre-portable database backup and native unit remain in
+`/var/backups/argus-before-portable-20261018T093944Z`; its `profile` file records
+the native rollback generation. The separate canary definition and build output
+have been retired in favor of this production application.
+
+Validated on Mashu on 2026-10-18: first attachment, replacement between distinct
+immutable image paths, and repeat deployment all passed. Only `argus` appears in
+the portable inventory, its normal systemd boot link is enabled, and all 11
+approval records, credential mounts and state ownership are preserved. SSH,
+DNS, application and public HTTPS continuity checks passed. A full reboot was
+not exercised. The migration backup, including retired canary state, is at
+`/var/backups/argus-persistent-20261018T095654Z`.
 
 ### Production release tracking
 
@@ -176,6 +188,25 @@ approval/skipping state. Approval does not update Git or deploy a package.
 Discord webhook URL, storing the webhook ID/token separately. Deploy the change,
 then verify delivery before revoking old credentials. Update packages through
 `make update`, review/build them and explicitly deploy; no GitOps controller runs.
+
+### Remaining portable candidates, simplest first
+
+This ranks packaging effort. Authentication and ingress services have a larger
+outage impact even when their image is simple; migrate one application at a time.
+
+| Order | Service | Main work beyond the Argus pattern |
+| --- | --- | --- |
+| 1 | Pocket ID | One binary, SQLite/uploads and a runtime encryption key; verify existing passkeys and OIDC clients. |
+| 2 | Traefik | One binary and config, ACME state, DNS credential and low-port capability; validate public ingress and certificate renewal. |
+| 3 | Syncthing | Bind synchronized folders and identity/config state; verify peer connections, discovery and real transfers. |
+| 4 | ArchiSteamFarm | Include .NET and UI assets, preserve bot state and allow JIT; verify Steam connectivity without parallel bot sessions. |
+| 5 | Pomerium | Embedded Envoy, executable temporary files and internal RPC listeners; verify login, callbacks and existing sessions. |
+| 6 | Forgejo | Git/LFS/SSH and helper closure, generated hooks, repository/database state; verify push, clone, SSH and jobs. |
+
+Keep Unbound, Tailscale, Netdata, Backrest, the Forgejo runner and its Podman
+engine native for their host/network/data/socket integration. Keep Pingvin Share X
+on its pinned upstream OCI image. Firewalls, accounts, SOPS and maintenance units
+also remain host services.
 
 ## Forgejo and runner
 

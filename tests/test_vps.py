@@ -155,6 +155,8 @@ def check_access(
 def check_health(target_host, options=()):
     print(ssh(target_host, options, HEALTH, privileged=True), end="", flush=True)
     opener = build_opener(ProxyHandler({}))
+    # Cloudflare rejects the default Python user-agent on Pocket ID (error 1010).
+    opener.addheaders = [("User-Agent", "mashu-healthcheck/1.0")]
     for url in [
         "https://git.maxice8.com/api/healthz",
         "https://id.maxice8.com/.well-known/openid-configuration",

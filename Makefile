@@ -12,7 +12,6 @@ help:
 	@printf '%s\n' \
 		'Bootstrap Ubuntu prerequisites: make bootstrap host=mashu-admin' \
 		'Build the ARM profile: make build' \
-		'Build the ARM portable canary: make build output=packages.aarch64-linux.argus-canary' \
 		'Deploy over SSH: make deploy host=mashu' \
 		'Check live VPS access and health (read-only): make test' \
 		'Build/cache the NixOS guest: make vm-image' \

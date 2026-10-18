@@ -10,7 +10,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-from tests.test_vps import RECOVERY_HOST, TAILSCALE_HOST, check_access, check_health
+from tests.test_vps import (
+    RECOVERY_HOST,
+    SSH_OPTIONS,
+    TAILSCALE_HOST,
+    check_access,
+    check_health,
+)
 from tests.vm import DEFAULT_DIRECTORY, NixVM
 
 ROOT = Path(__file__).resolve().parent
@@ -234,6 +240,19 @@ def main() -> int:
                 for action in ["register", "activate"]:
                     subprocess.run(
                         command + [action, "--store-path", profile, "--sudo"],
+                        check=True,
+                    )
+                portables = Path(profile) / "bin/activate-portables"
+                if portables.exists():
+                    subprocess.run(
+                        [
+                            "ssh",
+                            *SSH_OPTIONS,
+                            *args.ssh_option,
+                            "--",
+                            args.target_host,
+                            f"sudo -n {portables}",
+                        ],
                         check=True,
                     )
             finally:

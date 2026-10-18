@@ -38,7 +38,6 @@
         let pkgs = nixpkgs.legacyPackages.${system};
         in {
           system-manager = system-manager.packages.${system}.default;
-          argus-canary = import ./services/argus/canary.nix { inherit pkgs; };
         } // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
           vm-image = inputs.self.nixosConfigurations.builder.config.system.build.vm;
         });
