@@ -12,7 +12,8 @@ jobs:
     container:
       image: node:20-alpine
     env:
-      NIX_REMOTE: local
+      # Evaluate in a writable job-local store without requiring host privileges.
+      NIX_REMOTE: "local?root=/tmp/nix"
       NIX_CONFIG: |
         experimental-features = nix-command flakes
         build-users-group =
