@@ -16,6 +16,7 @@
     curl
     age
     sops
+    nix-prefetch-docker
     kubectl
     kubernetes-helm
     yq-go

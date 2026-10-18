@@ -28,7 +28,7 @@ ALIASES = {
     "archisteamfarm": "asf",
     "traefik-image": "traefik",
 }
-COMPONENTS = set(PACKAGES) | LOCKED
+COMPONENTS = set(PACKAGES) | LOCKED | {"pingvin-share"}
 VERSION = re.compile(r'(\bversion = ")([^"\n]+)(")')
 RELEASE = re.compile(
     r'((?:aarch64|x86_64)-linux = \{ arch = "([^"]+)"; sha256 = ")([a-f0-9]{64})(")'
@@ -125,7 +125,7 @@ def path_for(component: str) -> Path:
 
 
 def validate() -> None:
-    for component in sorted(set(PACKAGES)):
+    for component in sorted(set(PACKAGES) | {"pingvin-share"}):
         text = path_for(component).read_text()
         if component == "pingvin-share":
             for key in ["imageDigest", "hash", "finalImageTag"]:

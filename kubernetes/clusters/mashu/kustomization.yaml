@@ -17,7 +17,6 @@ resources:
   - rancher-compliance.yaml
   - platform-routes.yaml
   - whoami.yaml
-  - pingvin-share.yaml
   - netdata.yaml
 
 patches:
