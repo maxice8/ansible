@@ -41,6 +41,7 @@ Nix command; rotation is not complete until the consumer is checked.
 
 | Service | Secret fields in the shared encrypted document | Durable directory |
 | --- | --- | --- |
+| Traefik | `cloudflare_dns_api_token` | `traefik` (including ACME account/certificates) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
@@ -97,3 +98,41 @@ without replacing their identity. Never clone the live node state into a VM.
 Keep the independent key-only SSH22 path working before changing networking or
 the Tailscale daemon. Tailscale owns its own packet-filter tables; the host
 firewall deliberately owns only `inet hostfilter`.
+
+## Traefik / Cloudflare
+
+Use a Cloudflare token limited to Zone DNS Edit and Zone Read for the required
+zone. Store it with `make secret service=traefik`. Traefik owns DNS-01 issuance;
+certificates and account state persist in its own data directory. Check issuance
+and HTTPS before revoking an old token. Required DNS names and ingress ports are
+listed in README.md. The retired cluster's Argo/Rancher/whoami routes are absent.
+
+### Traefik portable service
+
+`services/traefik/default.nix` packages the pinned binary, static configuration
+and file-provider routes into `traefik.raw`. Configuration changes replace the
+image through the shared deployment hook. UID/GID 5002 and the existing
+`/var/lib/data/traefik/acme.json` persist; the Cloudflare token is injected with
+`LoadCredential`, never included in the image. The host still owns the firewall.
+Systemd grants only `CAP_NET_BIND_SERVICE` for TCP 80/443, with health on loopback
+9080. Attachment and boot enablement follow the same pattern as Argus/Pocket ID.
+
+```sh
+ssh mashu 'sudo -n portablectl inspect traefik; systemctl is-enabled traefik'
+ssh mashu 'systemctl show traefik -p RootImage -p User -p CapabilityBoundingSet'
+ssh mashu 'curl --fail http://127.0.0.1:9080/ping'
+```
+
+For a native-generation rollback, first run `sudo systemctl disable --now traefik`
+and `sudo portablectl detach traefik`, then deploy the retained native profile.
+Never use `--clean`: the certificate account and private keys must survive.
+The pre-migration backup and native profile are recorded in
+`/var/backups/traefik-before-portable-20261018T191254Z`.
+
+Validated on Mashu on 2026-10-18 with the same 3.7.15 binary: all nine origin
+HTTPS routes retain the original trusted certificate, HTTP redirects work, ACME
+state and the runtime DNS token are unchanged, and the original state mount,
+numeric identity, capability bounds and boot enablement are intact. Deployment
+also checks both SSH paths, DNS, application health and public HTTPS. The shared
+health retry tolerates Traefik's brief startup 404 before `/ping` is registered.
+Certificate issuance/renewal and a full host reboot were not exercised.
