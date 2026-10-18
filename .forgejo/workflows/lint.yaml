@@ -32,6 +32,16 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Clean persistent CI cache above 2 GiB
+        # shortcut: runner capacity=1 serializes cleanup; add locking before increasing it.
+        run: |
+          cache_kib=$(du -sk /tmp/nix | cut -f1)
+          echo "CI cache: $cache_kib KiB; cleanup threshold: 2097152 KiB"
+          if [ "$cache_kib" -gt 2097152 ]; then
+            nix store gc
+            rm -rf /tmp/nix/cache
+          fi
+
       - name: Install Ruff
         run: |
           python3 -m venv /tmp/ci-tools
