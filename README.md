@@ -25,5 +25,6 @@ Never copy local age identities into the Nix store.
 - `pocket-id`
 - `pomerium`
 - `syncthing`
+- `forgejo`
 
 See [SERVICES.md](SERVICES.md) for service configuration and credentials.

@@ -45,6 +45,7 @@ Nix command; rotation is not complete until the consumer is checked.
 | Pomerium | `pomerium_cookie_secret`, `pomerium_shared_secret`, `pomerium_idp_client_id`, `pomerium_idp_client_secret` | `pomerium` (databroker/session state) |
 | Pocket ID | `pocket_id_encryption_key` | `pocket-id` (SQLite, uploads and passkeys) |
 | Syncthing heartbeat | `syncthing_heartbeat_url` | `syncthing` (device/configuration/database and synchronized data) |
+| Forgejo | `forgejo_app_ini` | `forgejo` (database, repositories, attachments, SSH identity) |
 | Tailscale | `tailscale_auth_key` | `tailscale` (node/SSH identity) |
 
 All directory names in the last column are beneath `/var/lib/data`. Existing
@@ -189,8 +190,20 @@ OIDC changes. Loopback readiness checks alone do not exercise a browser login.
 | --- | --- | --- |
 | Syncthing 2.1.6 | `syncthing.raw` | UID/GID 5001; device keys, index and all five synchronized folders stay under `/var/lib/data/syncthing`. The host heartbeat remains native. New synchronized folders must be inside that state root to be visible in the image. |
 
+## Forgejo
+
+| Service | Image | State and special runtime requirements |
+| --- | --- | --- |
+| Forgejo 17.0.0 | `forgejo.raw` | UID/GID 5005; database, repositories, LFS and SSH host keys remain under `/var/lib/data/forgejo`. The image includes Git/LFS/SSH, signing/compression helpers, `/bin/sh`, `/usr/bin/env` and a minimal Forgejo account database for subprocesses. |
+
 ## Pomerium
 
 | Service | Image | State and special runtime requirements |
 | --- | --- | --- |
 | Pomerium 0.33.4 | `pomerium.raw` | UID/GID 5003; the original databroker persists, and four credentials enter through `LoadCredential`. Embedded Envoy uses Nix glibc via conventional loader paths, executable private temporary files and the existing loopback RPC range. |
+
+## Forgejo and runner
+
+Preserve repositories, database, hook paths and SSH host keys. The Forgejo service
+regenerates hooks against its selected Nix executable at startup. Public SSH23
+redirects to its unprivileged 2222 listener; administrator OpenSSH stays on 22.
