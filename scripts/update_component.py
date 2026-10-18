@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {
     "argus": "release-argus",
+    "asf": "archisteamfarm",
     "forgejo": "forgejo",
     "pocket-id": "pocket-id",
     "pomerium": "pomerium",
@@ -24,6 +25,7 @@ PACKAGES = {
 }
 LOCKED = {"forgejo-runner"}
 ALIASES = {
+    "archisteamfarm": "asf",
     "traefik-image": "traefik",
 }
 COMPONENTS = set(PACKAGES) | LOCKED

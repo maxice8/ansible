@@ -16,6 +16,10 @@ let
       repo = "release-argus/Argus";
       version = argus.version;
     };
+    asf = {
+      repo = "JustArchiNET/ArchiSteamFarm";
+      version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix { }).version;
+    };
     forgejo-runner = {
       repo = "forgejo/runner";
       version = pkgs.forgejo-runner.version;
@@ -123,6 +127,10 @@ let
       forgejo-runner = manual.forgejo-runner // {
         # Change only the upstream query; its selected Nix version remains manual.
         latest_version = forgejoLatest "runner";
+      };
+      asf = manual.asf // {
+        # ASF uses four-part versions, outside SemVer's three-part format.
+        options.semantic_versioning = false;
       };
     };
   };

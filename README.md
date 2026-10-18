@@ -28,5 +28,6 @@ Never copy local age identities into the Nix store.
 - `forgejo`
 - `forgejo-runner`
 - `argus`
+- `archisteamfarm`
 
 Each module declares its service configuration and credential requirements.
