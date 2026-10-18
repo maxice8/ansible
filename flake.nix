@@ -25,6 +25,13 @@
       forSystems = nixpkgs.lib.genAttrs systems;
     in
     {
+      # Guest packages are ARM-native for cache reuse; only the VM runner is x86.
+      nixosConfigurations.builder = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs.hostPkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [ ./tests/builder.nix ];
+      };
+
       systemConfigs.mashu = system-manager.lib.makeSystemConfig {
         # Pass inputs to our modules; `inherit inputs` is shorthand for inputs = inputs.
         specialArgs = { inherit inputs; };
@@ -41,6 +48,9 @@
         in
         {
           system-manager = system-manager.packages.${system}.default;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          vm-image = inputs.self.nixosConfigurations.builder.config.system.build.vm;
         }
       );
     };
