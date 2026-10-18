@@ -21,5 +21,6 @@ Never copy local age identities into the Nix store.
 
 - `unbound`
 - `tailscale`
+- `traefik`
 
 Each module declares its service configuration and credential requirements.
