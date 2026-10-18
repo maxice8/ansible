@@ -1,5 +1,5 @@
 # Native Forgejo with its original encrypted configuration and private repository state.
-# Database initialization and hook regeneration are normal startup/upgrade operations.
+# Forgejo initializes shared Git hooks during web startup.
 { config, pkgs, ... }:
 let
   forgejo = pkgs.callPackage ../pkgs/forgejo.nix {};
@@ -18,7 +18,7 @@ in {
     after = [ "network-online.target" "userborn.service" "sops-install-secrets.service" "forgejo-network.service" ];
     requires = [ "sops-install-secrets.service" "forgejo-network.service" ];
     partOf = [ "forgejo-network.service" ];
-    path = [ pkgs.git pkgs.git-lfs pkgs.openssh pkgs.gnupg pkgs.gzip pkgs.coreutils ];
+    path = [ pkgs.bash pkgs.git pkgs.git-lfs pkgs.openssh pkgs.gnupg pkgs.gzip pkgs.coreutils ];
     environment = {
       HOME = "/var/lib/data/forgejo/gitea/git";
       GITEA_WORK_DIR = "/var/lib/data/forgejo";
@@ -30,8 +30,7 @@ in {
       StateDirectory = "data/forgejo"; StateDirectoryMode = "0700";
       WorkingDirectory = "/var/lib/data/forgejo";
       LoadCredential = [ "app.ini:${config.sops.secrets.forgejo-config.path}" ];
-      # Hooks contain absolute executable paths; refresh them whenever Nix changes versions.
-      ExecStartPre = [ "${command} migrate" "${command} admin regenerate hooks" ];
+      ExecStartPre = [ "${command} migrate" ];
       ExecStart = "${command} web";
       Restart = "on-failure"; RestartSec = 5;
       MemoryMax = "1G"; TasksMax = 256;
