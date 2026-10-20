@@ -29,3 +29,5 @@ manage bot services.
 manage native application services.
 
 manage host monitoring.
+
+manage backups with Nix.

@@ -22,6 +22,7 @@ let
   native = [
     "netdata"
     "netdata-heartbeat"
+    "backrest"
     "forgejo-runner"
     "runner-engine"
     "pingvin-share"
