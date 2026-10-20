@@ -1,0 +1,17 @@
+# Pocket ID UID 5004: embedded actor runtime, DNS, public HTTPS and SMTP.
+# Application configuration owns mail/client destinations; private host services stay denied.
+destroy table inet pocket_id_egress
+table inet pocket_id_egress {
+  chain output {
+    type filter hook output priority filter; policy accept;
+    meta skuid 5004 ct state established,related accept
+    meta skuid 5004 ip daddr 127.0.0.1 udp dport 1414 accept
+    meta skuid 5004 ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
+    meta skuid 5004 fib daddr type local reject
+    meta skuid 5004 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } reject
+    meta skuid 5004 ip6 daddr { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } reject
+    # OIDC metadata/icons and configured mail delivery; no general public-port access.
+    meta skuid 5004 tcp dport { 25, 443, 465, 587 } accept
+    meta skuid 5004 reject
+  }
+}

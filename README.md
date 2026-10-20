@@ -13,3 +13,5 @@ manage credentials with sops-nix.
 manage host connectivity and enrollment.
 
 manage ingress and certificates.
+
+manage identity services.
