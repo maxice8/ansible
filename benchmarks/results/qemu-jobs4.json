@@ -1,0 +1,54 @@
+{
+  "host": {
+    "system": "Linux",
+    "node": "natsume",
+    "release": "7.2.10",
+    "version": "#1-NixOS SMP PREEMPT_DYNAMIC @1791725270",
+    "machine": "x86_64",
+    "processor": ""
+  },
+  "tools": {
+    "bash": "/nix/store/brnhnyb8lq3sfkdsdq10i5w85b120imz-bash-interactive-5.3p20",
+    "coreutils": "/nix/store/m2ar7c5ylhgg8vp7dfdx9bhjfvki5xdg-coreutils-9.12",
+    "gcc": "/nix/store/6gj4dzcv6gaxh5raqyrq7jmy605qaj3z-gcc-wrapper-16.2.0",
+    "gnutar": "/nix/store/0xhhzmnjfc0ws5vwkvlnyhkaa8f92v65-gnutar-1.35",
+    "gzip": "/nix/store/gm4gzpllicwvrjxyilsm7140nqikxhbx-gzip-1.15",
+    "nodejs_24": "/nix/store/6vlx51wp6rjcsb1gcx54hfb7ndf3k2h8-nodejs-24.21.0"
+  },
+  "logical_cpus": 20,
+  "emulator": [
+    "/run/binfmt/aarch64-linux"
+  ],
+  "jobs": 4,
+  "runs": 3,
+  "qemu_environment": {},
+  "results": {
+    "files": {
+      "seconds": [
+        0.3158,
+        0.3388,
+        0.3461
+      ],
+      "median_seconds": 0.3388,
+      "jobs_per_second": 11.8064
+    },
+    "node": {
+      "seconds": [
+        5.625,
+        5.5893,
+        5.4468
+      ],
+      "median_seconds": 5.5893,
+      "jobs_per_second": 0.7157
+    },
+    "compile": {
+      "seconds": [
+        18.1302,
+        18.2975,
+        17.2286
+      ],
+      "median_seconds": 18.1302,
+      "jobs_per_second": 0.2206
+    }
+  }
+}

@@ -218,7 +218,8 @@ adds `aarch64-linux` to Nix's supported build platforms. The native host kernel
 runs ARM build processes through QEMU user-mode emulation. No VM is used.
 An ARM workstation can build directly. Other workstations need equivalent
 binfmt support or an explicit remote builder. Emulation does not provide an ARM
-kernel for boot or kernel-specific tests.
+kernel for boot or kernel-specific tests. See [the ARM emulation benchmark](benchmarks/README.md)
+for repeatable build-tool measurements and explicit emulator comparisons.
 
 Local Nix commands use `sudo -n` so the daemon honors temporary builder settings;
 the workstation needs passwordless sudo for these Nix operations. Deployment SSH
