@@ -34,3 +34,14 @@ docs(bootstrap): explain Ubuntu prerequisites
 Use ASD-STE100 for comments and docstrings. Use short sentences and stable terms.
 Describe what the code does. Avoid labels such as "final configuration".
 Format Nix files with the official `nixfmt` formatter.
+
+## Package selection
+
+Use Nixpkgs when it provides the application. Use `flake.lock` to select versions.
+Do not add Nixpkgs version overrides to follow newer upstream releases.
+Check the binary cache before starting a package build. Defer upgrades that need
+an uncached source build when the application is available through Nixpkgs.
+Use local packaging when Nixpkgs does not provide the application. Keep existing
+pins when the Nixpkgs replacement needs an uncached source build.
+Keep existing pins across a major-version gap. Minor and patch downgrades to
+Nixpkgs are allowed. Check runtime compatibility before activation.
