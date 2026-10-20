@@ -17,6 +17,7 @@
     ../services/argus
     ../services/pingvin-share
     ../services/archisteamfarm
+    ../services/netdata
     ../services/forgejo-runner
   ];
   nixpkgs.hostPlatform = "aarch64-linux";

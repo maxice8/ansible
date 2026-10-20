@@ -27,3 +27,5 @@ manage release monitoring and package updates.
 manage bot services.
 
 manage native application services.
+
+manage host monitoring.
