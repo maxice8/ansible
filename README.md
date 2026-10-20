@@ -15,3 +15,5 @@ manage host connectivity and enrollment.
 manage ingress and certificates.
 
 manage identity services.
+
+manage authenticated application access.
