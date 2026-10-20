@@ -20,6 +20,7 @@ let
     }
   ];
   native = [
+    "syncthing-heartbeat"
   ];
 in
 {

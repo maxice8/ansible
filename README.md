@@ -17,3 +17,5 @@ manage ingress and certificates.
 manage identity services.
 
 manage authenticated application access.
+
+manage synchronization and heartbeat.
