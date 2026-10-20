@@ -28,6 +28,10 @@ let
       repo = "forgejo/runner";
       version = pkgs.forgejo-runner.version;
     };
+    pingvin-share = {
+      repo = "smp46/pingvin-share-x";
+      version = (pkgs.callPackage ../../pkgs/pingvin-share.nix { }).version;
+    };
     pocket-id = {
       repo = "pocket-id/pocket-id";
       version = pkgs.pocket-id.version;

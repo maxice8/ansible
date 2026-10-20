@@ -36,5 +36,15 @@
 
       formatter = forSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
+      packages = forSystems (
+        system:
+        # ${system} selects an attribute by platform name rather than a literal key.
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          pingvin-share = pkgs.callPackage ./pkgs/pingvin-share.nix { };
+        }
+      );
     };
 }

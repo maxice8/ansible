@@ -15,6 +15,7 @@
     ../services/rootless-containers.nix
     ../services/forgejo
     ../services/argus
+    ../services/pingvin-share
     ../services/archisteamfarm
     ../services/forgejo-runner
   ];

@@ -22,6 +22,7 @@ let
   native = [
     "forgejo-runner"
     "runner-engine"
+    "pingvin-share"
     "syncthing-heartbeat"
   ];
 in

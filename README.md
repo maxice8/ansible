@@ -25,3 +25,5 @@ manage git hosting and isolated runners.
 manage release monitoring and package updates.
 
 manage bot services.
+
+manage native application services.
