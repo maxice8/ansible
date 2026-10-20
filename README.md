@@ -366,6 +366,25 @@ above; `recovery_host=mashu-admin` selects your configured recovery alias.
 Deployment checks detect access loss but do not provide automatic rollback if
 both access paths are blocked. No check reboots the VPS.
 
+Forgejo requires approval for PR workflows from users without write access.
+Repository owners, writers, Actions team writers and instance administrators
+run workflows automatically. There are no additional PR trust grants. Keep this
+policy: approving an outside author also gives their code access to the shared
+CI cache. Grant write access or permanent trust only to trusted developers.
+
+Enable hooks after each clone and inspect changes before committing:
+
+```sh
+pre-commit install --install-hooks
+pre-commit run --all-files
+git diff --check
+git diff --cached
+```
+
+Hooks check private keys, local identity files, formatting and secrets. They do
+not replace credential review or a full-history scan. Do not bypass them with
+`--no-verify`. Keep credentials and unrelated work out of commits.
+
 ## Pingvin Share
 
 Pingvin uses a Nix-built NestJS backend on `127.0.0.1:3002` and a Next.js frontend

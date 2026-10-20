@@ -1,0 +1,67 @@
+name: Infrastructure Checks
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master", "stable", "release/v*"]
+
+jobs:
+  lint:
+    runs-on: alpine
+    # Relative /var/run symlinks avoid Podman 5.8.7's archive-copy regression.
+    container:
+      image: node:20-alpine
+      volumes:
+        # Disposable public-input cache; never mount the host's deployment store.
+        - ansible-nix-ci:/nix
+    env:
+      # Use the normal store path so Nix tools do not need chroot privileges.
+      NIX_REMOTE: local
+      XDG_CACHE_HOME: /nix/cache
+      NIX_CONFIG: |
+        experimental-features = nix-command flakes
+        build-users-group =
+        sandbox = false
+    steps:
+      - name: Install validation tools
+        shell: sh
+        run: apk add --no-cache bash git python3 py3-pip nix
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Clean persistent CI cache above 2 GiB
+        # shortcut: runner capacity=1 serializes cleanup; add locking before increasing it.
+        run: |
+          cache_kib=$(du -sk /nix | cut -f1)
+          echo "CI cache: $cache_kib KiB; cleanup threshold: 2097152 KiB"
+          if [ "$cache_kib" -gt 2097152 ]; then
+            nix store gc
+            rm -rf /nix/cache
+          fi
+
+      - name: Install Ruff
+        run: |
+          python3 -m venv /tmp/ci-tools
+          /tmp/ci-tools/bin/pip install ruff==0.16.1
+          echo /tmp/ci-tools/bin >> "$GITHUB_PATH"
+
+      - name: Lint Python
+        run: ruff check .
+
+      - name: Check Python formatting
+        run: ruff format --check .
+
+      - name: Check bootstrap syntax
+        run: bash -n bootstrap.sh
+
+      - name: Validate component update mappings
+        run: python3 scripts/update_component.py --check
+
+      - name: Check Nix formatting
+        run: git ls-files -z '*.nix' | xargs -0 nix fmt -- --check
+
+      - name: Evaluate Mashu configuration
+        run: nix eval --no-write-lock-file --raw .#systemConfigs.mashu.drvPath
