@@ -21,3 +21,5 @@ manage authenticated application access.
 manage synchronization and heartbeat.
 
 manage git hosting and isolated runners.
+
+manage release monitoring and package updates.
