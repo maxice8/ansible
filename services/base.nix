@@ -2,6 +2,7 @@
 # Modules receive flake inputs through specialArgs.
 { inputs, ... }: {
   imports = [
+    inputs.sops-nix.nixosModules.sops
     ./nix-maintenance.nix
   ];
 
@@ -15,6 +16,7 @@
   system-manager.linkCurrentSystem = true;
 
   # Reference a root-provisioned identity; never embed its contents in the Nix store.
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
 
   # Refuse activation on hosts lacking the systemd/cgroup baseline used by our units.
   system-manager.preActivationAssertions.hostBaseline = {

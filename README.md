@@ -7,3 +7,5 @@ configuring administrator SSH access and passwordless sudo.
 manage Ubuntu services with Nix.
 
 isolate application services.
+
+manage credentials with sops-nix.
