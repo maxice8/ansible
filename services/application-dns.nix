@@ -20,6 +20,8 @@ let
     }
   ];
   native = [
+    "forgejo-runner"
+    "runner-engine"
     "syncthing-heartbeat"
   ];
 in

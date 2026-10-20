@@ -1,0 +1,15 @@
+# Network policy for runner-engine. Keep other services and private networks blocked.
+destroy table inet runner_engine_egress
+table inet runner_engine_egress {
+  chain output {
+    type filter hook output priority filter; policy accept;
+    meta skuid { 5009, 500000-565535 } ct state established,related accept
+    meta skuid { 5009, 500000-565535 } ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
+    meta skuid { 5009, 500000-565535 } fib daddr type local reject
+    meta skuid { 5009, 500000-565535 } ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4 } reject
+    meta skuid { 5009, 500000-565535 } ip6 daddr { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } reject
+    meta skuid { 5009, 500000-565535 } meta l4proto tcp accept
+    meta skuid { 5009, 500000-565535 } meta l4proto udp accept
+    meta skuid { 5009, 500000-565535 } reject
+  }
+}

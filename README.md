@@ -19,3 +19,5 @@ manage identity services.
 manage authenticated application access.
 
 manage synchronization and heartbeat.
+
+manage git hosting and isolated runners.
