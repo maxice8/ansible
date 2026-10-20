@@ -1,0 +1,32 @@
+# Own only this table; Tailscale maintains its own routing/netfilter rules.
+# Native web ingress binds 80/443; only Forgejo's unprivileged SSH needs a redirect.
+destroy table inet hostfilter
+table inet hostfilter {
+  chain prerouting {
+    type nat hook prerouting priority dstnat; policy accept;
+    iifname { "enp0s6", "tailscale0" } tcp dport 23 redirect to :2222
+  }
+  chain output_nat {
+    type nat hook output priority dstnat; policy accept;
+    fib daddr type local tcp dport 23 redirect to :2222
+  }
+  chain input {
+    type filter hook input priority -10; policy drop;
+    iifname "lo" accept
+    iifname "tailscale0" accept
+    ct state established,related accept
+    udp sport 547 udp dport 546 accept
+    ct state invalid drop
+    meta l4proto { icmp, ipv6-icmp } accept
+    tcp dport { 22, 80, 443, 22000 } accept
+    ct original proto-dst 23 tcp dport 2222 accept
+    udp dport { 22000, 41641 } accept
+  }
+  chain forward {
+    # This host consumes overlay routes; it advertises neither subnets nor an exit node.
+    type filter hook forward priority -10; policy drop;
+  }
+  chain output {
+    type filter hook output priority -10; policy accept;
+  }
+}

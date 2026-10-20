@@ -5,3 +5,5 @@ manage declared service configuration. Run `./bootstrap.sh <ssh-host>` after
 configuring administrator SSH access and passwordless sudo.
 
 manage Ubuntu services with Nix.
+
+isolate application services.

@@ -3,9 +3,24 @@
 { lib, pkgs, ... }:
 let
   ids = {
+    syncthing = 5001;
+    traefik = 5002;
+    pomerium = 5003;
+    pocket-id = 5004;
+    pingvin-share-frontend = 5014;
+    forgejo = 5005;
+    argus = 5007;
+    archisteamfarm = 5013;
+    netdata = 5011;
+    forgejo-runner = 5012;
+    backrest = 5008;
+    runner-engine = 5009;
+    pingvin-share = 5006;
     unbound = 5010;
   };
-  ranges = { };
+  ranges = {
+    runner-engine = 500000;
+  };
 in
 {
   services.userborn.enable = lib.mkForce true;
