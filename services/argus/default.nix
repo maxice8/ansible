@@ -16,6 +16,10 @@ let
       repo = "release-argus/Argus";
       version = argus.version;
     };
+    asf = {
+      repo = "JustArchiNET/ArchiSteamFarm";
+      version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix { }).version;
+    };
     backrest = {
       repo = "garethgeorge/backrest";
       version = pkgs.backrest.version;
@@ -140,6 +144,10 @@ let
           json = "version";
           regex = "^v?([0-9.]+)";
         };
+      };
+      asf = manual.asf // {
+        # ASF uses four-part versions, outside SemVer's three-part format.
+        options.semantic_versioning = false;
       };
     };
   };
