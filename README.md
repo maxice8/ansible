@@ -9,3 +9,5 @@ manage Ubuntu services with Nix.
 isolate application services.
 
 manage credentials with sops-nix.
+
+manage host connectivity and enrollment.
