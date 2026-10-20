@@ -7,6 +7,7 @@
     ../services/host-policy.nix
     ../services/unbound
     ../services/application-dns.nix
+    ../services/traefik
     ../services/app-users.nix
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
