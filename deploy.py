@@ -57,6 +57,23 @@ def build(
     ).strip()
 
 
+def deployment_guard(host, options, action, profile):
+    """Run the access guard on the deployment host."""
+    script = (ROOT / "scripts/deploy_guard.py").read_text()
+    return ssh(
+        host,
+        options,
+        f"""import subprocess,tempfile
+from pathlib import Path
+with tempfile.TemporaryDirectory(prefix='mashu-guard-') as directory:
+    script = Path(directory) / 'guard.py'
+    script.write_text({script!r})
+    subprocess.run(['/usr/bin/python3', str(script), {action!r}, {profile!r}], check=True)
+""",
+        privileged=True,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["build", "test", "deploy"])
@@ -119,6 +136,12 @@ def main() -> int:
             env=os.environ | {"NIX_SSHOPTS": shlex.join(copy_options)},
             check=True,
         )
+        print("Validating candidate access and arming rollback...", flush=True)
+        print(
+            deployment_guard(args.target_host, args.ssh_option, "arm", profile),
+            end="",
+            flush=True,
+        )
         registration_started = True
         try:
             print("Activating services; changed services may restart...", flush=True)
@@ -164,6 +187,11 @@ for action in ['register-profile', 'activate']:
                 raise
             finally:
                 check_health(args.target_host, args.ssh_option)
+        print(
+            deployment_guard(args.target_host, args.ssh_option, "disarm", profile),
+            end="",
+            flush=True,
+        )
     except (
         OSError,
         RuntimeError,
@@ -177,7 +205,8 @@ for action in ['register-profile', 'activate']:
             print(error.stderr or error.stdout or "", file=sys.stderr)
         if registration_started:
             print(
-                "Inspect readiness and deploy an older Git revision if needed; "
+                "The host-side rollback remains armed for 30 minutes from preflight; "
+                "inspect systemctl status mashu-deploy-rollback.timer and .service. "
                 "application data migrations are not rolled back automatically.",
                 file=sys.stderr,
             )
