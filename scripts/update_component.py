@@ -217,10 +217,8 @@ def validate() -> None:
         ALIASES.get(name, name)
         for name in re.findall(r"^    ([a-z0-9-]+) =", selected, re.MULTILINE)
     }
-    if names != COMPONENTS - {"tailscale"}:
-        raise RuntimeError(
-            f"Argus/updater mapping mismatch: {names ^ (COMPONENTS - {'tailscale'})}"
-        )
+    if names != set(PACKAGES):
+        raise RuntimeError(f"Argus/updater mapping mismatch: {names ^ set(PACKAGES)}")
     print(
         f"Validated {len(COMPONENTS)} Nix component mappings; {', '.join(sorted(LOCKED))} use flake.lock"
     )

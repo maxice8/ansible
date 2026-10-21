@@ -8,10 +8,6 @@
 let
   argus = pkgs.callPackage ../../pkgs/release-argus.nix { };
   selected = {
-    traefik-image = {
-      repo = "traefik/traefik";
-      version = pkgs.traefik.version;
-    };
     argus = {
       repo = "release-argus/Argus";
       version = argus.version;
@@ -20,33 +16,9 @@ let
       repo = "JustArchiNET/ArchiSteamFarm";
       version = (pkgs.callPackage ../../pkgs/archisteamfarm.nix { }).version;
     };
-    backrest = {
-      repo = "garethgeorge/backrest";
-      version = pkgs.backrest.version;
-    };
-    forgejo-runner = {
-      repo = "forgejo/runner";
-      version = pkgs.forgejo-runner.version;
-    };
     pingvin-share = {
       repo = "smp46/pingvin-share-x";
       version = (pkgs.callPackage ../../pkgs/pingvin-share.nix { }).version;
-    };
-    pocket-id = {
-      repo = "pocket-id/pocket-id";
-      version = pkgs.pocket-id.version;
-    };
-    pomerium = {
-      repo = "pomerium/pomerium";
-      version = pkgs.pomerium.version;
-    };
-    syncthing = {
-      repo = "syncthing/syncthing";
-      version = pkgs.syncthing.version;
-    };
-    netdata = {
-      repo = "netdata/netdata";
-      version = pkgs.netdata.version;
     };
     forgejo = {
       repo = "forgejo/forgejo";
@@ -74,7 +46,7 @@ let
     };
   }) selected;
 
-  # Query Forgejo's own latest-release API for both the server and its runner.
+  # Query Forgejo's own latest-release API for the server.
   forgejoLatest = repo: {
     type = "url";
     url = "https://code.forgejo.org/api/v1/repos/forgejo/${repo}/releases/latest";
@@ -134,19 +106,6 @@ let
           url = "http://127.0.0.1:3000/api/v1/version";
           json = "version";
           regex = "^([0-9.]+)";
-        };
-      };
-      forgejo-runner = manual.forgejo-runner // {
-        # Change only the upstream query; its selected Nix version remains manual.
-        latest_version = forgejoLatest "runner";
-      };
-      netdata = manual.netdata // {
-        comment = "Running native host collector HTTP version";
-        deployed_version = {
-          type = "url";
-          url = "http://127.0.0.1:19999/api/v1/info";
-          json = "version";
-          regex = "^v?([0-9.]+)";
         };
       };
       asf = manual.asf // {

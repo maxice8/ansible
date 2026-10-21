@@ -302,7 +302,8 @@ fetch and verify the proposed artifacts but write nothing. A real update refuses
 dirty package files and creates a commit containing only that package. Inspect
 its diff and build/test the result before deployment; an upstream download hash
 is not a substitute for reviewing release provenance. The updater never pushes
-or deploys. Argus derives configured release versions from those package pins.
+or deploys. Argus monitors only these local packages. Packages supplied by Nixpkgs
+are not monitored by Argus.
 
 Traefik, Syncthing, Backrest, Pocket ID, Pomerium, Tailscale, Netdata,
 Forgejo Runner and runtime dependencies come from locked Nixpkgs. Update them with `make update inputs=nixpkgs`.
