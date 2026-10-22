@@ -13,10 +13,10 @@
 }:
 stdenvNoCC.mkDerivation rec {
   pname = "archisteamfarm";
-  version = "6.3.10.6";
+  version = "6.3.11.6";
   src = fetchurl {
     url = "https://github.com/JustArchiNET/ArchiSteamFarm/releases/download/${version}/ASF-generic.zip";
-    sha256 = "118f9bb85d2d8d301536e96d304cbe8e7aa99a6aa1d1bb97a540e78b7c73b1ce";
+    sha256 = "8549cdacb951d0011d4856e9ecb9a748e0e2b97a970e0dbe45b2dcdac0c6a149";
   };
   dontUnpack = true;
   nativeBuildInputs = [
