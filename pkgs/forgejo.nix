@@ -8,18 +8,18 @@ let
   releases = {
     aarch64-linux = {
       arch = "arm64";
-      sha256 = "e5ec437cd6357e8d1b4580cb47ab1daa58a32b33971a63db63446a535d33adb7";
+      sha256 = "1e99403746406e8199efc903ddd1940d5728a60e50241f7aa6c9f2b907bd8ec9";
     };
     x86_64-linux = {
       arch = "amd64";
-      sha256 = "5a3b07e124ed70b4e46ee3939515f003bd3cc85352257a9a4607a527251042ca";
+      sha256 = "51a8cdf4a1252e79f4b3855d7a7891af6c6635105420768c460e2f0690385d6f";
     };
   };
   release = releases.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation rec {
   pname = "forgejo";
-  version = "17.0.0";
+  version = "17.0.1";
   src = fetchurl {
     url = "https://code.forgejo.org/forgejo/forgejo/releases/download/v${version}/forgejo-${version}-linux-${release.arch}";
     inherit (release) sha256;
