@@ -48,6 +48,7 @@ def build(
     """Build with local platform support or explicitly supplied remote builders."""
     target = f"path:{source}#{output}"
     command = ["sudo", "-n", shutil.which("nom") or "nom", "build"]
+    command += ["--max-jobs", "1", "--cores", "2"]
     command += ["--out-link", str(out_link)] if out_link else ["--no-link"]
     if builders == "none":
         builders = ""

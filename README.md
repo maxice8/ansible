@@ -166,7 +166,9 @@ make deploy host=mashu-admin
 `deploy.py` uses Nix's Git fetcher to freeze the tracked source files in the store.
 Stage new files with `git add` before building. Ignored files stay outside the
 snapshot. Nix downloads cached ARM outputs and builds uncached jobs locally with
-host binfmt emulation. Deployment first requires fresh public recovery and
+host binfmt emulation. Builds run one job at a time with two cores per job to
+leave resources for other work. Explicit remote builders set their own job limits.
+Deployment first requires fresh public recovery and
 target SSH connections, before building or activation. Tailscale can be absent on
 a new host.
 After activation, deployment checks Tailscale and public SSH, then service, DNS
