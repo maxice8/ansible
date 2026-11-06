@@ -17,16 +17,16 @@
   makeWrapper,
 }:
 let
-  version = "1.22.4";
+  version = "2.1.1";
   prismaVersion = "6.6.0";
   engineRev = "f676762280b54cd07c770017ed3711ddde35f37a";
-  backendNpmDepsHash = "sha256-ELbC/tS4Ug2nc221220/incyFKIjlUGlVF03WqcVpe0=";
-  frontendNpmDepsHash = "sha256-9dZCrG2GRxDRTH7oXpQ+tXGxOptQbyT73Mj0HG4U9JY=";
+  backendNpmDepsHash = "sha256-Puv7/oDPgQ0xfvMztCbM/hst35qulblaeaGZOmsL+BA=";
+  frontendNpmDepsHash = "sha256-mSPXzgWdCgzT6xd4hxBB8DPztmUBiHUZM9fs1gHBbEc=";
   src = fetchFromGitHub {
     owner = "smp46";
     repo = "pingvin-share-x";
-    rev = "2152bdcafaa85d936c5f59fd3465b35cdb562387";
-    hash = "sha256-gB09NRomMyiJSuIRUgR2JsDqixs7TOvDpCi7x89i0+I=";
+    rev = "fd4632b9882fae3d1c67d69ae1d4ab7f91947cd5";
+    hash = "sha256-WadA9c/TBzrhj37Rw9erTUoQY/bFtC+Vxdu7m3xeywk=";
   };
   # Select binaries for the service's CPU, not the workstation's CPU.
   engineRelease =
