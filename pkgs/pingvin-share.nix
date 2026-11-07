@@ -156,10 +156,11 @@ let
     installPhase = ''
       runHook preInstall
       mkdir -p $out/.next/cache
-      cp -r .next/standalone/. $out/
+      cp -r .next/standalone/frontend/. $out/
       cp -r .next/static $out/.next/static
       cp -r public $out/public
       cp ../LICENSE $out/LICENSE
+      test -f $out/server.js
       runHook postInstall
     '';
   };
