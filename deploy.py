@@ -61,6 +61,7 @@ def build(
 def deployment_guard(host, options, action, profile):
     """Run the access guard on the deployment host."""
     script = (ROOT / "scripts/deploy_guard.py").read_text()
+    arguments = [action] if profile is None else [action, profile]
     return ssh(
         host,
         options,
@@ -69,7 +70,7 @@ from pathlib import Path
 with tempfile.TemporaryDirectory(prefix='mashu-guard-') as directory:
     script = Path(directory) / 'guard.py'
     script.write_text({script!r})
-    subprocess.run(['/usr/bin/python3', str(script), {action!r}, {profile!r}], check=True)
+    subprocess.run(['/usr/bin/python3', str(script), *{arguments!r}], check=True)
 """,
         privileged=True,
     )
@@ -77,7 +78,7 @@ with tempfile.TemporaryDirectory(prefix='mashu-guard-') as directory:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["build", "test", "deploy"])
+    parser.add_argument("action", choices=["build", "test", "deploy", "clear-rollback"])
     parser.add_argument("--target-host")
     parser.add_argument("--tailscale-host", default=TAILSCALE_HOST)
     parser.add_argument("--recovery-host", default=RECOVERY_HOST)
@@ -100,7 +101,7 @@ def main() -> int:
             parser.error("invalid SSH target")
     registration_started = False
     try:
-        if args.action == "test":
+        if args.action in ("test", "clear-rollback"):
             check_access(
                 args.target_host,
                 args.tailscale_host,
@@ -108,6 +109,12 @@ def main() -> int:
                 args.ssh_option,
             )
             check_health(args.target_host, args.ssh_option)
+            if args.action == "clear-rollback":
+                print(
+                    deployment_guard(args.target_host, args.ssh_option, "clear", None),
+                    end="",
+                    flush=True,
+                )
             return 0
         if args.action == "deploy":
             machine = check_access(

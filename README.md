@@ -109,6 +109,7 @@ make update         # update and commit only flake.lock
 make build          # build without updating or committing
 make diff           # compare the latest successful build with Mashu
 make deploy         # activate and check Mashu over recovery SSH
+make clear-rollback # clear the retained guard after reviewing a completed rollback
 make push           # push Git commits
 ```
 

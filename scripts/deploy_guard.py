@@ -143,6 +143,28 @@ def main(action, profile=None):
             ROOT.unlink()
             shutil.rmtree(STATE)
             print("Rollback disarmed", flush=True)
+        elif action == "clear":
+            for unit in (UNIT + ".timer", UNIT + ".service"):
+                status = run(
+                    "systemctl",
+                    "show",
+                    unit,
+                    "--property=ActiveState",
+                    "--value",
+                    capture_output=True,
+                ).stdout.strip()
+                if status not in ("inactive", "failed"):
+                    raise RuntimeError(f"Rollback unit is still active: {unit}")
+            if not STATE.exists() and not ROOT.is_symlink():
+                print("No rollback guard to clear", flush=True)
+                return
+            if not (STATE / "rollback-started").exists():
+                raise RuntimeError("Rollback has not started; retain the guard")
+            if CURRENT.resolve(strict=True) != ROOT.resolve(strict=True):
+                raise RuntimeError("Previous profile is not active; inspect the host")
+            ROOT.unlink()
+            shutil.rmtree(STATE)
+            print("Reviewed rollback guard cleared", flush=True)
         elif action == "rollback":
             if not ROOT.exists():
                 return

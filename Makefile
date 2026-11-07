@@ -14,7 +14,7 @@ $(error Usage: make update [<component> <version>] [dry_run=1])
 endif
 service := $(word 2,$(MAKECMDGOALS))
 version := $(word 3,$(MAKECMDGOALS))
-ifneq ($(filter build deploy test bootstrap diff push help list check-updates update secret,$(service) $(version)),)
+ifneq ($(filter build deploy clear-rollback test bootstrap diff push help list check-updates update secret,$(service) $(version)),)
 $(error Service and version must not be Make command names)
 endif
 .PHONY: $(service) $(version)
@@ -26,7 +26,7 @@ PYTHON ?= python3
 
 DRY_RUN_FLAG = $(if $(filter 1 true yes,$(dry_run)),--dry-run)
 
-.PHONY: build deploy test bootstrap diff push help list check-updates update secret
+.PHONY: build deploy clear-rollback test bootstrap diff push help list check-updates update secret
 
 help:
 	@printf '%s\n' \
@@ -34,6 +34,7 @@ help:
 		'  make build                        Build the profile' \
 		'  make diff                         Compare with the deployed profile' \
 		'  make deploy                       Deploy and check readiness' \
+		'  make clear-rollback               Clear a reviewed, inactive rollback guard' \
 		'  make test                         Check VPS health' \
 		'  make bootstrap host=<ssh-host>    Prepare Ubuntu prerequisites' \
 		'  make push                         Push Git commits' \
@@ -70,6 +71,9 @@ build:
 
 deploy:
 	@$(PYTHON) deploy.py deploy $(if $(filter command line,$(origin host)),--target-host '$(host)') --builders '$(builders)' $(ACCESS_FLAGS)
+
+clear-rollback:
+	@$(PYTHON) deploy.py clear-rollback $(if $(filter command line,$(origin host)),--target-host '$(host)') $(ACCESS_FLAGS)
 
 test:
 	@$(PYTHON) deploy.py test --target-host '$(host)' $(ACCESS_FLAGS)

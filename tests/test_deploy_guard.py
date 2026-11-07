@@ -1,6 +1,7 @@
 """Check deployment access gates and rollback cancellation."""
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,105 @@ from scripts import deploy_guard as guard
 
 
 class GuardTests(unittest.TestCase):
+    def test_clear_without_guard_is_a_noop(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            with (
+                patch.object(guard, "STATE", base / "state"),
+                patch.object(guard, "ROOT", base / "gcroot"),
+                patch("builtins.open", unittest.mock.mock_open()),
+                patch.object(guard.fcntl, "flock"),
+                patch.object(
+                    guard,
+                    "run",
+                    return_value=subprocess.CompletedProcess([], 0, "inactive"),
+                ),
+            ):
+                guard.main("clear")
+                (base / "gcroot").symlink_to(base / "missing")
+                with self.assertRaises(RuntimeError):
+                    guard.main("clear")
+                self.assertTrue((base / "gcroot").is_symlink())
+
+    def test_remote_guard_omits_absent_profile(self):
+        for action, profile in (("clear", None), ("arm", "/candidate")):
+            with self.subTest(action=action), patch.object(deploy, "ssh") as ssh:
+                deploy.deployment_guard("host", [], action, profile)
+                script = ssh.call_args.args[2]
+                with patch.object(subprocess, "run") as run:
+                    exec(script, {})  # noqa: S102 - Run the generated SSH script with subprocess mocked.
+                arguments = run.call_args.args[0]
+                self.assertEqual(
+                    arguments[2:], [action] if profile is None else [action, profile]
+                )
+                self.assertTrue(all(isinstance(arg, str) for arg in arguments))
+
+    def test_clear_only_removes_an_inactive_restored_guard(self):
+        for status, started, restored in (
+            ("active", True, True),
+            ("activating", True, True),
+            ("inactive", False, True),
+            ("inactive", True, False),
+            ("inactive", True, True),
+        ):
+            with (
+                self.subTest(status=status, started=started, restored=restored),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                base = Path(directory)
+                previous = base / "previous"
+                previous.mkdir()
+                state = base / "state"
+                state.mkdir()
+                if started:
+                    (state / "rollback-started").touch()
+                root = base / "gcroot"
+                root.symlink_to(previous)
+                current = base / "current"
+                current.symlink_to(previous if restored else base)
+                with (
+                    patch.object(guard, "STATE", state),
+                    patch.object(guard, "ROOT", root),
+                    patch.object(guard, "CURRENT", current),
+                    patch("builtins.open", unittest.mock.mock_open()),
+                    patch.object(guard.fcntl, "flock"),
+                    patch.object(
+                        guard,
+                        "run",
+                        return_value=subprocess.CompletedProcess([], 0, status),
+                    ),
+                ):
+                    if status == "inactive" and started and restored:
+                        guard.main("clear")
+                        self.assertFalse(state.exists())
+                        self.assertFalse(root.is_symlink())
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            guard.main("clear")
+                        self.assertTrue(state.exists())
+                        self.assertTrue(root.is_symlink())
+
+    def test_clear_checks_health_without_building(self):
+        for healthy in (True, False):
+            with (
+                self.subTest(healthy=healthy),
+                patch("sys.argv", ["deploy.py", "clear-rollback"]),
+                patch.object(deploy, "check_access"),
+                patch.object(
+                    deploy,
+                    "check_health",
+                    side_effect=None if healthy else RuntimeError("unhealthy"),
+                ),
+                patch.object(deploy, "snapshot") as snapshot,
+                patch.object(deploy, "deployment_guard", return_value="") as gate,
+            ):
+                self.assertEqual(deploy.main(), 0 if healthy else 1)
+                snapshot.assert_not_called()
+                if healthy:
+                    self.assertEqual(gate.call_args.args[2:], ("clear", None))
+                else:
+                    gate.assert_not_called()
+
     def test_firewall_requires_ssh_before_blocking_rules(self):
         policy = (deploy.ROOT / "services/host-firewall.nft").read_text()
         guard.check_firewall(policy)
