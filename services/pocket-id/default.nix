@@ -2,12 +2,16 @@
 # Preserve the issuer hostname and encryption key on upgrades.
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
 }:
 let
-  pocket-id = pkgs.pocket-id;
+  # Use native build tools for the platform-independent frontend assets.
+  pocket-id = pkgs.pocket-id.overrideAttrs {
+    frontend = inputs.nixpkgs.legacyPackages.x86_64-linux.pocket-id.frontend;
+  };
   hardening = import ../hardening.nix;
   environment = {
     APP_URL = "https://id.maxice8.com";
