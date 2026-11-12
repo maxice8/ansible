@@ -7,7 +7,8 @@
   ...
 }:
 let
-  pomerium = pkgs.pomerium;
+  # The Swiss dependency excludes Go 1.27.
+  pomerium = pkgs.pomerium.override { buildGoModule = pkgs.buildGo126Module; };
   credentials = [
     "cookie-secret"
     "shared-secret"
