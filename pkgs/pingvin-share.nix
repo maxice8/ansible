@@ -25,8 +25,8 @@ let
   src = fetchFromGitHub {
     owner = "smp46";
     repo = "pingvin-share-x";
-    rev = "fd4632b9882fae3d1c67d69ae1d4ab7f91947cd5";
-    hash = "sha256-WadA9c/TBzrhj37Rw9erTUoQY/bFtC+Vxdu7m3xeywk=";
+    rev = "d34960e1f583b396a3a641cd6769fe42c898a547";
+    hash = "sha256-0rsxDcZOwyoqLIVflrZWQ0vlE3qbXCUvHemMimdlIsQ=";
   };
   # Select binaries for the service's CPU, not the workstation's CPU.
   engineRelease =
