@@ -16,6 +16,9 @@ The live test module is `test_vps.py`. It checks:
 - Eleven local application health endpoints and public HTTPS access to Forgejo and
   Pocket ID from the workstation.
 
+Each required unit must be active. Local HTTP checks run concurrently with a
+shared 65-second deadline inside the 120-second SSH timeout.
+
 Defaults are Tailscale hostname `mashu` and public recovery target
 `ubuntu@2603:c025:4005:8f7e:0:b837:618:268c`. Override them when needed:
 
@@ -61,8 +64,8 @@ never reboot the VPS; boot recovery is not verified by this suite.
 Passkey login, actual file synchronization, CI jobs and backup restores still need
 separate acceptance when their behavior changes.
 
-Run the focused deployment guard tests with:
+Run the local deployment and readiness regression tests with:
 
 ```sh
-direnv exec . python3 -m unittest tests.test_deploy_guard
+direnv exec . python3 -m unittest discover
 ```

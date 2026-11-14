@@ -28,11 +28,13 @@ print(json.dumps({'machine':Path('/etc/machine-id').read_text().strip(),
                   'hostname':socket.gethostname(),
                   'address':os.environ['SSH_CONNECTION'].split()[2]}))
 """
-HEALTH = """import json,socket,struct,subprocess
+HEALTH = """import json,socket,struct,subprocess,time
+from concurrent.futures import ThreadPoolExecutor
 units = ['ssh','tailscaled','systemd-resolved','homelab-firewall','unbound','unbound-network',
          'traefik','pomerium','pocket-id','syncthing','forgejo','argus','archisteamfarm',
          'pingvin-share','pingvin-share-frontend','netdata','forgejo-runner','runner-engine','backrest']
-subprocess.run(['systemctl','is-active','--quiet',*units],check=True)
+for unit in units:
+    subprocess.run(['systemctl','is-active','--quiet',unit],check=True)
 failed=subprocess.check_output(['systemctl','--failed','--no-legend','--plain'],text=True).strip()
 assert not failed, failed
 status=json.loads(subprocess.check_output(['tailscale','status','--json'],text=True))
@@ -63,15 +65,21 @@ for kind in [socket.SOCK_DGRAM,socket.SOCK_STREAM]:
     assert ident==0x5281 and flags&15==0 and answers>0, 'Unbound resolution failed'
 print('PASS Unbound UDP/TCP resolution',flush=True)
 
-for port,path in [(9080,'/ping'),(28080,'/readyz'),(1411,'/.well-known/openid-configuration'),
+endpoints = [(9080,'/ping'),(28080,'/readyz'),(1411,'/.well-known/openid-configuration'),
                   (8384,'/rest/noauth/health'),(3000,'/api/healthz'),(8081,'/api/v1/healthcheck'),
-                  (1242,'/'),(3001,'/'),(3002,'/api/health'),(19999,'/api/v1/info'),(9898,'/')]:
+                  (1242,'/'),(3001,'/'),(3002,'/api/health'),(19999,'/api/v1/info'),(9898,'/')]
+deadline = time.monotonic() + 65
+def check_endpoint(endpoint):
+    port,path = endpoint
     status=subprocess.check_output(['/usr/bin/curl','--fail','--silent','--show-error',
                     '--location','--noproxy','*','--write-out','%{http_code}',
                     '--output','/dev/null','--retry','60','--retry-max-time','60',
                     '--retry-all-errors','--retry-delay','1','--max-time','5',
-                    f'http://127.0.0.1:{port}{path}'],text=True)
+                    f'http://127.0.0.1:{port}{path}'],text=True,
+                    timeout=max(0.001,deadline-time.monotonic()))
     assert status=='200', (port,status)
+with ThreadPoolExecutor(max_workers=len(endpoints)) as pool:
+    list(pool.map(check_endpoint,endpoints))
 print('PASS eleven application health endpoints',flush=True)
 """
 

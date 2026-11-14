@@ -1,0 +1,75 @@
+"""Check readiness failures without connecting to the VPS."""
+
+import json
+import struct
+import subprocess
+import threading
+import unittest
+from unittest.mock import MagicMock, patch
+
+from tests.test_vps import HEALTH
+
+
+class HealthTests(unittest.TestCase):
+    def test_inactive_runner_fails_even_when_other_units_are_active(self):
+        def check_unit(command, **kwargs):
+            if command[-1] == "forgejo-runner":
+                raise subprocess.CalledProcessError(3, command)
+
+        with (
+            patch("subprocess.run", side_effect=check_unit) as run,
+            patch("subprocess.check_output") as output,
+            self.assertRaises(subprocess.CalledProcessError),
+        ):
+            exec(HEALTH, {})  # noqa: S102 - Exercise the remote script with host calls mocked.
+        self.assertEqual(len(run.call_args_list), 17)
+        output.assert_not_called()
+
+    def test_http_checks_share_a_deadline_and_run_concurrently(self):
+        self.check_endpoints()
+
+    def test_http_failure_rejects_readiness(self):
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.check_endpoints(failure=subprocess.CalledProcessError)
+
+    def test_http_deadline_rejects_readiness(self):
+        with self.assertRaises(subprocess.TimeoutExpired):
+            self.check_endpoints(failure=subprocess.TimeoutExpired)
+
+    def check_endpoints(self, failure=None):
+        barrier = threading.Barrier(11)
+        response = struct.pack("!6H", 0x5281, 0x8180, 1, 1, 0, 0)
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.recv.side_effect = [
+            response,
+            struct.pack("!H", len(response)),
+            response,
+        ]
+
+        def output(command, **kwargs):
+            if command[0] == "systemctl":
+                return ""
+            if command[0] == "tailscale":
+                return json.dumps({"BackendState": "Running", "Self": {"Online": True}})
+            self.assertEqual(kwargs["timeout"], 55)
+            barrier.wait(timeout=5)
+            if failure and command[-1].endswith(":9080/ping"):
+                if failure is subprocess.TimeoutExpired:
+                    raise failure(command, kwargs["timeout"])
+                raise failure(7, command)
+            return "200"
+
+        with (
+            patch("subprocess.run"),
+            patch("subprocess.check_output", side_effect=output),
+            patch("socket.getaddrinfo"),
+            patch("socket.socket", return_value=connection),
+            patch("time.monotonic", side_effect=[100] + [110] * 11),
+            patch("builtins.print"),
+        ):
+            exec(HEALTH, {})  # noqa: S102 - Exercise the remote script with host calls mocked.
+
+
+if __name__ == "__main__":
+    unittest.main()
