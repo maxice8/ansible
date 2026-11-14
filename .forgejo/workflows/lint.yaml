@@ -54,6 +54,9 @@ jobs:
       - name: Check Python formatting
         run: ruff format --check .
 
+      - name: Test deployment and readiness checks
+        run: python3 -m unittest discover
+
       - name: Check bootstrap syntax
         run: bash -n bootstrap.sh
 
