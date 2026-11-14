@@ -259,6 +259,9 @@ Nix store. Store optimisation runs weekly with low CPU and I/O priority.
 Ubuntu still supplies the Nix daemon; Nix declares its included settings.
 Diagnostic tools are available in `/run/current-system/sw/bin`.
 
+The runner stops without waiting for active jobs. Systemd kills remaining runner
+processes after five seconds. A deployment that restarts CI can interrupt jobs.
+
 The runner and rootless engine share `ci.slice`: CPU weight 25, memory throttling
 at 3 GiB and a 4 GiB hard limit. Their existing individual limits still apply.
 

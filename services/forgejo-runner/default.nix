@@ -14,7 +14,7 @@ let
       file = "/var/lib/data/forgejo-runner/.runner";
       capacity = 1;
       timeout = "3h";
-      shutdown_timeout = "3h";
+      shutdown_timeout = "0s";
       labels = [
         "alpine:docker://alpine:latest"
         "docker:docker://docker:dind"
@@ -203,7 +203,7 @@ in
       ExecStart = "${pkgs.forgejo-runner}/bin/forgejo-runner daemon --config /etc/forgejo-runner/config.json";
       Restart = "on-failure";
       RestartSec = 5;
-      TimeoutStopSec = "3h";
+      TimeoutStopSec = "5s";
       MemoryMax = "1G";
       TasksMax = 256;
       RestrictAddressFamilies = [
