@@ -39,6 +39,10 @@ class ChecklistTests(unittest.TestCase):
                 self.assertIn("\r\033[2K", stream.getvalue())
                 self.assertIn("\033[32m✓", stream.getvalue())
                 self.assertIn("\033[33mRollback armed", stream.getvalue())
+                report.feed("GROUP\tRollback")
+                report.feed("CHECK\tTimer armed · 30 minutes")
+                report.feed("PASS\tTimer armed · 30 minutes")
+                self.assertIn("\033[33mTimer armed · 30 minutes", stream.getvalue())
             with patch.dict(os.environ, {"NO_COLOR": "1"}):
                 self.assertEqual(Checklist(stream).style("text", "32"), "text")
             with patch.dict(os.environ, {"TERM": "dumb"}):

@@ -1,14 +1,20 @@
-"""Read-only continuity checks for Mashu: python -m tests.test_vps."""
+"""Check Mashu continuity: python -m tests.test_vps."""
 
 import argparse
+import io
 import ipaddress
 import json
 import os
+import re
 import selectors
+import shlex
 import subprocess
 import tempfile
 import time
-from urllib.request import ProxyHandler, build_opener
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import urljoin, urlsplit
+from urllib.request import HTTPRedirectHandler, ProxyHandler, build_opener
 
 from scripts.checklist import Checklist
 
@@ -33,76 +39,7 @@ print(json.dumps({'machine':Path('/etc/machine-id').read_text().strip(),
                   'hostname':socket.gethostname(),
                   'address':os.environ['SSH_CONNECTION'].split()[2]}))
 """
-HEALTH = """import json,socket,struct,subprocess,time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-units = ['ssh','tailscaled','systemd-resolved','homelab-firewall','unbound','unbound-network',
-         'traefik','pomerium','pocket-id','syncthing','forgejo','argus','archisteamfarm',
-         'pingvin-share','pingvin-share-frontend','netdata','forgejo-runner','runner-engine','backrest']
-print('GROUP\tHost',flush=True)
-print('CHECK\tManaged services',flush=True)
-for unit in units:
-    subprocess.run(['systemctl','is-active','--quiet',unit],check=True)
-failed=subprocess.check_output(['systemctl','--failed','--no-legend','--plain'],text=True).strip()
-assert not failed, failed
-print('PASS\tManaged services',flush=True)
-print('CHECK\tTailscale status',flush=True)
-status=json.loads(subprocess.check_output(['tailscale','status','--json'],text=True))
-assert status['BackendState']=='Running' and status['Self']['Online'], 'Tailscale offline'
-print('PASS\tTailscale status',flush=True)
-print('GROUP\tDNS',flush=True)
-print('CHECK\tSystem resolution',flush=True)
-socket.getaddrinfo('id.maxice8.com',443,type=socket.SOCK_STREAM)
-print('PASS\tSystem resolution',flush=True)
-
-def receive(connection,length):
-    result=b''
-    while len(result)<length:
-        chunk=connection.recv(length-len(result))
-        assert chunk, 'Truncated DNS response'
-        result+=chunk
-    return result
-
-query=struct.pack('!6H',0x5281,0x0100,1,0,0,0)+b'\\x0acloudflare\\x03com\\0'+struct.pack('!HH',1,1)
-for kind in [socket.SOCK_DGRAM,socket.SOCK_STREAM]:
-    label='Unbound UDP' if kind==socket.SOCK_DGRAM else 'Unbound TCP'
-    print('CHECK\t'+label,flush=True)
-    with socket.socket(socket.AF_INET,kind) as connection:
-        connection.settimeout(10)
-        connection.connect(('127.0.0.1',53))
-        if kind==socket.SOCK_STREAM:
-            connection.sendall(struct.pack('!H',len(query))+query)
-            response=receive(connection,struct.unpack('!H',receive(connection,2))[0])
-        else:
-            connection.send(query)
-            response=connection.recv(4096)
-    ident,flags,questions,answers,authority,additional=struct.unpack('!6H',response[:12])
-    assert ident==0x5281 and flags&15==0 and answers>0, 'Unbound resolution failed'
-    print('PASS\t'+label,flush=True)
-
-endpoints = [('Traefik',9080,'/ping'),('Pomerium',28080,'/readyz'),
-             ('Pocket ID',1411,'/.well-known/openid-configuration'),
-             ('Syncthing',8384,'/rest/noauth/health'),('Forgejo',3000,'/api/healthz'),
-             ('Argus',8081,'/api/v1/healthcheck'),('ArchiSteamFarm',1242,'/'),
-             ('Pingvin Share frontend',3001,'/'),('Pingvin Share API',3002,'/api/health'),
-             ('Netdata',19999,'/api/v1/info'),('Backrest',9898,'/')]
-print('GROUP\tApplications',flush=True)
-deadline = time.monotonic() + 65
-def check_endpoint(endpoint):
-    name,port,path = endpoint
-    status=subprocess.check_output(['/usr/bin/curl','--fail','--silent','--show-error',
-                    '--location','--noproxy','*','--write-out','%{http_code}',
-                    '--output','/dev/null','--retry','60','--retry-max-time','60',
-                    '--retry-all-errors','--retry-delay','1','--max-time','5',
-                    f'http://127.0.0.1:{port}{path}'],text=True,
-                    timeout=max(0.001,deadline-time.monotonic()))
-    assert status=='200', (port,status)
-with ThreadPoolExecutor(max_workers=len(endpoints)) as pool:
-    pending={pool.submit(check_endpoint,endpoint):endpoint[0] for endpoint in endpoints}
-    for future in as_completed(pending):
-        print('CHECK\t'+pending[future],flush=True)
-        future.result()
-        print('PASS\t'+pending[future],flush=True)
-"""
+HEALTH = (Path(__file__).resolve().parents[1] / "scripts/deploy_health.py").read_text()
 
 
 def ssh(host, options, script, *, privileged=False, timeout=120, on_line=None):
@@ -245,14 +182,58 @@ def check_access(
     return expected
 
 
-def check_health(target_host, options=(), report=None):
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def check_redirect(opener, url, expected):
+    try:
+        response = opener.open(url, timeout=10)
+    except HTTPError as error:
+        response = error
+    with response:
+        assert response.status in (302, 303, 307, 308), (
+            f"{url}: expected a login redirect, got HTTP {response.status}"
+        )
+        location = urlsplit(urljoin(url, response.headers.get("Location", "")))
+        # Do not include login state or signed query strings in diagnostics.
+        actual = (location.scheme, location.netloc, location.path)
+        assert actual == expected, f"{url}: unexpected login destination {actual}"
+
+
+def check_storage(target_host, options=(), report=None):
     report = report or Checklist()
     try:
-        ssh(target_host, options, HEALTH, privileged=True, on_line=report.feed)
+        ssh(
+            target_host,
+            options,
+            HEALTH + "\nstorage()",
+            privileged=True,
+            on_line=report.feed,
+        )
     except BaseException:
         report.fail_active()
         raise
-    opener = build_opener(ProxyHandler({}))
+
+
+def check_health(
+    target_host, options=(), report=None, *, probe_runner=True, probe_git=True
+):
+    report = report or Checklist()
+    try:
+        ssh(
+            target_host,
+            options,
+            HEALTH + f"\nhealth(probe_runner={probe_runner!r})",
+            timeout=240,
+            privileged=True,
+            on_line=report.feed,
+        )
+    except BaseException:
+        report.fail_active()
+        raise
+    opener = build_opener(ProxyHandler({}), NoRedirect())
     # Cloudflare rejects the default Python user-agent on Pocket ID (error 1010).
     opener.addheaders = [("User-Agent", "mashu-healthcheck/1.0")]
     report.group("Public HTTPS")
@@ -262,9 +243,90 @@ def check_health(target_host, options=(), report=None):
             "id.maxice8.com · OpenID configuration",
             "https://id.maxice8.com/.well-known/openid-configuration",
         ),
+        ("share.mashu.maxice8.com · frontend", "https://share.mashu.maxice8.com/"),
+        ("share.mashu.maxice8.com · API", "https://share.mashu.maxice8.com/api/health"),
     ]:
         with report.step(label, child=True), opener.open(url, timeout=10) as response:
             assert response.status == 200, (url, response.status)
+            if url.endswith("/api/health"):
+                assert response.read(4096).strip() == b"OK", (
+                    "Share API health did not reach the backend"
+                )
+    report.group("Authentication")
+    with report.step("Pomerium · login redirect", child=True):
+        check_redirect(
+            opener,
+            "https://pomerium.maxice8.com/",
+            ("https", "pomerium.maxice8.com", "/.pomerium/"),
+        )
+        check_redirect(
+            opener,
+            "https://pomerium.maxice8.com/.pomerium/",
+            ("https", "id.maxice8.com", "/authorize"),
+        )
+    for label, host in [
+        ("Argus", "argus"),
+        ("ArchiSteamFarm", "asf"),
+        ("Backrest", "backrest"),
+        ("Netdata", "netdata"),
+        ("Syncthing", "syncthing"),
+    ]:
+        with report.step(label + " · login required", child=True):
+            check_redirect(
+                opener,
+                f"https://{host}.mashu.maxice8.com/",
+                ("https", "pomerium.maxice8.com", "/.pomerium/sign_in"),
+            )
+    if probe_git:
+        report.group("Git SSH")
+        with report.step("Port 23 · repository refs accessible", child=True):
+            result = subprocess.run(
+                [
+                    "git",
+                    "ls-remote",
+                    "--exit-code",
+                    "ssh://git@git.maxice8.com:23/max/ansible.git",
+                    "HEAD",
+                ],
+                env=os.environ
+                | {
+                    "GIT_TERMINAL_PROMPT": "0",
+                    "GIT_SSH_COMMAND": shlex.join(["ssh", *SSH_OPTIONS]),
+                },
+                text=True,
+                capture_output=True,
+                check=True,
+                timeout=20,
+            )
+            assert any(
+                re.fullmatch(r"[0-9a-f]{40,64}\tHEAD", line)
+                for line in result.stdout.splitlines()
+            ), "No repository HEAD received over Git SSH"
+
+
+def check_stability(target_host, options=(), report=None):
+    report = report or Checklist()
+    report.group("Stability")
+    state_script = HEALTH + "\nprint(json.dumps(service_state()))"
+    with report.step("Readiness maintained · 15 seconds", child=True):
+        before = json.loads(ssh(target_host, options, state_script, privileged=True))
+        started = time.monotonic()
+        quiet = Checklist(io.StringIO())
+        for sample in range(1, 4):
+            time.sleep(max(0, started + sample * 5 - time.monotonic()))
+            check_health(
+                target_host, options, report=quiet, probe_runner=False, probe_git=False
+            )
+    with report.step("No new automatic service restarts", child=True):
+        after = json.loads(ssh(target_host, options, state_script, privileged=True))
+        changed = sorted(
+            unit
+            for unit in before.keys() | after.keys()
+            if before.get(unit) != after.get(unit)
+        )
+        assert not changed, (
+            "Services restarted during the stability window: " + ", ".join(changed)
+        )
 
 
 def main():
@@ -277,7 +339,9 @@ def main():
     check_access(
         args.target_host, args.tailscale_host, args.recovery_host, args.ssh_option
     )
+    check_storage(args.target_host, args.ssh_option)
     check_health(args.target_host, args.ssh_option)
+    check_stability(args.target_host, args.ssh_option)
 
 
 if __name__ == "__main__":

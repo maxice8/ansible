@@ -20,6 +20,8 @@ from tests.test_vps import (
     TAILSCALE_HOST,
     check_access,
     check_health,
+    check_stability,
+    check_storage,
     ssh,
 )
 
@@ -116,7 +118,7 @@ def main() -> int:
         }[args.action]
     )
     started = time.monotonic()
-    registration_started = False
+    rollback_requested = False
     try:
         if args.action in ("test", "clear-rollback"):
             check_access(
@@ -126,7 +128,11 @@ def main() -> int:
                 args.ssh_option,
                 report=report,
             )
+            if args.action == "test":
+                check_storage(args.target_host, args.ssh_option, report=report)
             check_health(args.target_host, args.ssh_option, report=report)
+            if args.action == "test":
+                check_stability(args.target_host, args.ssh_option, report=report)
             if args.action == "clear-rollback":
                 with report.step("Clear rollback guard"):
                     deployment_guard(args.target_host, args.ssh_option, "clear", None)
@@ -140,6 +146,7 @@ def main() -> int:
                 require_tailscale=False,
                 report=report,
             )
+            check_storage(args.target_host, args.ssh_option, report=report)
         with report.step("Build profile"):
             source = snapshot()
             out_link = ROOT / "result" if args.output == "systemConfigs.mashu" else None
@@ -162,10 +169,10 @@ def main() -> int:
                 capture_output=True,
                 check=True,
             )
+        rollback_requested = True
         deployment_guard(
             args.target_host, args.ssh_option, "arm", profile, report=report
         )
-        registration_started = True
         try:
             with report.step("Activate services"):
                 # The built profile includes its native System Manager entry points.
@@ -207,8 +214,10 @@ for action in ['register-profile', 'activate']:
                 raise
             finally:
                 check_health(args.target_host, args.ssh_option, report=report)
-        with report.step("Disarm rollback"):
-            deployment_guard(args.target_host, args.ssh_option, "disarm", profile)
+        check_stability(args.target_host, args.ssh_option, report=report)
+        deployment_guard(
+            args.target_host, args.ssh_option, "disarm", profile, report=report
+        )
         report.line(
             "\n"
             + report.style(
@@ -231,11 +240,13 @@ for action in ['register-profile', 'activate']:
             for detail in (error.stdout, error.stderr):
                 if detail:
                     print(detail, file=sys.stderr)
-        if registration_started:
+        if rollback_requested:
             print(
-                "Rollback remains armed for 30 minutes from preflight; "
-                "inspect systemctl status mashu-deploy-rollback.timer and .service. "
-                "application data migrations are not rolled back automatically.",
+                report.style(
+                    "Inspect mashu-deploy-rollback.timer, .service and /run/mashu-deploy before retrying. "
+                    "The timer may remain armed; application data migrations are not rolled back automatically.",
+                    "33",
+                ),
                 file=sys.stderr,
             )
         return 1

@@ -54,6 +54,8 @@ class Checklist:
         )
         code = "33" if "Rollback armed" in text else "1"
         label = text if child else self.style(text, code)
+        if text == "Timer armed · 30 minutes":
+            label = self.style(text, "33")
         self.line(f"{indent}{symbol} {label}{duration}")
 
     @contextmanager

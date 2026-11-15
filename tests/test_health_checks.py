@@ -7,7 +7,7 @@ import threading
 import unittest
 from unittest.mock import MagicMock, patch
 
-from tests.test_vps import HEALTH
+from scripts import deploy_health as remote
 
 
 class HealthTests(unittest.TestCase):
@@ -21,7 +21,7 @@ class HealthTests(unittest.TestCase):
             patch("subprocess.check_output") as output,
             self.assertRaises(subprocess.CalledProcessError),
         ):
-            exec(HEALTH, {})  # noqa: S102 - Exercise the remote script with host calls mocked.
+            remote.health()
         self.assertEqual(len(run.call_args_list), 17)
         output.assert_not_called()
 
@@ -67,8 +67,10 @@ class HealthTests(unittest.TestCase):
             patch("socket.socket", return_value=connection),
             patch("time.monotonic", side_effect=[100] + [110] * 11),
             patch("builtins.print") as progress,
+            patch.object(remote, "application_dns"),
+            patch.object(remote, "runner_dns"),
         ):
-            exec(HEALTH, {})  # noqa: S102 - Exercise the remote script with host calls mocked.
+            remote.health()
         events = [call.args[0] for call in progress.call_args_list]
         self.assertIn("PASS\tSystem resolution", events)
         self.assertIn("PASS\tUnbound UDP", events)

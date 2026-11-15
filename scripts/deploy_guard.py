@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 STATE = Path("/run/mashu-deploy")
@@ -120,6 +121,8 @@ def main(action, profile=None):
             if STATE.exists() or ROOT.exists():
                 raise RuntimeError("A previous deployment guard needs review")
             preflight(profile)
+            print("GROUP\tRollback", flush=True)
+            print("CHECK\tPrevious profile retained", flush=True)
             previous = CURRENT.resolve(strict=True)
             if not (previous / "bin/activate").is_file():
                 raise RuntimeError("No previous profile is available for rollback")
@@ -127,6 +130,11 @@ def main(action, profile=None):
             ROOT.symlink_to(previous)
             (STATE / "candidate").write_text(profile)
             (STATE / "guard.py").write_text(Path(__file__).read_text())
+            assert ROOT.resolve(strict=True) == previous, (
+                "Previous profile GC root is invalid"
+            )
+            print("PASS\tPrevious profile retained", flush=True)
+            print("CHECK\tTimer armed · 30 minutes", flush=True)
             run(
                 "systemd-run",
                 "--collect",
@@ -137,7 +145,42 @@ def main(action, profile=None):
                 str(STATE / "guard.py"),
                 "rollback",
             )
-            print("DONE\tRollback armed · 30 minutes", flush=True)
+            status = run(
+                "systemctl",
+                "show",
+                UNIT + ".timer",
+                "--property=ActiveState",
+                "--property=SubState",
+                capture_output=True,
+            ).stdout
+            status = dict(line.split("=", 1) for line in status.splitlines())
+            assert status == {"ActiveState": "active", "SubState": "waiting"}, (
+                "Rollback timer is not waiting"
+            )
+            print("PASS\tTimer armed · 30 minutes", flush=True)
+            print("CHECK\tFuture trigger confirmed", flush=True)
+            timer_path = (
+                "/org/freedesktop/systemd1/unit/"
+                + UNIT.replace("-", "_2d")
+                + "_2etimer"
+            )
+            trigger = run(
+                "busctl",
+                "get-property",
+                "org.freedesktop.systemd1",
+                timer_path,
+                "org.freedesktop.systemd1.Timer",
+                "NextElapseUSecMonotonic",
+                capture_output=True,
+            ).stdout.split()
+            assert len(trigger) == 2 and trigger[0] == "t", (
+                "Invalid rollback timer trigger"
+            )
+            remaining = int(trigger[1]) / 1000000 - time.monotonic()
+            assert 0 < remaining <= 1801, (
+                "Rollback trigger is not within the next 30 minutes"
+            )
+            print("PASS\tFuture trigger confirmed", flush=True)
         elif action == "disarm":
             if (STATE / "rollback-started").exists():
                 raise RuntimeError("Rollback has started; inspect the host")
@@ -145,10 +188,29 @@ def main(action, profile=None):
                 raise RuntimeError("Deployment guard belongs to another profile")
             if CURRENT.resolve() != Path(profile):
                 raise RuntimeError("Candidate profile is no longer active")
+            print("GROUP\tRollback", flush=True)
+            print("CHECK\tTimer disarmed", flush=True)
             run("systemctl", "stop", UNIT + ".timer")
-            ROOT.unlink()
+            status = run(
+                "systemctl",
+                "show",
+                UNIT + ".timer",
+                "--property=ActiveState",
+                "--value",
+                capture_output=True,
+            ).stdout.strip()
+            assert status == "inactive", "Rollback timer is still active"
+            print("PASS\tTimer disarmed", flush=True)
+            print("CHECK\tRecovery state cleared", flush=True)
             shutil.rmtree(STATE)
-            print("Rollback disarmed", flush=True)
+            assert not STATE.exists(), "Rollback recovery state remains"
+            print("PASS\tRecovery state cleared", flush=True)
+            print("CHECK\tPrevious profile GC root removed", flush=True)
+            ROOT.unlink()
+            assert not ROOT.is_symlink() and not ROOT.exists(), (
+                "Rollback GC root remains"
+            )
+            print("PASS\tPrevious profile GC root removed", flush=True)
         elif action == "clear":
             for unit in (UNIT + ".timer", UNIT + ".service"):
                 status = run(
