@@ -61,6 +61,8 @@ def check_firewall(text):
 
 
 def preflight(profile):
+    print("GROUP\tValidate candidate", flush=True)
+    print("CHECK\tHost firewall", flush=True)
     files = entries(profile)
     # shortcut: recovery restores this one managed SSH file; review added SSH files.
     if {name for name in files if name.startswith("ssh/")} != {
@@ -70,6 +72,8 @@ def preflight(profile):
     firewall = source(files, "nftables.conf")
     check_firewall(firewall.read_text())
     run(firewall_binary(files), "--check", "--file", str(firewall))
+    print("PASS\tHost firewall", flush=True)
+    print("CHECK\tSSH configuration", flush=True)
     with tempfile.TemporaryDirectory(prefix="mashu-ssh-") as directory:
         staged = Path(directory) / "ssh"
         shutil.copytree("/etc/ssh", staged, symlinks=False)
@@ -103,8 +107,10 @@ assert '0.0.0.0:22' in listeners and '[::]:22' in listeners, 'Public SSH listene
             script,
             str(staged),
         )
+    print("PASS\tSSH configuration", flush=True)
+    print("CHECK\tActivation assertions", flush=True)
     run(str(Path(profile) / "bin/preActivationAssertions"))
-    print("PASS candidate SSH, host firewall and activation assertions", flush=True)
+    print("PASS\tActivation assertions", flush=True)
 
 
 def main(action, profile=None):
@@ -131,7 +137,7 @@ def main(action, profile=None):
                 str(STATE / "guard.py"),
                 "rollback",
             )
-            print("Rollback armed for 30 minutes", flush=True)
+            print("DONE\tRollback armed · 30 minutes", flush=True)
         elif action == "disarm":
             if (STATE / "rollback-started").exists():
                 raise RuntimeError("Rollback has started; inspect the host")

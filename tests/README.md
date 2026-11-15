@@ -16,6 +16,12 @@ The live test module is `test_vps.py`. It checks:
 - Eleven local application health endpoints and public HTTPS access to Forgejo and
   Pocket ID from the workstation.
 
+Deployments and continuity checks use a checklist with separate SSH, DNS,
+application and public HTTPS results. Terminals show active checks in cyan,
+passes in green, failures in red and armed rollback in amber. Set `NO_COLOR`
+to disable colours. Redirected output has no terminal control sequences.
+Successful build, copy and assertion logs are hidden; failures include diagnostics.
+
 Each required unit must be active. Local HTTP checks run concurrently with a
 shared 65-second deadline inside the 120-second SSH timeout.
 

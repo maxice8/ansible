@@ -10,8 +10,10 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
+from scripts.checklist import Checklist
 from tests.test_vps import (
     RECOVERY_HOST,
     SSH_OPTIONS,
@@ -26,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 
 def snapshot() -> Path:
     """Freeze tracked files with Nix's Git fetcher. Ignored files stay outside the store."""
-    source = subprocess.check_output(
+    source = subprocess.run(
         [
             "nix",
             "flake",
@@ -35,7 +37,9 @@ def snapshot() -> Path:
             f"git+{ROOT.as_uri()}",
         ],
         text=True,
-    )
+        capture_output=True,
+        check=True,
+    ).stdout
     return Path(json.loads(source)["storePath"])
 
 
@@ -52,13 +56,15 @@ def build(
     command += ["--out-link", str(out_link)] if out_link else ["--no-link"]
     if builders == "none":
         builders = ""
-    return subprocess.check_output(
+    return subprocess.run(
         command + ["--print-out-paths", "--builders", builders, target],
         text=True,
-    ).strip()
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
 
 
-def deployment_guard(host, options, action, profile):
+def deployment_guard(host, options, action, profile, report=None):
     """Run the access guard on the deployment host."""
     script = (ROOT / "scripts/deploy_guard.py").read_text()
     arguments = [action] if profile is None else [action, profile]
@@ -73,6 +79,7 @@ with tempfile.TemporaryDirectory(prefix='mashu-guard-') as directory:
     subprocess.run(['/usr/bin/python3', str(script), *{arguments!r}], check=True)
 """,
         privileged=True,
+        on_line=report.feed if report else None,
     )
 
 
@@ -99,6 +106,16 @@ def main() -> int:
     for host in [args.target_host, args.tailscale_host, args.recovery_host]:
         if not re.fullmatch(r"[A-Za-z0-9_@.:[\]-]+", host) or host.startswith("-"):
             parser.error("invalid SSH target")
+    report = Checklist()
+    report.title(
+        {
+            "deploy": "Deploy · Mashu",
+            "build": "Build · Mashu",
+            "test": "Verify · Mashu",
+            "clear-rollback": "Clear rollback · Mashu",
+        }[args.action]
+    )
+    started = time.monotonic()
     registration_started = False
     try:
         if args.action in ("test", "clear-rollback"):
@@ -107,14 +124,12 @@ def main() -> int:
                 args.tailscale_host,
                 args.recovery_host,
                 args.ssh_option,
+                report=report,
             )
-            check_health(args.target_host, args.ssh_option)
+            check_health(args.target_host, args.ssh_option, report=report)
             if args.action == "clear-rollback":
-                print(
-                    deployment_guard(args.target_host, args.ssh_option, "clear", None),
-                    end="",
-                    flush=True,
-                )
+                with report.step("Clear rollback guard"):
+                    deployment_guard(args.target_host, args.ssh_option, "clear", None)
             return 0
         if args.action == "deploy":
             machine = check_access(
@@ -123,13 +138,14 @@ def main() -> int:
                 args.recovery_host,
                 args.ssh_option,
                 require_tailscale=False,
+                report=report,
             )
-        source = snapshot()
-        out_link = ROOT / "result" if args.output == "systemConfigs.mashu" else None
-        print("Building Mashu profile...", flush=True)
-        profile = build(source, args.output, args.builders, out_link=out_link)
-        print(f"Build output: {profile}", flush=True)
+        with report.step("Build profile"):
+            source = snapshot()
+            out_link = ROOT / "result" if args.output == "systemConfigs.mashu" else None
+            profile = build(source, args.output, args.builders, out_link=out_link)
         if args.action == "build":
+            report.line(f"\nBuild output: {profile}")
             return 0
         target = args.target_host
         copy_options = [*SSH_OPTIONS, *args.ssh_option]
@@ -138,23 +154,21 @@ def main() -> int:
             address = str(ipaddress.IPv6Address(address.strip("[]")))
             target = f"{user + separator}[{address}]"
             copy_options += [f"-oHostName={address}"]
-        print("Copying missing paths to the VPS...", flush=True)
-        subprocess.run(
-            ["nom", "copy", "--to", f"ssh://{target}", profile],
-            env=os.environ | {"NIX_SSHOPTS": shlex.join(copy_options)},
-            check=True,
-        )
-        print("Validating candidate access and arming rollback...", flush=True)
-        print(
-            deployment_guard(args.target_host, args.ssh_option, "arm", profile),
-            end="",
-            flush=True,
+        with report.step("Copy store paths"):
+            subprocess.run(
+                ["nom", "copy", "--to", f"ssh://{target}", profile],
+                env=os.environ | {"NIX_SSHOPTS": shlex.join(copy_options)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+        deployment_guard(
+            args.target_host, args.ssh_option, "arm", profile, report=report
         )
         registration_started = True
         try:
-            print("Activating services; changed services may restart...", flush=True)
-            # The built profile includes its native System Manager entry points.
-            print(
+            with report.step("Activate services"):
+                # The built profile includes its native System Manager entry points.
                 ssh(
                     args.target_host,
                     args.ssh_option,
@@ -166,21 +180,18 @@ for action in ['register-profile', 'activate']:
 """,
                     privileged=True,
                     timeout=600,
-                ),
-                end="",
-                flush=True,
-            )
+                )
         except subprocess.SubprocessError as error:
-            detail = (
-                error.stderr or error.stdout or str(error)
-                if isinstance(error, subprocess.CalledProcessError)
-                else str(error)
-            )
-            print(f"Activation failed: {detail}", file=sys.stderr, flush=True)
+            print(f"Activation failed: {error}", file=sys.stderr, flush=True)
+            for detail in (
+                getattr(error, "stdout", None),
+                getattr(error, "stderr", None),
+            ):
+                if detail:
+                    print(detail, file=sys.stderr, flush=True)
             raise
         finally:
             # A failed activation may still have changed the running host.
-            print("Checking SSH and application readiness...", flush=True)
             try:
                 check_access(
                     args.target_host,
@@ -189,16 +200,20 @@ for action in ['register-profile', 'activate']:
                     args.ssh_option,
                     expected=machine,
                     attempts=12,
+                    report=report,
                 )
             except RuntimeError as error:
                 print(f"Access check failed: {error}", file=sys.stderr, flush=True)
                 raise
             finally:
-                check_health(args.target_host, args.ssh_option)
-        print(
-            deployment_guard(args.target_host, args.ssh_option, "disarm", profile),
-            end="",
-            flush=True,
+                check_health(args.target_host, args.ssh_option, report=report)
+        with report.step("Disarm rollback"):
+            deployment_guard(args.target_host, args.ssh_option, "disarm", profile)
+        report.line(
+            "\n"
+            + report.style(
+                f"Deployment complete · {time.monotonic() - started:.0f}s", "32"
+            )
         )
     except (
         OSError,
@@ -208,12 +223,17 @@ for action in ['register-profile', 'activate']:
         KeyError,
         subprocess.SubprocessError,
     ) as error:
-        print(f"error: {error}", file=sys.stderr)
-        if isinstance(error, subprocess.CalledProcessError):
-            print(error.stderr or error.stdout or "", file=sys.stderr)
+        report.fail_active()
+        report.line("\n" + report.style(f"Failed: {error}", "31"))
+        if isinstance(
+            error, (subprocess.CalledProcessError, subprocess.TimeoutExpired)
+        ):
+            for detail in (error.stdout, error.stderr):
+                if detail:
+                    print(detail, file=sys.stderr)
         if registration_started:
             print(
-                "The host-side rollback remains armed for 30 minutes from preflight; "
+                "Rollback remains armed for 30 minutes from preflight; "
                 "inspect systemctl status mashu-deploy-rollback.timer and .service. "
                 "application data migrations are not rolled back automatically.",
                 file=sys.stderr,

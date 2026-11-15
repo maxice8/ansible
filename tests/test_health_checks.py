@@ -66,9 +66,17 @@ class HealthTests(unittest.TestCase):
             patch("socket.getaddrinfo"),
             patch("socket.socket", return_value=connection),
             patch("time.monotonic", side_effect=[100] + [110] * 11),
-            patch("builtins.print"),
+            patch("builtins.print") as progress,
         ):
             exec(HEALTH, {})  # noqa: S102 - Exercise the remote script with host calls mocked.
+        events = [call.args[0] for call in progress.call_args_list]
+        self.assertIn("PASS\tSystem resolution", events)
+        self.assertIn("PASS\tUnbound UDP", events)
+        self.assertIn("PASS\tUnbound TCP", events)
+        applications = events[events.index("GROUP\tApplications") + 1 :]
+        self.assertEqual(sum(event.startswith("PASS\t") for event in applications), 11)
+        self.assertIn("PASS\tForgejo", applications)
+        self.assertIn("PASS\tPingvin Share frontend", applications)
 
 
 if __name__ == "__main__":
