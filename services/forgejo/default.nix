@@ -58,6 +58,7 @@ let
       LoadCredential = [ "app.ini:${config.sops.secrets.forgejo-config.path}" ];
       ExecStartPre = [ "${command} migrate" ];
       ExecStart = "${command} web";
+      ExecStartPost = "${pkgs.curl}/bin/curl --fail --silent --show-error --noproxy '*' --output /dev/null --retry 20 --retry-connrefused --retry-delay 1 --retry-max-time 20 --max-time 2 http://127.0.0.1:3000/api/healthz";
       Restart = "on-failure";
       RestartSec = 5;
       MemoryMax = "1G";

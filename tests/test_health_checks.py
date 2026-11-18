@@ -19,11 +19,16 @@ class HealthTests(unittest.TestCase):
         with (
             patch("subprocess.run", side_effect=check_unit) as run,
             patch("subprocess.check_output") as output,
+            patch("time.sleep") as sleep,
             self.assertRaises(subprocess.CalledProcessError),
         ):
             remote.health()
-        self.assertEqual(len(run.call_args_list), 17)
+        self.assertEqual(run.call_count, (remote.SERVICE_WAIT_SECONDS + 1) * 17)
+        self.assertEqual(sleep.call_count, remote.SERVICE_WAIT_SECONDS)
         output.assert_not_called()
+
+    def test_restarting_runner_recovers(self):
+        self.check_endpoints(runner_restart_seconds=37)
 
     def test_http_checks_share_a_deadline_and_run_concurrently(self):
         self.check_endpoints()
@@ -36,7 +41,7 @@ class HealthTests(unittest.TestCase):
         with self.assertRaises(subprocess.TimeoutExpired):
             self.check_endpoints(failure=subprocess.TimeoutExpired)
 
-    def check_endpoints(self, failure=None):
+    def check_endpoints(self, failure=None, runner_restart_seconds=0):
         barrier = threading.Barrier(11)
         response = struct.pack("!6H", 0x5281, 0x8180, 1, 1, 0, 0)
         connection = MagicMock()
@@ -46,6 +51,14 @@ class HealthTests(unittest.TestCase):
             struct.pack("!H", len(response)),
             response,
         ]
+        runner_attempts = 0
+
+        def check_unit(command, **kwargs):
+            nonlocal runner_attempts
+            if command[-1] == "forgejo-runner":
+                runner_attempts += 1
+                if runner_attempts <= runner_restart_seconds:
+                    raise subprocess.CalledProcessError(3, command)
 
         def output(command, **kwargs):
             if command[0] == "systemctl":
@@ -61,7 +74,8 @@ class HealthTests(unittest.TestCase):
             return "200"
 
         with (
-            patch("subprocess.run"),
+            patch("subprocess.run", side_effect=check_unit),
+            patch("time.sleep") as sleep,
             patch("subprocess.check_output", side_effect=output),
             patch("socket.getaddrinfo"),
             patch("socket.socket", return_value=connection),
@@ -71,6 +85,9 @@ class HealthTests(unittest.TestCase):
             patch.object(remote, "runner_dns"),
         ):
             remote.health()
+        if runner_restart_seconds:
+            self.assertEqual(runner_attempts, runner_restart_seconds + 1)
+            self.assertEqual(sleep.call_count, runner_restart_seconds)
         events = [call.args[0] for call in progress.call_args_list]
         self.assertIn("PASS\tSystem resolution", events)
         self.assertIn("PASS\tUnbound UDP", events)

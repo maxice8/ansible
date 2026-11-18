@@ -33,6 +33,8 @@ UNITS = [
     "backrest",
 ]
 
+SERVICE_WAIT_SECONDS = 100
+
 ENDPOINTS = [
     ("Traefik", 9080, "/ping"),
     ("Pomerium", 28080, "/readyz"),
@@ -212,8 +214,18 @@ def receive(connection, length):
 def health(probe_runner=True):
     print("GROUP\tHost", flush=True)
     with check("Managed services"):
-        for unit in UNITS:
-            subprocess.run(["systemctl", "is-active", "--quiet", unit], check=True)
+        for attempt in range(SERVICE_WAIT_SECONDS + 1):
+            try:
+                for unit in UNITS:
+                    subprocess.run(
+                        ["systemctl", "is-active", "--quiet", unit], check=True
+                    )
+            except subprocess.CalledProcessError:
+                if attempt == SERVICE_WAIT_SECONDS:
+                    raise
+                time.sleep(1)
+            else:
+                break
         failed = subprocess.check_output(
             ["systemctl", "--failed", "--no-legend", "--plain"], text=True
         ).strip()
