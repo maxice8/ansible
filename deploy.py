@@ -61,7 +61,7 @@ def build(
     return subprocess.run(
         command + ["--print-out-paths", "--builders", builders, target],
         text=True,
-        capture_output=True,
+        stdout=subprocess.PIPE,
         check=True,
     ).stdout.strip()
 
@@ -147,10 +147,10 @@ def main() -> int:
                 report=report,
             )
             check_storage(args.target_host, args.ssh_option, report=report)
-        with report.step("Build profile"):
-            source = snapshot()
-            out_link = ROOT / "result" if args.output == "systemConfigs.mashu" else None
-            profile = build(source, args.output, args.builders, out_link=out_link)
+        report.line("\nBuilding profile…")
+        source = snapshot()
+        out_link = ROOT / "result" if args.output == "systemConfigs.mashu" else None
+        profile = build(source, args.output, args.builders, out_link=out_link)
         if args.action == "build":
             report.line(f"\nBuild output: {profile}")
             return 0

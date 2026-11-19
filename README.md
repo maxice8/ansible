@@ -181,8 +181,8 @@ connect timeout and verifies the machine identity. Application health checks
 run even when an access check fails. Activation errors remain visible if a
 later check also fails.
 
-Build and upload progress use `nix-output-monitor` (`nom`) from devenv. The helper
-prints build, copy, activation and readiness stages. Missing paths are sent from
+Build progress streams live through `nix-output-monitor` (`nom`) from devenv.
+Copy, activation and readiness use the deployment checklist. Missing paths are sent from
 the workstation's completed build to the VPS. The VPS does not redownload them
 from public caches during this copy.
 
